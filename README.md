@@ -1,0 +1,139 @@
+# Notable Reader
+
+Artikel, Textauswahl und lokale Dokumente vorlesen. Kostenlose Basis, keine
+Registrierung, keine Werbung, keine Textkontingente. Freiwillige Unterstützung
+finanziert die Weiterentwicklung und schaltet keine Zusatzfunktionen frei.
+
+- **Web-App:** https://reader.benotable.de/app/
+- **Website und Downloads:** https://reader.benotable.de/
+- **Quellen:** https://github.com/burak-basci/notable-reader
+- **Unterstützen:** https://buy.stripe.com/cNi7sM72dbaU3w6eY7aVa00
+
+## Was Version 2.1 kann
+
+- Browser-Erweiterung: Artikel und markierten Text über einen bewussten Klick
+  öffnen; eine kompakte Leiste mit Satzmarkierung, Pause/Weiterlesen, Sprüngen,
+  Stimmenauswahl, Lautstärke, Tempo von 0,8× bis 4× und Lesestellen.
+- Dokument-App: PDF mit Textebene und Seitenvorschau; passwortgeschützte PDF nach
+  Eingabe des Passworts; EPUB ohne DRM in Buchreihenfolge; DOCX-Absätze und
+  Tabellenzellen; TXT, Markdown als Klartext und HTML ohne aktive Inhalte.
+- Wortmarkierung in der Dokument-App, wenn die gewählte Systemstimme Wortgrenzen
+  meldet; sonst bleibt die aktuelle Textpassage markiert.
+- Verarbeitung der Dateien auf dem Gerät. Keine Dokumente an Notable Reader,
+  kein Produktkonto, keine Werbung oder Analysetracker.
+- Optionale lokale KI-Stimmen funktionieren auch ohne Systemstimmen: Deutsch
+  mit Piper Thorsten high und Englisch mit Kokoro82M FP32/Bella. Der ausdrücklich
+  angeklickte Modelldownload umfasst 113,9 MB beziehungsweise 326,1 MB, plus
+  einmalig ca. 30 MB lokale Sprachmodule in der Web-App. Herkunft, Lizenzen und
+  Löschknopf sind direkt an der Downloadauswahl sichtbar.
+- System-/Browserstimmen. Standardmäßig werden nur Stimmen angeboten, die der
+  Browser als lokal meldet. Online-Stimmen erfordern bewusstes Einschalten.
+
+Stimmen, Sprachumfang, Aussprache und die tatsächlich erreichbare
+Wiedergabegeschwindigkeit hängen vom Betriebssystem und der gewählten Stimme ab.
+Eine als online gemeldete Systemstimme kann Text an ihren Anbieter übertragen. Auf
+Systemen ohne installierte Stimmen kann der bewusst gestartete lokale
+KI-Modelldownload genutzt, eine Systemstimme eingerichtet oder eine verfügbare
+Online-Stimme ausdrücklich eingeschaltet werden. Der Reader zeigt diesen
+Fall an, statt eine funktionierende Sprachausgabe vorzutäuschen.
+
+PDF-Scans brauchen eine vorgelagerte OCR. Alte binäre DOC-Dateien müssen zuerst
+als DOCX exportiert werden. Verschlüsselte EPUBs/Office-Archive, ZIP64-Archive,
+unsichere Pfade und Archive mit auffälligen Entpackgrößen werden abgewiesen.
+Für den Archivimport gelten technische Sicherheitsgrenzen: höchstens 128 MB
+Archiv-/Gesamtinhalt, 32 MB je Datei, 4.096 Einträge und bei großen Einträgen ein
+maximales Kompressionsverhältnis von 1.000:1. Diese Grenzen verhindern
+Speicherüberlastungen; sie sind kein kostenpflichtiges Textkontingent.
+
+## Erweiterung installieren
+
+Die ZIP-Datei vollständig entpacken. In Chrome, Edge oder Brave die Seite
+`chrome://extensions` beziehungsweise `edge://extensions` öffnen, den
+Entwicklermodus einschalten und **Entpackte Erweiterung laden** wählen. Den
+entpackten Ordner auswählen, der `manifest.json` enthält. Das Symbol anheften.
+Die Store-Installation ist eine separate Vertriebsfreigabe durch den jeweiligen
+Store; die ZIP ist bereits direkt als entpackte Erweiterung installierbar.
+
+Auf einer normalen Webseite das Symbol anklicken und **Diese Seite vorlesen**
+wählen. Markierter Text hat Vorrang. Für lokale KI-Stimmen in Artikeln **Lokale KI-Stimme öffnen** wählen. Der
+Artikel wird ausschließlich im Arbeitsspeicher des Browsers über
+`chrome.storage.session` an die eigene Erweiterungsleseseite übergeben; der
+Eintrag wird beim Öffnen entfernt. Nicht geöffnete Übergaben verfallen nach
+fünf Minuten und werden spätestens bei der nächsten Übergabe bereinigt; ein
+Browserneustart entfernt den Sitzungsspeicher. Keine Übergabe an einen Server.
+Die Leiste öffnet sich ohne Autoplay;
+**Vorlesen** startet die Stimme. Browser-interne Seiten und der eingebaute
+PDF-Viewer sperren fremde Scripts; dort **PDF oder Text öffnen** verwenden.
+Die Erweiterung benötigt keine generelle Berechtigung für alle Webseiten.
+
+Die Web-App kann auf unterstützten Geräten über das Browsermenü zum Startbildschirm
+hinzugefügt werden. App und Lesemodule lassen sich nach dem Laden offline nutzen,
+sobald die Offline-Speicherung abgeschlossen ist; dafür ist eine lokale Stimme nötig.
+Das ist eine installierbare Web-App, keine Zusage einer Store-Veröffentlichung.
+
+## Datenschutz
+
+Dateien und geladener Text bleiben im Speicher der geöffneten Seite. Es gibt
+keinen Upload-Endpunkt. Beim Schließen wird die Sitzung verworfen. Bis zu 100
+Lesestellen werden als Text-Fingerabdruck und Abschnittsnummer gespeichert,
+zusammen mit Stimme, Tempo, Lautstärke und Optionen. Es werden weder Dokumenttext
+noch Dateiname oder Quell-URL in diesen Einstellungen gespeichert.
+
+Die Dokument-App nutzt den Browserspeicher ihrer Website beziehungsweise ihrer
+Erweiterungsseite. Die Artikelleiste speichert Einstellungen in
+`chrome.storage.local`. **Einstellungen & Lesestellen löschen** entfernt diese
+Daten im jeweiligen Reader. Die Web-App speichert öffentlich ausgelieferte
+Programmdateien im Offline-Cache; Dokumentdateien gehören nicht zu diesem Cache.
+Freiwillig heruntergeladene KI-Modelle liegen getrennt im CacheStorage
+`notable-reader-neural-models-v1` und werden mit **Lokale KI-Modelle löschen**
+entfernt. Beim Modelldownload erhält Hugging Face technische Verbindungsdaten;
+Dateien und Text werden nicht übertragen. Modellgröße und SHA-256 müssen vor
+der Speicherung mit dem gepinnten Katalog übereinstimmen. Die Inferenz arbeitet
+im eigenen Worker mit ONNX Runtime WebAssembly und gibt lokal erzeugtes Audio
+über einen Audiopuffer aus. Ein Abschnitt wird vorausberechnet; tatsächliche
+Synthesegeschwindigkeit und Geräteleistung können das gewünschte Tempo begrenzen.
+Websitebesuch und freiwillige Zahlung unterliegen den Hinweisen auf
+https://reader.benotable.de/privacy und den Bedingungen des Zahlungsanbieters.
+
+## Entwicklung und Prüfung
+
+Die Erweiterung ist buildless HTML, CSS und JavaScript. Produktcode liegt unter
+`extension/`. Kein CDN und kein nachgeladener ausführbarer Fremdcode.
+
+```sh
+npm install
+npm run test:core
+npm run test:browser
+python3 tools/release.py
+```
+
+Die Browserprüfung benötigt eine von Playwright unterstützte Chromium-Installation;
+`npx playwright-core install chromium` lädt sie bei Bedarf. Tests starten ausschließlich
+einen eigenen stummen Headless-Browser und benutzen öffentliche synthetische
+Dokumente unter `tests/fixtures/`. Die Stimmen-Zustandsprüfung benutzt kontrollierte
+Teststimmen; der tatsächliche Stimmenbestand wird separat erfasst. Ein bestandener
+Stummschalttest ist kein subjektives Klangurteil.
+
+Die PDF-Testdateien lassen sich mit dem optionalen Entwicklungswerkzeug
+PyMuPDF neu erzeugen: `python3 tools/fixtures.py tests/fixtures`.
+PyMuPDF wird nicht mit dem Produkt verteilt und gehört nicht zur Laufzeit.
+
+## Lizenzen
+
+Die kombinierte Distribution einschließlich eSpeak NG wird unter
+GPL-3.0-or-later ausgeliefert (LICENSE/COPYING). Der selbst geschriebene
+Readercode ist zusätzlich unter MIT verfügbar (LICENSE-MIT, Dateiheader).
+Mozilla PDF.js und Readability: Apache-2.0. fflate und ONNX Runtime: MIT.
+Piper-Phonemizer-Wrapper: MIT, eingebettetes eSpeak NG: GPL-3.0-or-later.
+Kokoro-Modell: Apache-2.0. Piper-Modellverzeichnis: MIT, Thorsten-Sprachdatensatz:
+CC0. Stimmengewichte kommen erst nach dem ausdrücklichen Download.
+
+Vollständige Phonemizer-/eSpeak-Quellen, Sprachdatenquellen, Originalhinweise,
+Buildanleitung und Hashinventar sind im Quellpaket enthalten, siehe
+[third_party_sources/README.md](third_party_sources/README.md) und
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Das Releasepaket enthält keine Modellgewichte und
+keine Komponenten des getrennten Python-/CUDA-Companions. Der bisherige lokale
+Companion bleibt eine eigenständige Installation für dessen natürliche
+Offline-Stimmen und Dokumentintegration.
