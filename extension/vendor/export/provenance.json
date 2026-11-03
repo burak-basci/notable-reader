@@ -1,0 +1,12 @@
+{
+  "package": "@breezystack/lamejs",
+  "version": "1.2.7",
+  "license": "LGPL-3.0",
+  "gitHead": "1fb0ef5fa177413107e2e107d054a9b994e3f79c",
+  "packageTarball": "https://registry.npmjs.org/@breezystack/lamejs/-/lamejs-1.2.7.tgz",
+  "npmIntegrity": "sha512-6wc7ck65ctA75Hq7FYHTtTvGnYs6msgdxiSUICQ+A01nVOWg6rqouZB8IdyteRlfpYYiFovkf67dIeOgWIUzTA==",
+  "sourceUrl": "https://codeload.github.com/gideonstele/lamejs/tar.gz/1fb0ef5fa177413107e2e107d054a9b994e3f79c",
+  "sourceSha256": "af8f08f0ff9a13777f2ffff737b48e40019b53a4b21db270dd62e829574e2b83",
+  "moduleSha256": "1c5f944911ccf2f6e29ab36c2e568363210ab16f50c0d76077060f40ecf91d28",
+  "changes": "None. ES module copied byte-for-byte from the verified npm tarball."
+}

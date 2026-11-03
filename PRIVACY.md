@@ -1,6 +1,6 @@
 # Product privacy
 
-Version 2.1.0, 3 November 2026. Operator: Burak Basci. The full website and
+Version 2.2.0, 3 November 2026. Operator: Burak Basci. The full website and
 payment privacy notice is https://reader.benotable.de/privacy.
 
 The reader processes user-selected documents and article text in the browser.
@@ -43,3 +43,9 @@ text via temporary chrome.storage.session to the extension's own reader page.
 The handoff is removed after retrieval. An unopened handoff expires after five
 minutes and is cleaned during the next handoff; closing/restarting the browser
 clears this session store. It is never copied into persistent settings.
+
+## Local audiobook export
+
+MP3/WAV export uses the deliberately downloaded local neural model and an on-device encoder. Native browser/system voices do not expose exportable audio and are not recorded. Document text and generated audio are not uploaded. The entire opened text is processed in sequential chunks; the original document text is not persisted by the export module.
+
+Depending on browser capabilities, audio is written to an explicitly selected file, temporary Origin Private File System storage, IndexedDB (`notable-reader-audiobook-exports`) or a bounded memory fallback. These local temporary audio files can remain after a browser crash. The export cleanup button removes unused temporary exports while protecting active jobs in other tabs where browser locks are supported. Browser/site storage controls can clear these stores. A finished file downloaded to the user's own folder remains there until the user deletes it.

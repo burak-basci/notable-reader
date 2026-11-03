@@ -3,6 +3,9 @@ const {Reader, cleanText, fingerprint, textFromPdfItems} = globalThis.NotableRea
 import {LocalModels,Speech,Utterance,MODELS,totalBytes} from './neural-speech.js';
 const $ = selector => document.querySelector(selector);
 const key = 'notable-reader-v2';
+let converterMode = new URL(location.href).searchParams.get('mode') === 'audiobook';
+let exportBusy = false, exporter = null, exportAbort = null, exportResult = null, exportUrl = '', exportModelTouched = false, exportSelecting = false, importBusy = false;
+const exportLocks = new Map();
 const defaults = {rate:1, volume:1, voice:'', language:'auto', online:false, follow:true, positions:{}};
 let settings;
 try { settings = {...defaults, ...JSON.parse(localStorage.getItem(key) || '{}')}; } catch { settings = {...defaults}; }
@@ -52,17 +55,20 @@ function refreshVoices() {
   if (chosen) select.value = chosen.voiceURI;
   reader.configure({voice:chosen});
   $('#voice-note').textContent = !available.length ? 'Keine Systemstimme gefunden. Lade unten eine kostenlose lokale KI-Stimme oder installiere eine Systemstimme. Online-Stimmen lassen sich bewusst einschalten.' : chosen?.voiceURI?.startsWith('notable:') ? 'Lokale neuronale Stimme: Text und erzeugtes Audio bleiben auf diesem Gerät.' : chosen?.localService ? `${available.length} Stimme${available.length===1?'':'n'} verfügbar. Gewählte Stimme wird vom Browser als lokal gemeldet.` : 'Online-Stimme: Der Browser oder Stimmenanbieter kann deinen Text verarbeiten. Für vertrauliche Inhalte eine lokale Stimme wählen.';
-  if(!available.length)$('#local-models').open=true;
+  $('#choose-voice').textContent = chosen ? `${chosen.name} ⌄` : 'Stimme wählen ⌄';
+  $('#choose-voice').title = chosen ? `${chosen.name} · Stimme ändern` : 'Stimme wählen';
+  renderExportAvailability();
 }
 const reader = new Reader({
   speech,Utterance,
   onstate({state,index,count,error}) {
     $('#play').textContent = state === 'playing' ? 'Pause' : state === 'paused' ? 'Weiterlesen' : state === 'ended' ? 'Noch einmal' : 'Vorlesen';
     $('#play').setAttribute('aria-pressed', String(state === 'playing'));
-    for (const selector of ['#play','#previous','#next','#stop']) $(selector).disabled = !count;
-    $('#previous').disabled = !count || index === 0; $('#next').disabled = !count || index >= count - 1;
+    $('#play').setAttribute('aria-label', $('#play').textContent); $('#play').title=$('#play').textContent;
+    for (const selector of ['#play','#previous','#next','#stop']) $(selector).disabled = exportBusy || !count;
+    $('#previous').disabled = exportBusy || !count || index === 0; $('#next').disabled = exportBusy || !count || index >= count - 1;
     $('#progress').style.width = `${count ? (state==='ended'?100:index/count*100) : 0}%`;
-    if (error) status(error,true);
+    if (error){status(error,true);if(!reader.voice){$('#voice-settings').open=true;$('#local-models').open=true;}}
     else if (count) status(`${state==='playing'?'Wird vorgelesen':state==='paused'?'Pausiert':state==='ended'?'Fertig':'Bereit'} · Abschnitt ${index+1} von ${count}`);
   },
   onword({start,end,sentence}) {
@@ -83,6 +89,7 @@ const reader = new Reader({
 globalThis.notableReader = reader;
 globalThis.notableModels=models;globalThis.notableSpeech=speech;
 function loadDocument(text, title, language = '') {
+  clearExportResult();
   currentText = cleanText(text); currentFingerprint = fingerprint(currentText); documentLanguage = language || detectLanguage(currentText);
   const position = Number(settings.positions[currentFingerprint]) || 0;
   reader.load(currentText,position); $('#document-title').textContent = title; $('#empty').hidden = !!currentText;
@@ -91,12 +98,15 @@ function loadDocument(text, title, language = '') {
   reader.chunks.forEach((chunk,index)=>{
     root.append(document.createTextNode(reader.text.slice(cursor,chunk.start)));
     const span=document.createElement('span'); span.className='sentence'; span.tabIndex=0; span.setAttribute('role','button'); span.setAttribute('aria-label',`Ab Abschnitt ${index+1} lesen`); span.textContent=chunk.text;
-    span.addEventListener('click',()=>reader.seek(index)); span.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();reader.seek(index);}});
+    span.addEventListener('click',()=>{if(!exportBusy)reader.seek(index);}); span.addEventListener('keydown',event=>{if(!exportBusy&&['Enter',' '].includes(event.key)){event.preventDefault();reader.seek(index);}});
     root.append(span); spans.push(span); cursor=chunk.end;
   });
   root.append(document.createTextNode(reader.text.slice(cursor)));
   $('#document-meta').textContent = `${reader.text.length.toLocaleString('de-DE')} Zeichen · ${reader.chunks.length.toLocaleString('de-DE')} Abschnitte · ${documentLanguage.toUpperCase()}`;
+  if(!exportModelTouched)$('#export-model').value = documentLanguage.toLowerCase().startsWith('en') ? 'kokoro' : 'piper';
   refreshVoices();
+  renderExportAvailability();
+  if(converterMode)openExport(false);
   if(position>0 && reader.chunks.length) status(`Lesestelle wiederhergestellt · Abschnitt ${reader.index+1} von ${reader.chunks.length}.`);
   if(!currentText) status('Keine lesbare Textebene gefunden. Bei einem gescannten PDF zuerst eine OCR-Texterkennung durchführen.',true);
 }
@@ -135,22 +145,26 @@ async function importPdf(bytes,title,gen) {
 $('#password-form').addEventListener('submit',event=>{event.preventDefault();const password=$('#pdf-password').value;$('#pdf-password').value='';if(passwordUpdate)passwordUpdate(password);});
 async function cancelPdf(){passwordUpdate=null;$('#password-form').hidden=true;$('#pdf-password').value='';pdfRender?.cancel();if(loadingTask){try{await loadingTask.destroy();}catch{}}loadingTask=null;pdf=null;$('#pdf-preview').hidden=true;}
 $('#file').addEventListener('change',async event=>{
-  const file=event.target.files?.[0];if(!file)return;
-  const gen=++generation;reader.stop();await cancelPdf();
+  const file=event.target.files?.[0];if(!file||exportBusy)return;
+  const gen=++generation;importBusy=true;renderExportAvailability();reader.stop();await cancelPdf();
   status('Datei wird lokal geöffnet …');
   try{
     if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))await importPdf(new Uint8Array(await file.arrayBuffer()),file.name,gen);
     else {const {importTextFile}=await import('./formats.js');const imported=await importTextFile(file);if(gen===generation)loadDocument(imported.text,imported.title||file.name,imported.language||'');}
   }catch(error){if(gen===generation)status(error.name==='PasswordException'?'Das PDF benötigt ein gültiges Passwort.':/\.(epub|docx?|html?|txt|md|markdown)$/i.test(file.name)?error.message:'Diese Datei konnte nicht geöffnet werden. Bitte eine unbeschädigte Datei in einem unterstützten Format wählen.',true);}
   event.target.value='';
-  if(gen===generation)showMobileReadingArea();
+  if(gen===generation){importBusy=false;renderExportAvailability();showMobileReadingArea();}
 });
-$('#load-text').addEventListener('click',async()=>{++generation;await cancelPdf();loadDocument($('#paste').value,'Dein Text');$('#paste').value='';showMobileReadingArea();});
-$('#choose-voice').addEventListener('click',event=>{event.preventDefault();const area=$('#voice-settings');area.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});area.focus({preventScroll:true});});
-$('#play').addEventListener('click',()=>reader.toggle());
-$('#stop').addEventListener('click',()=>{reader.stop();reader.seek(0);});
-$('#previous').addEventListener('click',()=>reader.seek(reader.index-1));
-$('#next').addEventListener('click',()=>reader.seek(reader.index+1));
+$('#load-text').addEventListener('click',async()=>{if(exportBusy)return;++generation;importBusy=true;renderExportAvailability();await cancelPdf();loadDocument($('#paste').value,'Dein Text');$('#paste').value='';$('#text-import').open=false;importBusy=false;renderExportAvailability();showMobileReadingArea();});
+function openVoiceSettings(){const area=$('#voice-settings');area.open=true;area.style.scrollMarginTop=($('.reader-toolbar').getBoundingClientRect().height+32)+'px';area.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});area.focus({preventScroll:true});}
+$('#choose-voice').addEventListener('click',event=>{event.preventDefault();openVoiceSettings();});
+$('#settings-toggle').addEventListener('click',()=>{const area=$('#voice-settings');area.open=!area.open;});
+$('#voice-settings').addEventListener('toggle',()=>$('#settings-toggle').setAttribute('aria-expanded',String($('#voice-settings').open)));
+for(const id of ['header-open','empty-open'])$('#'+id).addEventListener('click',()=>{if(!exportBusy)$('#file').click();});
+$('#play').addEventListener('click',()=>{if(!exportBusy)reader.toggle();});
+$('#stop').addEventListener('click',()=>{if(!exportBusy){reader.stop();reader.seek(0);}});
+$('#previous').addEventListener('click',()=>{if(!exportBusy)reader.seek(reader.index-1);});
+$('#next').addEventListener('click',()=>{if(!exportBusy)reader.seek(reader.index+1);});
 $('#rate').value=settings.rate;$('#volume').value=settings.volume;$('#online').checked=settings.online;$('#follow').checked=settings.follow;
 function applySliders(){settings.rate=Math.max(.8,Math.min(4,Number($('#rate').value)||1));settings.volume=Math.max(0,Math.min(1,Number($('#volume').value)));$('#rate-value').textContent=`${settings.rate.toLocaleString('de-DE',{minimumFractionDigits:2})}×`;$('#volume-value').textContent=`${Math.round(settings.volume*100)} %`;reader.configure({rate:settings.rate,volume:settings.volume});save();}
 $('#rate').addEventListener('input',applySliders);$('#volume').addEventListener('input',applySliders);applySliders();
@@ -162,18 +176,94 @@ $('#clear-data').addEventListener('click',()=>{settings={...defaults,positions:{
 $('#pdf-preview').addEventListener('toggle',()=>{if($('#pdf-preview').open)renderPdfPage();});
 $('#pdf-previous').addEventListener('click',()=>{if(pdfPage>1){pdfPage--;renderPdfPage();}});$('#pdf-next').addEventListener('click',()=>{if(pdf&&pdfPage<pdf.numPages){pdfPage++;renderPdfPage();}});
 speech.addEventListener('voiceschanged',refreshVoices);refreshVoices();models.restore().catch(()=>{});
-models.addEventListener('status',event=>{$('#model-status').textContent=event.detail.message;$('#model-status').classList.toggle('error',event.detail.error);if(reader.state==='playing')status(event.detail.message,event.detail.error);});
+models.addEventListener('status',event=>{$('#model-status').textContent=event.detail.message;$('#model-status').classList.toggle('error',event.detail.error);if(models.downloading){$('#export-status').textContent=event.detail.message;$('#export-status').classList.toggle('error',event.detail.error);}if(reader.state==='playing')status(event.detail.message,event.detail.error);});
+async function installLocalModel(id){
+ if(exportBusy||models.downloading)return;
+ for(const node of document.querySelectorAll('[data-model]'))node.disabled=true;
+ $('#export-download-model').disabled=true;$('#cancel-model').hidden=false;$('#export-cancel-model').hidden=false;
+ try{await models.install(id);settings.voice=MODELS[id].voiceURI;settings.language=MODELS[id].lang;refreshVoices();save();}
+ catch(error){$('#export-status').textContent=error.name==='AbortError'?'Modelldownload abgebrochen.':error.message;}
+ finally{for(const node of document.querySelectorAll('[data-model]'))node.disabled=false;$('#cancel-model').hidden=true;$('#export-cancel-model').hidden=true;renderExportAvailability();}
+}
 for(const button of document.querySelectorAll('[data-model]')){
  const id=button.dataset.model,model=MODELS[id];button.textContent=`${model.name} laden · ${(totalBytes(model)/1e6).toLocaleString('de-DE',{maximumFractionDigits:1})} MB`;
- button.addEventListener('click',async()=>{for(const node of document.querySelectorAll('[data-model]'))node.disabled=true;$('#cancel-model').hidden=false;try{await models.install(id);settings.voice=model.voiceURI;settings.language=model.lang;refreshVoices();save();}catch{}finally{for(const node of document.querySelectorAll('[data-model]'))node.disabled=false;$('#cancel-model').hidden=true;}});
+ button.addEventListener('click',()=>installLocalModel(id));
 }
 $('#cancel-model').addEventListener('click',()=>models.cancelDownload());
+$('#export-cancel-model').addEventListener('click',()=>models.cancelDownload());
 $('#clear-models').addEventListener('click',async()=>{reader.stop();await models.clear();settings.voice='';refreshVoices();save();});
+function openExport(scroll=true){
+ const area=$('#audio-export');area.hidden=false;area.open=true;
+ if(scroll){area.style.scrollMarginTop=($('.reader-toolbar').getBoundingClientRect().height+32)+'px';area.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});area.focus({preventScroll:true});}
+ renderExportAvailability();
+}
+function renderExportAvailability(){
+ const model=MODELS[$('#export-model').value],installed=models.installed.has(model.id),hasText=!!currentText;
+ $('#open-export').disabled=!hasText||exportBusy||importBusy;
+ $('#start-export').disabled=!hasText||!installed||exportBusy||exportSelecting||importBusy||models.downloading;
+ $('#export-download-model').hidden=installed;$('#export-download-model').disabled=exportBusy||models.downloading;
+ $('#export-download-model').textContent=`${model.name} laden · ${(totalBytes(model)/1e6).toLocaleString('de-DE',{maximumFractionDigits:1})} MB`;
+ $('#export-document').textContent=hasText?`${$('#document-title').textContent} · gesamter Text · ${currentText.length.toLocaleString('de-DE')} Zeichen`:'Öffne zuerst eine Datei oder füge Text ein.';
+ $('#export-note').textContent=installed?'Die Stimme ist auf diesem Gerät bereit. Der gesamte Text wird lokal berechnet. Gerätestimmen sind nur zum direkten Vorlesen verfügbar.':`Für eine Audiodatei brauchst du eine lokale KI-Stimme. Lade ${model.name} einmal ausdrücklich herunter. Dein Dokumenttext wird dabei nicht übertragen.`;
+}
+function clearExportResult(){
+ if(exportUrl){URL.revokeObjectURL(exportUrl);exportUrl='';}
+ const previous=exportResult;exportResult=null;
+ const cleanup=previous?.cleanup?Promise.resolve().then(()=>previous.cleanup()):Promise.resolve();cleanup.catch(()=>{});
+ $('#export-result').hidden=true;$('#download-audio').removeAttribute('href');return cleanup;
+}
+function setExportBusy(busy){
+ exportBusy=busy;document.body.dataset.exportBusy=String(busy);
+ const nodes=document.querySelectorAll('#file,#paste,#load-text,#header-open,#empty-open,#language,#voice,#online,#follow,#clear-models,#clear-data,#rate,#volume,[data-model],#export-model,#export-format,#export-download-model,#clear-export-storage,#clear-export');
+ for(const node of nodes){if(busy){exportLocks.set(node,node.disabled);node.disabled=true;}else node.disabled=exportLocks.get(node)===true;}
+ if(!busy)exportLocks.clear();
+ $('#cancel-export').hidden=!busy;$('#cancel-export').disabled=false;$('#start-export').hidden=busy;$('#export-progress-wrap').hidden=!busy;
+ reader.emit();renderExportAvailability();
+}
+function suggestedAudioName(title,format){return (title.replace(/\.[a-z0-9]{1,8}$/i,'').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').trim().slice(0,120)||'notable-reader')+'.'+format;}
+$('#open-export').addEventListener('click',()=>openExport());
+$('#audio-export').addEventListener('toggle',()=>{if(!$('#audio-export').open&&!converterMode)$('#audio-export').hidden=true;});
+$('#header-converter').addEventListener('click',event=>{event.preventDefault();converterMode=true;const url=new URL(location.href);url.searchParams.set('mode','audiobook');history.replaceState(null,'',url.pathname+url.search+url.hash);openExport();});
+$('#clear-export-storage').addEventListener('click',async()=>{if(exportBusy)return;const button=$('#clear-export-storage');button.disabled=true;try{await clearExportResult();const {clearAudiobookStorage}=await import('./audio-export.js');const result=await clearAudiobookStorage();$('#privacy-status').textContent=result.message;}catch{$('#privacy-status').textContent='Temporäre Audiodaten konnten nicht vollständig gelöscht werden. Bitte Browser-Speicher dieser App prüfen.';}finally{button.disabled=false;}});
+$('#clear-export').addEventListener('click',async()=>{if(exportBusy)return;try{await clearExportResult();$('#export-status').textContent='Temporäre Audiodaten wurden auf diesem Gerät gelöscht.';}catch{$('#export-status').textContent='Die temporäre Audiodatei konnte nicht vollständig gelöscht werden. Bitte Browser-Speicher dieser App löschen.';}});
+$('#export-model').addEventListener('change',()=>{exportModelTouched=true;renderExportAvailability();});
+$('#export-download-model').addEventListener('click',()=>installLocalModel($('#export-model').value));
+$('#cancel-export').addEventListener('click',()=>{exportAbort?.abort();exporter?.cancel();$('#export-status').textContent='Export wird abgebrochen …';});
+$('#start-export').addEventListener('click',async()=>{
+ if(exportBusy||exportSelecting||importBusy||!currentText||!models.installed.has($('#export-model').value))return;
+ const title=$('#document-title').textContent,format=$('#export-format').value,modelId=$('#export-model').value,text=reader.text;
+ reader.pause();models.cancelSynthesis();clearExportResult();exportAbort=new AbortController();exportSelecting=true;setExportBusy(true);$('#export-status').classList.remove('error');$('#export-progress').value=0;
+ let sink=null;
+ // Invoke the native picker in the user's click gesture, before module loading.
+ if(typeof window.showSaveFilePicker==='function'){
+  try{const handle=await window.showSaveFilePicker({suggestedName:suggestedAudioName(title,format),types:[{description:format==='mp3'?'MP3-Hörbuch':'WAV-Audio',accept:{[format==='mp3'?'audio/mpeg':'audio/wav']:['.'+format]}}]});sink=await handle.createWritable();}
+  catch(error){if(error.name==='AbortError'){exportSelecting=false;exportAbort=null;setExportBusy(false);$('#export-status').textContent='Speichern abgebrochen. Dein Dokument bleibt geöffnet.';return;}$('#export-status').textContent='Die Dateiauswahl ist hier nicht verfügbar. Das fertige Hörbuch kannst du anschließend herunterladen.';}
+ }
+ exportSelecting=false;$('#export-status').textContent='Hörbuch wird auf diesem Gerät vorbereitet …';
+ try{
+  if(!exporter){const {AudiobookExport}=await import('./audio-export.js');exporter=new AudiobookExport({models});}
+  if(exportAbort.signal.aborted)throw new DOMException('Abgebrochen','AbortError');
+  const result=await exporter.exportBook({text,modelId,format,title,signal:exportAbort.signal,sink,onProgress:info=>{
+   $('#cancel-export').disabled=info.phase==='saving'||info.phase==='done';
+   $('#export-progress').value=Math.max(0,Math.min(100,Number(info.percent)||0));
+   $('#export-status').textContent=info.message||`${Math.round(Number(info.percent)||0)} % · Abschnitt ${info.completedChunks} von ${info.totalChunks}`;
+  }});
+  exportResult=result;
+  const duration=Number(result.duration)||0,minutes=Math.round(duration/60),size=(result.bytes/1e6).toLocaleString('de-DE',{maximumFractionDigits:1});
+  if(result.blob){exportUrl=URL.createObjectURL(result.blob);$('#download-audio').href=exportUrl;$('#download-audio').download=result.filename;$('#export-result').hidden=false;$('#export-file-meta').textContent=`${result.filename} · ${size} MB · ${minutes} Min. · kompletter Text`;$('#export-status').textContent='Dein vollständiges Hörbuch ist bereit. Jetzt die Audiodatei herunterladen.';}
+  else $('#export-status').textContent=`Hörbuch gespeichert · ${size} MB · ${minutes} Min. · kompletter Text.`;
+ }catch(error){
+  if(sink){try{await sink.abort();}catch{}}
+  $('#export-status').textContent=error.name==='AbortError'?'Export abgebrochen. Es wurde kein vollständiges Hörbuch gespeichert.':error.message||'Das Hörbuch konnte nicht erstellt werden. Bitte erneut versuchen.';
+  $('#export-status').classList.toggle('error',error.name!=='AbortError');
+ }finally{exportAbort=null;setExportBusy(false);}
+});
+if(converterMode)openExport(false);
 if(location.protocol==='chrome-extension:'&&/^#incoming=[a-f0-9-]{36}$/.test(location.hash)){
  const id=location.hash.slice(10),key='notable-incoming-'+id;
  chrome.storage.session.get(key).then(async values=>{const document=values[key];await chrome.storage.session.remove(key);history.replaceState(null,'',location.pathname);if(document&&typeof document.text==='string'&&Date.now()-document.created<300000)loadDocument(document.text,document.title||'Artikel',document.language||'');else status('Der temporäre Artikel ist abgelaufen. Bitte die Seite erneut über die Erweiterung öffnen.',true);}).catch(()=>status('Der temporäre Artikel konnte nicht geöffnet werden.',true));
 }
-document.addEventListener('keydown',event=>{if(event.altKey&&event.code==='Space'){event.preventDefault();reader.toggle();}if(event.key==='Escape'&&reader.state==='playing')reader.pause();});
+document.addEventListener('keydown',event=>{if(exportBusy)return;if(event.altKey&&event.code==='Space'){event.preventDefault();reader.toggle();}if(event.key==='Escape'&&reader.state==='playing')reader.pause();});
 document.addEventListener('wheel',event=>{if(event.isTrusted&&reader.state==='playing'){settings.follow=false;$('#follow').checked=false;save();}},{passive:true});
-window.addEventListener('pagehide',()=>reader.stop());
+window.addEventListener('pagehide',()=>{reader.stop();exportAbort?.abort();exporter?.cancel();clearExportResult();});
 if(['https:','http:'].includes(location.protocol)&&isSecureContext&&'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});

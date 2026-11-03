@@ -9,7 +9,7 @@ finanziert die Weiterentwicklung und schaltet keine Zusatzfunktionen frei.
 - **Quellen:** https://github.com/burak-basci/notable-reader
 - **Unterstützen:** https://buy.stripe.com/cNi7sM72dbaU3w6eY7aVa00
 
-## Was Version 2.1 kann
+## Was Version 2.2 kann
 
 - Browser-Erweiterung: Artikel und markierten Text über einen bewussten Klick
   öffnen; eine kompakte Leiste mit Satzmarkierung, Pause/Weiterlesen, Sprüngen,
@@ -28,6 +28,46 @@ finanziert die Weiterentwicklung und schaltet keine Zusatzfunktionen frei.
   Löschknopf sind direkt an der Downloadauswahl sichtbar.
 - System-/Browserstimmen. Standardmäßig werden nur Stimmen angeboten, die der
   Browser als lokal meldet. Online-Stimmen erfordern bewusstes Einschalten.
+- Lokaler Hörbuch-Export: vollständige geöffnete Bücher und Texte als MP3 oder
+  WAV speichern. Die Audioerzeugung und Kodierung laufen auf dem eigenen Gerät.
+  Der kompakte Player lässt Import, Stimmen und erweiterte Optionen getrennt
+  öffnen; GitHub und Hörbuchaktion sind direkt erreichbar.
+
+## Bücher und Text als Hörbuch speichern
+
+Die [Web-App](https://reader.benotable.de/app/?mode=audiobook) öffnen und eine
+EPUB-, PDF-, DOCX-, TXT-, Markdown- oder HTML-Datei auswählen oder Text einfügen.
+PDFs benötigen eine Textebene, EPUBs müssen DRM-frei sein. Unter **Hörbuch
+erstellen** eine lokale KI-Stimme und MP3 oder WAV wählen. Ein noch nicht
+installiertes Sprachmodell wird erst nach einem ausdrücklichen Klick geladen.
+System- und Online-Stimmen des Browsers stehen für diesen Dateiexport nicht
+zur Verfügung, weil die Browser-Sprachschnittstelle keine Audiodaten ausgibt.
+
+Der Export verarbeitet den vollständigen geöffneten Text von Anfang bis Ende,
+unabhängig von der Lesestelle. Er läuft mit Standardtempo 1×; Tempo und
+Lautstärke des Vorleseplayers verändern die gespeicherte Datei nicht.
+MP3 verwendet 64 kbit/s mono, WAV unkomprimiertes 16-Bit-PCM mono. Für WAV gilt
+die technische 4-GiB-Dateigrenze; MP3 ist für lange Bücher platzsparender.
+Es gibt kein kostenpflichtiges Wortkontingent. Die vorhandenen
+Sicherheitsgrenzen des Dateiimports gelten weiterhin.
+
+Auf unterstützten Browsern lässt sich direkt in eine ausgewählte Datei
+schreiben. Sonst speichert der Browser Audio abschnittsweise im lokalen
+Dateisystem OPFS oder in IndexedDB und bietet anschließend den Download an.
+Nur wenn beide Verfahren fehlen, gilt eine 32-MiB-Grenze für den
+Arbeitsspeicher-Fallback. Die App meldet echte Speichergrenzen ausdrücklich.
+Eine vollständige PCM-Kopie des Buchs wird nicht im RAM gesammelt.
+
+Den Tab während der Berechnung geöffnet lassen; Dauer und verfügbare
+Speichermenge hängen vom Gerät und vom Buch ab. Fortschritt und Abbruch sind
+sichtbar. Unterbrochene Berechnungen beginnen erneut. Nach normalem Ende oder
+Abbruch werden temporäre Audiodaten bereinigt; nach einem Browserabsturz können
+Reste mit **Temporäre Hörbuchdaten löschen** entfernt werden. Aktive Exporte
+anderer Tabs bleiben geschützt. Bewusst heruntergeladene Dateien verbleiben
+im gewählten Downloadordner.
+
+Anleitungen: [Buch in Hörbuch umwandeln](https://reader.benotable.de/buch-in-hoerbuch/)
+und [Book to audiobook](https://reader.benotable.de/book-to-audiobook/).
 
 Stimmen, Sprachumfang, Aussprache und die tatsächlich erreichbare
 Wiedergabegeschwindigkeit hängen vom Betriebssystem und der gewählten Stimme ab.
@@ -73,8 +113,10 @@ Das ist eine installierbare Web-App, keine Zusage einer Store-Veröffentlichung.
 
 ## Datenschutz
 
-Dateien und geladener Text bleiben im Speicher der geöffneten Seite. Es gibt
-keinen Upload-Endpunkt. Beim Schließen wird die Sitzung verworfen. Bis zu 100
+Dateien und geladener Text bleiben im Speicher der geöffneten Seite. Der
+Hörbuchexport kann temporäres Audio lokal in OPFS oder IndexedDB speichern,
+wie oben beschrieben. Es gibt keinen Upload-Endpunkt. Beim Schließen wird die
+Textsitzung verworfen. Bis zu 100
 Lesestellen werden als Text-Fingerabdruck und Abschnittsnummer gespeichert,
 zusammen mit Stimme, Tempo, Lautstärke und Optionen. Es werden weder Dokumenttext
 noch Dateiname oder Quell-URL in diesen Einstellungen gespeichert.
@@ -114,6 +156,15 @@ Dokumente unter `tests/fixtures/`. Die Stimmen-Zustandsprüfung benutzt kontroll
 Teststimmen; der tatsächliche Stimmenbestand wird separat erfasst. Ein bestandener
 Stummschalttest ist kein subjektives Klangurteil.
 
+Der vollständige Hörbuchexport hat eine gesonderte reproduzierbare Abnahme:
+[tests/audiobook-export/README.md](tests/audiobook-export/README.md). Sie trennt
+echte vollständige ONNX-Buchsynthese und vollständige Dateidekodierung von
+deterministischen Tests für 100.000 Wörter, Speichergrenzen und Abbruch.
+`node tests/audiobook-ui.mjs` prüft nach dem Releasebau zusätzlich den tatsächlichen
+UI-Weg mit lokal vorhandenen, hashgeprüften Piper-Modellen, Offline-Reload,
+MP3/WAV-Download und Abbruch. Dafür gelten die Modellpfade und Voraussetzungen
+der gesonderten Abnahme.
+
 Die PDF-Testdateien lassen sich mit dem optionalen Entwicklungswerkzeug
 PyMuPDF neu erzeugen: `python3 tools/fixtures.py tests/fixtures`.
 PyMuPDF wird nicht mit dem Produkt verteilt und gehört nicht zur Laufzeit.
@@ -127,6 +178,9 @@ Mozilla PDF.js und Readability: Apache-2.0. fflate und ONNX Runtime: MIT.
 Piper-Phonemizer-Wrapper: MIT, eingebettetes eSpeak NG: GPL-3.0-or-later.
 Kokoro-Modell: Apache-2.0. Piper-Modellverzeichnis: MIT, Thorsten-Sprachdatensatz:
 CC0. Stimmengewichte kommen erst nach dem ausdrücklichen Download.
+Der lokal gebündelte MP3-Encoder @breezystack/lamejs 1.2.7 steht unter
+LGPL-3.0; seine vollständigen korrespondierenden Quellen und Hinweise liegen
+unter `extension/vendor/export/` und sind Bestandteil der Distribution.
 
 Vollständige Phonemizer-/eSpeak-Quellen, Sprachdatenquellen, Originalhinweise,
 Buildanleitung und Hashinventar sind im Quellpaket enthalten, siehe

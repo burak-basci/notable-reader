@@ -2,7 +2,7 @@
 import {MODELS,MODEL_CACHE,RUNTIME_ASSETS} from './neural-models.js';
 const totalBytes=model=>model.files.reduce((sum,file)=>sum+file.bytes,0);
 export class LocalModels extends EventTarget{
- constructor(){super();this.installed=new Set();this.worker=null;this.workerKind='';this.requests=new Map();this.serial=0;this.sequence=Promise.resolve();this.downloading=false;this.abort=null;this.epoch=0;}
+ constructor(){super();this.installed=new Set();this.worker=null;this.workerKind='';this.requests=new Map();this.serial=0;this.sequence=Promise.resolve();this.downloading=false;this.abort=null;this.epoch=0;this.synthesisEpoch=0;}
  event(message,error=false){this.dispatchEvent(new CustomEvent('status',{detail:{message,error}}));}
  async restore(){
   if(!('caches'in globalThis))return;
@@ -42,22 +42,27 @@ export class LocalModels extends EventTarget{
  }
  cancelDownload(){this.abort?.abort();}
  async clear(){
-  this.epoch++;this.cancelDownload();this.terminate();await caches.delete(MODEL_CACHE);this.installed.clear();this.dispatchEvent(new Event('voiceschanged'));this.event('Lokale KI-Modelle wurden von diesem Gerät gelöscht.');
+  this.epoch++;this.cancelDownload();this.cancelSynthesis();await caches.delete(MODEL_CACHE);this.installed.clear();this.dispatchEvent(new Event('voiceschanged'));this.event('Lokale KI-Modelle wurden von diesem Gerät gelöscht.');
  }
+ cancelSynthesis(){this.synthesisEpoch++;this.terminate();}
  terminate(){this.worker?.terminate();this.worker=null;this.workerKind='';for(const request of this.requests.values())request.reject(new Error('Die lokale Stimme wurde angehalten.'));this.requests.clear();}
  call(message,transfer=[]){return new Promise((resolve,reject)=>{const id=++this.serial;this.requests.set(id,{resolve,reject});this.worker.postMessage({...message,id},transfer);});}
- async initialize(id){
+ async initialize(id,epoch=this.synthesisEpoch){
+  const current=()=>{if(epoch!==this.synthesisEpoch)throw new DOMException('Die lokale Berechnung wurde abgebrochen.','AbortError');};current();
   if(this.workerKind===id&&this.worker)return;
   this.terminate();const model=MODELS[id],cache=await caches.open(MODEL_CACHE),payload={action:'init',kind:id},transfer=[];
+  current();
   this.event(`${model.name} wird auf diesem Gerät vorbereitet …`);
-  for(const file of model.files){const response=await cache.match(file.url);if(!response)throw Error('Bitte das lokale Sprachmodell zuerst über den Downloadknopf laden.');if(['config','tokenizer'].includes(file.role))payload[file.role]=await response.json();else{const value=await response.arrayBuffer();payload[file.role]=value;transfer.push(value);}}
+  for(const file of model.files){const response=await cache.match(file.url);current();if(!response)throw Error('Bitte das lokale Sprachmodell zuerst über den Downloadknopf laden.');if(['config','tokenizer'].includes(file.role))payload[file.role]=await response.json();else{const value=await response.arrayBuffer();payload[file.role]=value;transfer.push(value);}current();}
   this.worker=new Worker(new URL('./neural-worker.js',import.meta.url),{type:'module'});
-  this.worker.addEventListener('message',event=>{const request=this.requests.get(event.data.id);if(!request)return;this.requests.delete(event.data.id);event.data.ok?request.resolve(event.data):request.reject(new Error(event.data.error));});
-  this.worker.addEventListener('error',()=>{this.event('Die lokale KI-Stimme konnte nicht geladen werden. Bitte Browser aktualisieren oder eine Systemstimme wählen.',true);this.terminate();});
-  await this.call(payload,transfer);this.workerKind=id;
+  const worker=this.worker;
+  worker.addEventListener('message',event=>{if(this.worker!==worker)return;const request=this.requests.get(event.data.id);if(!request)return;this.requests.delete(event.data.id);event.data.ok?request.resolve(event.data):request.reject(new Error(event.data.error));});
+  worker.addEventListener('error',()=>{if(this.worker!==worker)return;this.event('Die lokale KI-Stimme konnte nicht geladen werden. Bitte Browser aktualisieren oder eine Systemstimme wählen.',true);this.terminate();});
+  await this.call(payload,transfer);current();this.workerKind=id;
  }
  synthesize(id,text,rate){
-  const work=this.sequence.catch(()=>{}).then(async()=>{if(!this.installed.has(id))throw Error('Bitte das Sprachmodell zuerst ausdrücklich herunterladen.');await this.initialize(id);this.event(`${MODELS[id].name} berechnet den nächsten Abschnitt lokal …`);const audio=await this.call({action:'synthesize',text,rate});this.dispatchEvent(new CustomEvent('audio',{detail:{id,sampleCount:audio.sampleCount,sampleRate:audio.sampleRate,duration:audio.duration,peak:audio.peak,milliseconds:audio.milliseconds}}));return audio;});this.sequence=work;return work;
+  const epoch=this.synthesisEpoch,current=()=>{if(epoch!==this.synthesisEpoch)throw new DOMException('Die lokale Berechnung wurde abgebrochen.','AbortError');};
+  const work=this.sequence.catch(()=>{}).then(async()=>{current();if(!this.installed.has(id))throw Error('Bitte das Sprachmodell zuerst ausdrücklich herunterladen.');await this.initialize(id,epoch);current();this.event(`${MODELS[id].name} berechnet den nächsten Abschnitt lokal …`);const audio=await this.call({action:'synthesize',text,rate});current();this.dispatchEvent(new CustomEvent('audio',{detail:{id,sampleCount:audio.sampleCount,sampleRate:audio.sampleRate,duration:audio.duration,peak:audio.peak,milliseconds:audio.milliseconds}}));return audio;});this.sequence=work;return work;
  }
 }
 function wav(samples,sampleRate){const bytes=new ArrayBuffer(44+samples.length*2),view=new DataView(bytes);const text=(offset,value)=>{for(let n=0;n<value.length;n++)view.setUint8(offset+n,value.charCodeAt(n));};text(0,'RIFF');view.setUint32(4,bytes.byteLength-8,true);text(8,'WAVE');text(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);text(36,'data');view.setUint32(40,samples.length*2,true);for(let i=0;i<samples.length;i++)view.setInt16(44+i*2,Math.max(-1,Math.min(1,samples[i]))*(samples[i]<0?32768:32767),true);return new Blob([bytes],{type:'audio/wav'});}

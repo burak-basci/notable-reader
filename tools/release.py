@@ -23,7 +23,7 @@ extension=ROOT/'extension'
 for name in ['LICENSE','LICENSE-MIT','COPYING','THIRD_PARTY_NOTICES.md']:
  shutil.copyfile(ROOT/name,extension/name)
 # Explicit assets keep offline caching within this app's public source tree.
-assets=['./'+f.relative_to(extension).as_posix() for f in extension.rglob('*') if f.is_file() and f.name not in ['manifest.json','background.js','popup.js','popup.html','content-reader.js','sw.js','offline-assets.json','neural-worker.js'] and '/vendor/neural/' not in str(f)]
+assets=['./'+f.relative_to(extension).as_posix() for f in extension.rglob('*') if f.is_file() and f.name not in ['manifest.json','background.js','popup.js','popup.html','content-reader.js','sw.js','offline-assets.json','neural-worker.js'] and '/vendor/neural/' not in str(f) and f.name!='lamejs-corresponding-source.tar.gz']
 (extension/'offline-assets.json').write_text(json.dumps(sorted(assets),indent=2)+'\n')
 extension_files=[(file.relative_to(extension).as_posix(),file.read_bytes()) for file in extension.rglob('*') if file.is_file()]
 manifest=json.loads((extension/'manifest.json').read_text())
@@ -44,7 +44,7 @@ index=(web/'reader.html').read_text()
 index=index.replace('<title>', '<link rel="canonical" href="https://reader.benotable.de/app/"><title>',1)
 (web/'index.html').write_text(index)
 # Match the web-app cache list to the webapp allowlist exactly.
-web_assets=['./','./index.html']+['./'+f.relative_to(web).as_posix() for f in web.rglob('*') if f.is_file() and f.name not in ['sw.js','offline-assets.json','index.html','neural-worker.js'] and '/vendor/neural/' not in str(f)]
+web_assets=['./','./index.html']+['./'+f.relative_to(web).as_posix() for f in web.rglob('*') if f.is_file() and f.name not in ['sw.js','offline-assets.json','index.html','neural-worker.js'] and '/vendor/neural/' not in str(f) and f.name!='lamejs-corresponding-source.tar.gz']
 (web/'offline-assets.json').write_text(json.dumps(sorted(web_assets),indent=2)+'\n')
 
 source=[]

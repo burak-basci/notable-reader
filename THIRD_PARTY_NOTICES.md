@@ -35,3 +35,7 @@ Browser and operating-system voices remain separately supplied components.
 - Optional Piper Thorsten high: upstream model repository MIT; Thorsten voice dataset CC0 as stated by its retained model card. No weights distributed in the extension or source ZIP.
 
 The neural runtime does not incorporate the unused `phonemizer` npm package or Transformers.js. It calls the local Piper/eSpeak phonemizer and ONNX Runtime directly.
+
+## Local MP3 encoder
+
+Audio export uses the unchanged ES module from `@breezystack/lamejs` 1.2.7 (git commit `1fb0ef5fa177413107e2e107d054a9b994e3f79c`), licensed LGPL-3.0. Its complete corresponding source archive, upstream notices, GPL/LGPL license texts and SHA-256 provenance are included under `extension/vendor/export/`. The encoder is a separately replaceable module; no remote encoder script or cloud conversion service is loaded. See `extension/vendor/export/provenance.json` for the exact upstream archive and module hashes. The complete combined distribution remains GPL-3.0-or-later.

@@ -2,12 +2,34 @@
   "manifest_version": 3,
   "name": "Notable Reader — Artikel & PDF vorlesen",
   "short_name": "Notable Reader",
-  "version": "2.1.0",
-  "description": "Artikel, markierten Text und lokale PDFs vorlesen. Ohne Produktkonto, mit Systemstimmen und freiwilliger Unterstützung.",
+  "version": "2.2.0",
+  "description": "Artikel, PDF, EPUB, Word und Text lokal vorlesen oder als MP3/WAV-Hörbuch speichern. Kostenlos und ohne Produktkonto.",
   "homepage_url": "https://reader.benotable.de/",
-  "permissions": ["activeTab", "scripting", "storage"],
-  "background": {"service_worker":"background.js"},
-  "action": {"default_title": "Notable Reader", "default_popup": "popup.html", "default_icon": {"16":"icons/icon-16.png","32":"icons/icon-32.png","48":"icons/icon-48.png","128":"icons/icon-128.png"}},
-  "icons": {"16":"icons/icon-16.png","32":"icons/icon-32.png","48":"icons/icon-48.png","128":"icons/icon-128.png"},
-  "content_security_policy": {"extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; worker-src 'self'; media-src 'self' blob:; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://*.xethub.hf.co;"}
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Notable Reader",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; worker-src 'self'; media-src 'self' blob:; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://*.xethub.hf.co;"
+  }
 }
