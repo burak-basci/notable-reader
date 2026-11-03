@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Notable Reader — Artikel & PDF vorlesen",
   "short_name": "Notable Reader",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Artikel, PDF, EPUB, Word und Text lokal vorlesen oder als MP3/WAV-Hörbuch speichern. Kostenlos und ohne Produktkonto.",
   "homepage_url": "https://reader.benotable.de/",
   "permissions": [

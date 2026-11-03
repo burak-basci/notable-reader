@@ -16,6 +16,7 @@ const out=process.env.READER_UI_EXPORT_OUTPUT||path.join(project,'qa/audiobook-u
 const modelRoot=process.env.READER_MODEL_FIXTURES||path.join(os.homedir(),'.cache/notable-reader-models');
 const files={model:'thorsten-high.onnx',config:'thorsten-high.onnx.json'};
 const fixtures=path.join(project,'tests/fixtures'),book=process.env.READER_UI_BOOK_EPUB,story=process.env.READER_UI_BOOK_TEXT;
+const version=JSON.parse(fs.readFileSync(path.join(project,'extension/manifest.json'),'utf8')).version,cacheName='notable-reader-'+version;
 fs.mkdirSync(out,{recursive:true});
 const profile=fs.mkdtempSync(path.join(out,'isolated-profile-'));
 for(const file of MODELS.piper.files){const b=fs.readFileSync(path.join(modelRoot,files[file.role]));assert.equal(b.length,file.bytes);assert.equal(crypto.createHash('sha256').update(b).digest('hex'),file.sha256);}
@@ -44,7 +45,7 @@ try{
  });
  await page.goto(base+'/?mode=audiobook');await page.waitForFunction(()=>window.notableReader&&notableModels.installed.has('piper'));
  await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>navigator.serviceWorker.controller);
- const upgrade=await page.evaluate(async()=>({keys:await caches.keys(),assets:await (await caches.open('notable-reader-2.2.0')).keys().then(a=>a.map(r=>new URL(r.url).pathname))}));
+ const upgrade=await page.evaluate(async cacheName=>({keys:await caches.keys(),assets:await (await caches.open(cacheName)).keys().then(a=>a.map(r=>new URL(r.url).pathname))}),cacheName);
  assert(!upgrade.keys.includes('notable-reader-2.1.0'));assert(upgrade.keys.includes('notable-reader-neural-models-v1'));assert(upgrade.assets.includes('/audio-export.js')&&upgrade.assets.includes('/vendor/export/lamejs.js'));assert(!upgrade.assets.some(p=>p.includes('corresponding-source')));
  results.push({check:'actual-service-worker-upgrade-retains-models-and-offline-encoder',...upgrade});
  if(book&&story){
