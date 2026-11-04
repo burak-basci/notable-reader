@@ -1,15 +1,17 @@
 # Notable Reader
 
 Artikel, Textauswahl und lokale Dokumente vorlesen. Kostenlose Basis, keine
-Registrierung, keine Werbung, keine Textkontingente. Freiwillige Unterstützung
-finanziert die Weiterentwicklung und schaltet keine Zusatzfunktionen frei.
+Registrierung, keine Werbung, keine Textkontingente. Die Web-App bietet kostenlose lokale Downloads. In der Erweiterung sind Downloads
+Premium: 2,99 € monatlich oder eine einzelne Unterstützung ab 50 € für Lifetime.
+Lesen bleibt kostenlos; ein Dokumentupload oder ein Pflichtkonto ist nicht nötig.
 
 - **Web-App:** https://reader.benotable.de/app/
 - **Website und Downloads:** https://reader.benotable.de/
 - **Quellen:** https://github.com/burak-basci/notable-reader
+- **Premium kaufen / Zahlungen verwalten:** https://reader-premium.benotable.de/account
 - **Unterstützen:** https://buy.stripe.com/cNi7sM72dbaU3w6eY7aVa00
 
-## Was Version 2.2 kann
+## Was Version 2.3 kann
 
 - Browser-Erweiterung: Artikel und markierten Text über einen bewussten Klick
   öffnen; eine kompakte Leiste mit Satzmarkierung, Pause/Weiterlesen, Sprüngen,
@@ -20,7 +22,7 @@ finanziert die Weiterentwicklung und schaltet keine Zusatzfunktionen frei.
 - Wortmarkierung in der Dokument-App, wenn die gewählte Systemstimme Wortgrenzen
   meldet; sonst bleibt die aktuelle Textpassage markiert.
 - Verarbeitung der Dateien auf dem Gerät. Keine Dokumente an Notable Reader,
-  kein Produktkonto, keine Werbung oder Analysetracker.
+  kein Pflichtkonto für das Lesen, keine Werbung oder Analysetracker.
 - Optionale lokale KI-Stimmen funktionieren auch ohne Systemstimmen: Deutsch
   mit Piper Thorsten high und Englisch mit Kokoro82M FP32/Bella. Der ausdrücklich
   angeklickte Modelldownload umfasst 113,9 MB beziehungsweise 326,1 MB, plus
@@ -48,7 +50,8 @@ unabhängig von der Lesestelle. Er läuft mit Standardtempo 1×; Tempo und
 Lautstärke des Vorleseplayers verändern die gespeicherte Datei nicht.
 MP3 verwendet 64 kbit/s mono, WAV unkomprimiertes 16-Bit-PCM mono. Für WAV gilt
 die technische 4-GiB-Dateigrenze; MP3 ist für lange Bücher platzsparender.
-Es gibt kein kostenpflichtiges Wortkontingent. Die vorhandenen
+Auf der Website sind diese Exporte kostenlos. In der Erweiterung wird eine gültige,
+auf dem Gerät geprüfte Premium-Lizenz benötigt. Es gibt kein Wortkontingent. Die vorhandenen
 Sicherheitsgrenzen des Dateiimports gelten weiterhin.
 
 Auf unterstützten Browsern lässt sich direkt in eine ausgewählte Datei
@@ -105,6 +108,12 @@ Die Leiste öffnet sich ohne Autoplay;
 **Vorlesen** startet die Stimme. Browser-interne Seiten und der eingebaute
 PDF-Viewer sperren fremde Scripts; dort **PDF oder Text öffnen** verwenden.
 Die Erweiterung benötigt keine generelle Berechtigung für alle Webseiten.
+Für Premium aktiviert sie ausschließlich den Zugriff auf reader-premium.benotable.de.
+Die Lizenzprüfung überträgt eine zufällige Gerätekennung und einen signierten
+Lizenznachweis; weder Dokumenttext noch erzeugte Audiodaten werden übertragen.
+Der Premium-Kauf erfasst die E-Mail-Adresse im Stripe-Checkout. Über die obige
+Zahlungsverwaltung lässt sich das Abo verwalten. Ein zusätzliches Reader-Passwort
+ist nicht erforderlich. Aktivierungscodes und Lizenznachweise niemals veröffentlichen.
 
 Die Web-App kann auf unterstützten Geräten über das Browsermenü zum Startbildschirm
 hinzugefügt werden. App und Lesemodule lassen sich nach dem Laden offline nutzen,

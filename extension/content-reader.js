@@ -1,81 +1,60 @@
-/* Notable Reader · Copyright (c) 2026 Burak Basci · MIT */
+/* Own isolated-world article adapter. The controls are the canonical shared factory. */
 (async()=>{
-  'use strict';
-  const previous=document.getElementById('notable-reader-panel');
-  if(previous?.dataset.notableReader==='2'){previous.dispatchEvent(new Event('notable-close'));}
-  const selection=String(getSelection()||'').trim();
-  let text=selection,title=selection?'Markierter Text':document.title;
-  function readableBlockText(html){
-    // Template content stays inert and is never adopted into the live page.
-    // Only its plain text reaches the reader's textContent-rendered spans.
-    const template=document.createElement('template');template.innerHTML=String(html||'');
-    template.content.querySelectorAll('script,style,noscript,iframe,object,embed,svg,math,canvas,audio,video,img,link,meta,base,form').forEach(node=>node.remove());
-    template.content.querySelectorAll('br,hr,p,div,section,article,h1,h2,h3,h4,h5,h6,li,tr,td,th,blockquote,pre').forEach(node=>{node.before(document.createTextNode('\n'));node.after(document.createTextNode('\n'));});
-    return template.content.textContent;
-  }
-  if(!text){
-    const clone=document.cloneNode(true);
-    clone.querySelectorAll('script,style,noscript,nav,header,footer,aside,[hidden],[aria-hidden="true"],sup a[href*="#"],a[role="doc-noteref"]').forEach(node=>node.remove());
-    try{const article=new Readability(clone,{charThreshold:80}).parse();text=article?readableBlockText(article.content):'';title=article?.title||title;}catch{}
-    if(!text.trim()){
-      const roots=[...document.querySelectorAll('article,main,[role="main"]')].filter(node=>node.getClientRects().length);
-      roots.sort((a,b)=>(b.innerText?.length||0)-(a.innerText?.length||0));
-      text=(roots[0]||document.body).innerText||'';
-    }
-  }
-  const {Reader,fingerprint}=globalThis.NotableReaderCore;
-  const host=document.createElement('div');host.id='notable-reader-panel';host.dataset.notableReader='2';
-  host.style.cssText='all:initial;position:fixed;bottom:18px;right:18px;z-index:2147483647;max-width:calc(100vw - 24px);';
-  const shadow=host.attachShadow({mode:'open'});
-  shadow.innerHTML=`<style>:host{all:initial}*{box-sizing:border-box}.panel{font:14px/1.55 system-ui,-apple-system,sans-serif!important;color:#263a30;background:#fff;border:1px solid #bdcfc1;box-shadow:0 8px 40px #0003;border-radius:18px;width:390px;max-width:calc(100vw - 24px);padding:16px}header{display:flex;gap:10px;align-items:center}strong{font-size:15px;letter-spacing:-.02em}button,select,input{font:inherit}button{min-height:40px;min-width:40px;border:1px solid #cdd9d0;border-radius:10px;background:#f7f9f6;color:inherit;padding:8px 12px;cursor:pointer}button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid #dd9600;outline-offset:2px}.primary{background:#145c4c;color:white;border-color:#145c4c;flex:1}.close{margin-left:auto}.controls{display:flex;gap:7px;margin-top:13px}p{margin:9px 0;font-size:12px;color:#586b60}.status{min-height:19px}.error{color:#9b2424}.title{max-height:45px;overflow:hidden;font-size:12px;color:#586b60}label{display:block;margin-top:10px;font-size:12px}select{border:1px solid #cdd9d0;border-radius:8px;padding:8px;max-width:100%;width:100%;min-height:40px;background:white;color:#263a30}input[type=range]{width:100%;accent-color:#145c4c}input[type=checkbox]{accent-color:#145c4c}summary{cursor:pointer;padding:7px 0;font-size:12px}.text{white-space:pre-wrap;line-height:1.8;max-height:38vh;overflow:auto;border-top:1px solid #dbe4dd;margin-top:8px;padding-top:12px;font-size:15px}.sentence{cursor:pointer;border-radius:3px}.sentence:hover{background:#eef5ee}.sentence.active{background:#e3edb4;color:#263313}.text::highlight(notable-word){background:#d0df77;color:#263313}a{color:#145c4c;text-underline-offset:2px}.foot{display:flex;gap:12px;justify-content:space-between;font-size:11px;margin-top:12px}.settings{max-height:42vh;overflow:auto}.note{font-size:11px}.hint{font-size:11px}.reset{width:100%;font-size:12px;margin-top:10px}@media(max-width:430px){.panel{width:calc(100vw - 24px);padding:13px}}@media(prefers-color-scheme:dark){.panel{background:#202c25;color:#e0e9e2;border-color:#53685a}button,select{background:#2b3a30;color:#e0e9e2;border-color:#53685a}.primary{background:#95d8b6;color:#142a1f}p,.title{color:#b0c0b4}a{color:#95d8b6}.error{color:#ffb2aa}.sentence:hover{background:#3e5142}}</style><section class="panel" aria-label="Notable Reader"><header><strong>Notable Reader</strong><button class="close" aria-label="Vorleseleiste schließen">×</button></header><div class="title"></div><div class="controls"><button class="previous" aria-label="Vorheriger Abschnitt">←</button><button class="play primary">Vorlesen</button><button class="next" aria-label="Nächster Abschnitt">→</button><button class="stop" aria-label="Vorlesen stoppen">■</button></div><p class="status" role="status" aria-live="polite"></p><button class="local-ai" style="width:100%;margin-top:10px">Lokale KI-Stimme öffnen</button><details class="settings"><summary>Stimme & Tempo</summary><label>Stimme<select class="voice"></select></label><label><input type="checkbox" class="online"> Auch Online-Stimmen anbieten</label><p class="note"></p><label>Tempo <output class="speed-value">1,00×</output><input class="speed" aria-label="Lesetempo" type="range" min="0.8" max="4" step="0.05" value="1"></label><label>Lautstärke <input class="volume" aria-label="Lautstärke" type="range" min="0" max="1" step="0.05" value="1"></label><button class="reset">Einstellungen & Lesestellen löschen</button></details><details class="text-detail"><summary>Lesetext & Sprung zur Textstelle</summary><div class="text" aria-label="Lesetext"></div><p class="hint">Abschnitt anklicken, dann mit „Vorlesen“ starten.</p></details><div class="foot"><a href="https://reader.benotable.de/app/" target="_blank" rel="noopener noreferrer">PDF oder Text öffnen ↗</a><a href="https://buy.stripe.com/cNi7sM72dbaU3w6eY7aVa00" target="_blank" rel="noopener noreferrer">Unterstützen ↗</a></div></section>`;
-  const $=selector=>shadow.querySelector(selector), configKey='notableReaderV2';
-  const defaults={rate:1,volume:1,voice:'',online:false,positions:{}};
-  let config={...defaults},disposed=false,active=null,spans=[],docHash='';
-  try{config={...defaults,...(await chrome.storage.local.get(configKey))[configKey]};}catch{}
-  config.positions=config.positions&&typeof config.positions==='object'&&!Array.isArray(config.positions)?config.positions:{};
-  config.online=config.online===true;
-  const save=()=>{config.positions=Object.fromEntries(Object.entries(config.positions).slice(-100));chrome.storage.local.set({[configKey]:config}).catch(()=>{});};
-  const showStatus=(message,error=false)=>{$('.status').textContent=message;$('.status').classList.toggle('error',error);};
-  const reader=new Reader({
-    onstate({state,index,count,error}){
-      $('.play').textContent=state==='playing'?'Pause':state==='paused'?'Weiterlesen':state==='ended'?'Noch einmal':'Vorlesen';
-      $('.play').setAttribute('aria-pressed',String(state==='playing'));
-      $('.play').disabled=!count;$('.previous').disabled=!count||index===0;$('.next').disabled=!count||index>=count-1;$('.stop').disabled=!count;
-      showStatus(error||`${state==='playing'?'Liest':state==='paused'?'Pausiert':state==='ended'?'Fertig':'Bereit'} · ${count?index+1:0}/${count} Abschnitte`,!!error);
-    },
-    onposition(index){if(docHash){config.positions[docHash]=index;save();}},
-    onword({start,end,sentence}){
-      active?.classList.remove('active');active=spans[sentence];active?.classList.add('active');
-      if($('.text-detail').open&&active){const root=$('.text'),offset=active.offsetTop-root.offsetTop;if(offset<root.scrollTop||offset>root.scrollTop+root.clientHeight-40)root.scrollTop=Math.max(0,offset-80);}
-      // Sentence highlighting is guaranteed. Word events vary by installed voice.
-    }
-  });
-  reader.load(text);docHash=fingerprint(reader.text);reader.seek(Number(config.positions[docHash])||0);
-  $('.title').textContent=title;
-  let cursor=0;
-  reader.chunks.forEach((chunk,index)=>{const span=document.createElement('span');span.className='sentence';span.tabIndex=0;span.setAttribute('role','button');span.setAttribute('aria-label',`Abschnitt ${index+1}`);span.textContent=chunk.text;span.addEventListener('click',()=>reader.seek(index));span.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();reader.seek(index);}});$('.text').append(document.createTextNode(reader.text.slice(cursor,chunk.start)),span);spans.push(span);cursor=chunk.end;});
-  $('.text').append(document.createTextNode(reader.text.slice(cursor)));
-  function refreshVoices(){
-    const voices=(speechSynthesis?.getVoices()||[]).filter(voice=>config.online||voice.localService===true),lang=document.documentElement.lang?.split('-')[0]||navigator.language?.split('-')[0];
-    const select=$('.voice');select.replaceChildren();
-    voices.sort((a,b)=>Number(b.lang.startsWith(lang))-Number(a.lang.startsWith(lang))||a.name.localeCompare(b.name));
-    for(const voice of voices)select.add(new Option(`${voice.name} · ${voice.lang}${voice.localService?' · lokal':' · online'}`,voice.voiceURI));
-    const chosen=voices.find(voice=>voice.voiceURI===config.voice)||voices[0]||null;
-    if(!chosen)select.add(new Option('Keine passende Stimme verfügbar',''));
-    else select.value=chosen.voiceURI;
-    reader.configure({voice:chosen,rate:config.rate,volume:config.volume});
-    $('.note').textContent=!chosen?'Keine Systemstimme gefunden. Mit „Lokale KI-Stimme öffnen“ kannst du kostenlos eine lokale DE/EN-Stimme laden. Alternativ eine Systemstimme installieren oder Online-Stimmen bewusst aktivieren.':chosen.localService?'Vom Browser als lokal gemeldete Stimme. Kein Textupload zu Notable Reader.':'Online-Stimme: Text kann an den Anbieter der Stimme übertragen werden.';
-  }
-  $('.local-ai').addEventListener('click',async()=>{reader.pause();showStatus('Artikel wird ausschließlich lokal im Reader geöffnet …');try{const result=await chrome.runtime.sendMessage({action:'open-local-reader',text:reader.text,title,language:document.documentElement.lang||''});if(!result?.ok)throw Error('open');showStatus('Artikel ist in der eigenen Reader-Seite geöffnet.');}catch{showStatus('Der lokale Reader konnte nicht geöffnet werden. Bitte die Erweiterung erneut öffnen.',true);}});
-  $('.play').addEventListener('click',()=>reader.toggle());$('.previous').addEventListener('click',()=>reader.seek(reader.index-1));$('.next').addEventListener('click',()=>reader.seek(reader.index+1));$('.stop').addEventListener('click',()=>{reader.stop();reader.seek(0);});
-  $('.speed').value=config.rate;$('.volume').value=config.volume;$('.online').checked=config.online;$('.speed-value').textContent=`${Number(config.rate).toLocaleString('de-DE',{minimumFractionDigits:2})}×`;
-  $('.speed').addEventListener('input',()=>{config.rate=Number($('.speed').value);$('.speed-value').textContent=`${config.rate.toLocaleString('de-DE',{minimumFractionDigits:2})}×`;reader.configure({rate:config.rate});save();});
-  $('.volume').addEventListener('input',()=>{config.volume=Number($('.volume').value);reader.configure({volume:config.volume});save();});
-  $('.voice').addEventListener('change',()=>{config.voice=$('.voice').value;refreshVoices();save();});$('.online').addEventListener('change',()=>{config.online=$('.online').checked;config.voice='';refreshVoices();save();});
-  $('.reset').addEventListener('click',async()=>{reader.stop();await chrome.storage.local.remove(configKey);config={...defaults,positions:{}};docHash='';$('.speed').value=1;$('.volume').value=1;$('.speed-value').textContent='1,00×';$('.online').checked=false;refreshVoices();showStatus('Einstellungen und Lesestellen gelöscht.');});
-  function close(){if(disposed)return;disposed=true;reader.stop();speechSynthesis?.removeEventListener('voiceschanged',refreshVoices);window.removeEventListener('pagehide',close);host.remove();}
-  $('.close').addEventListener('click',close);host.addEventListener('notable-close',close);window.addEventListener('pagehide',close);
-  speechSynthesis?.addEventListener('voiceschanged',refreshVoices);refreshVoices();
-  document.documentElement.append(host);
-  if(!reader.chunks.length)showStatus('Keine lesbare Textstelle gefunden. Markiere einen Text oder öffne PDF & Text.',true);
-})();
+'use strict';
+if(globalThis.__notableArticle?.alive){if(globalThis.__notableArticle.url===location.href){globalThis.__notableArticle.show();return;}globalThis.__notableArticle.destroy();}
+const originalURL=location.href;
+const [{mountPlayerSurface},{createFormatting},{createAppearanceController},locales]=await Promise.all([import(chrome.runtime.getURL('player-surface.mjs')),import(chrome.runtime.getURL('formatting.mjs')),import(chrome.runtime.getURL('appearance.mjs')),fetch(chrome.runtime.getURL('ui-locales.json')).then(r=>{if(!r.ok)throw Error('locales');return r.json();})]);
+const selected=String(getSelection()||'').trim(),roots=[...document.querySelectorAll('article,main,[role=main]')].filter(n=>n.getClientRects().length).sort((a,b)=>(b.innerText?.length||0)-(a.innerText?.length||0)),root=roots[0]||document.body;
+let text=selected,title=selected?'Markierter Text':document.title;
+if(!text){const clone=document.cloneNode(true);clone.querySelectorAll('script,style,noscript,nav,header,footer,aside,[hidden],[aria-hidden=true]').forEach(n=>n.remove());try{const article=new Readability(clone,{charThreshold:80}).parse(),template=document.createElement('template');template.innerHTML=article?.content||'';template.content.querySelectorAll('script,style,iframe,object,embed,svg,math,canvas,video,audio,form').forEach(n=>n.remove());template.content.querySelectorAll('p,div,section,article,h1,h2,h3,li,br').forEach(n=>n.after(document.createTextNode('\n')));text=template.content.textContent;title=article?.title||title;}catch{}if(!text?.trim())text=root.innerText||'';}
+const {Reader,fingerprint}=globalThis.NotableReaderCore,generation=crypto.randomUUID(),instanceId=crypto.randomUUID(),key='notableReaderV2';
+const stored=(await chrome.storage.local.get(key))[key]||{},defaults={rate:1,volume:1,online:false,voice:'',language:'auto',uiLanguage:'de',formatLocale:'auto',timeFormat:'auto',playerTheme:'system',follow:true,clickSeek:true,positions:{}};
+const settings={...defaults,...stored,positions:stored.positions&&typeof stored.positions==='object'?stored.positions:{}},appearance=createAppearanceController({document,kind:'html',contentRoot:root,flow:true});settings.appearance={...appearance.defaults,...settings.appearance};let surface,disposed=false,error='',version=0,voiceId='',catalog=[],voiceMap=new Map(),lastWord=null;let sourceRanges=[];
+const host=document.createElement('div');host.id='notable-reader-panel';host.dataset.notableReader='3';document.documentElement.append(host);
+const save=()=>chrome.storage.local.set({[key]:settings}).catch(()=>{});
+const reader=new Reader({onstate:({error:detail})=>{error=detail||'';update();},onposition:index=>{paint(index);if(reader.text){settings.positions[fingerprint(reader.text)]=index;const keys=Object.keys(settings.positions);while(keys.length>200)delete settings.positions[keys.shift()];save();}update();},onword:info=>{lastWord=info;paint(info.sentence,info.start-reader.chunks[info.sentence]?.start);update();}});reader.load(text);reader.seek(Number(settings.positions[fingerprint(reader.text)])||0);
+// Preserve real source feedback when extracted chunks match its actual text nodes.
+const textNodes=[],walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){return n.parentElement?.closest('script,style,nav,header,footer,[hidden],[aria-hidden=true]')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});let sourceText='',node;while(node=walker.nextNode()){textNodes.push({node,start:sourceText.length,end:sourceText.length+node.length});sourceText+=node.nodeValue;}let sourceCursor=0;sourceRanges=reader.chunks.map(chunk=>{const start=sourceText.indexOf(chunk.text,sourceCursor);if(start<0)return null;sourceCursor=start+chunk.text.length;return{start,end:sourceCursor};});
+const wordStyle=document.createElement('style');wordStyle.textContent='::highlight(notable-reader-current){background:#ffe65a;color:#202124}';document.head.append(wordStyle);
+function paint(index,start=0,end=null){if(!globalThis.CSS?.highlights||typeof Highlight!=='function')return;const chunk=reader.chunks[index],mapped=sourceRanges[index];if(!chunk||!mapped){CSS.highlights.delete('notable-reader-current');return;}while(start<chunk.text.length&&/\s/u.test(chunk.text[start]))start++;if(end===null)end=start+(chunk.text.slice(start).match(/^\S+/u)?.[0].length||1);if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start||end>chunk.text.length)return;const a=mapped.start+start,b=mapped.start+end,left=textNodes.find(n=>n.start<=a&&n.end>a),right=textNodes.find(n=>n.start<b&&n.end>=b);if(!left||!right)return;const range=document.createRange();range.setStart(left.node,a-left.start);range.setEnd(right.node,b-right.start);CSS.highlights.set('notable-reader-current',new Highlight(range));if(settings.follow&&surface?.getActualVisible()&&!disposed&&location.href===originalURL){const rect=range.getBoundingClientRect(),bottom=Math.max(80,innerHeight-180);if(rect.width>0&&rect.height>0&&(rect.top<12||rect.bottom>bottom)){let scroll=root;while(scroll&&scroll!==document.body&&scroll!==document.documentElement){const css=getComputedStyle(scroll);if(/auto|scroll/.test(css.overflowY)&&scroll.scrollHeight>scroll.clientHeight)break;scroll=scroll.parentElement;}if(scroll&&scroll!==document.body&&scroll!==document.documentElement){const box=scroll.getBoundingClientRect();scroll.scrollBy({top:rect.top-(box.top+Math.min(box.height,innerHeight)*.4),behavior:'instant'});}else window.scrollBy({top:rect.top-innerHeight*.4,behavior:'instant'});}}}
+function sourceAtPoint(event){if(!settings.clickSeek||!surface?.getActualVisible()||disposed||location.href!==originalURL||event.button!==0||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||event.target.closest('a,button,input,textarea,select,[contenteditable=true]'))return;const caret=document.caretPositionFromPoint?.(event.clientX,event.clientY),fallback=!caret&&document.caretRangeFromPoint?.(event.clientX,event.clientY),textNode=caret?.offsetNode||fallback?.startContainer,offset=caret?.offset??fallback?.startOffset,entry=textNodes.find(n=>n.node===textNode);if(!entry||!Number.isInteger(offset))return;const absolute=entry.start+offset,index=sourceRanges.findIndex(r=>r&&absolute>=r.start&&absolute<r.end);if(index<0)return;const chunk=reader.chunks[index];let local=absolute-sourceRanges[index].start;while(local>0&&!/\s/u.test(chunk.text[local-1]))local--;event.preventDefault();reader.pause();reader.seek(index);reader.offset=local;paint(index,local);reader.play();update();}
+root.addEventListener('click',sourceAtPoint);
+function visibleSection(){for(let i=0;i<sourceRanges.length;i++){const mapped=sourceRanges[i];if(!mapped)continue;const entry=textNodes.find(n=>n.start<=mapped.start&&n.end>mapped.start);if(!entry)continue;const range=document.createRange();range.setStart(entry.node,mapped.start-entry.start);range.setEnd(entry.node,Math.min(entry.node.length,mapped.start-entry.start+1));const rect=range.getBoundingClientRect();if(rect.width>0&&rect.bottom>12&&rect.top<innerHeight-180)return i;}return reader.index;}
+function voices(){voiceMap=new Map();const groups=new Map();for(const v of speechSynthesis.getVoices().filter(v=>settings.online||v.localService===true)){const code=v.lang.toLowerCase().replace('_','-'),id='system:'+fingerprint(v.voiceURI+'|'+v.lang+'|'+v.name);if(!/^[a-z]{2}(-[a-z]{2})?$/.test(code))continue;voiceMap.set(id,v);if(!groups.has(code))groups.set(code,{code,label:code,voices:[]});groups.get(code).voices.push({id,label:v.name,note:v.localService?'Lokal auf dem Gerät':'Online · ausdrücklich freigegeben'});}catalog=[...groups.values()];let chosen=voiceMap.get(settings.voice);if(!chosen){const wanted=settings.language==='auto'?(document.documentElement.lang||navigator.language):settings.language;const match=[...voiceMap].find(([,v])=>v.lang.toLowerCase().startsWith(wanted.toLowerCase().split('-')[0]))||[...voiceMap][0];if(match){settings.voice=match[0];chosen=match[1];}}voiceId=settings.voice;reader.configure({voice:chosen||null,rate:settings.rate,volume:settings.muted?0:settings.volume});update();}
+function snapshot(){const chunk=reader.chunks[reader.index],chars=chunk?chunk.start+(reader.offset||0):0,total=reader.text.length/14/Math.max(.8,reader.rate),progress=reader.state==='ended'?1:reader.text.length?chars/reader.text.length:0;return{generation,ready:!!reader.chunks.length,title,visible:surface?.getActualVisible?.()===true,state:{...settings,positions:undefined,bar:settings.bar,volume:Math.round(settings.volume*100),volumeMax:100,speed:reader.rate,wordOffset:reader.offset,voice:voiceId,voiceLabel:voiceMap.get(voiceId)?.name||'',catalog,activeLanguage:voiceMap.get(voiceId)?.lang||'',detectedLanguage:document.documentElement.lang||'auto',playing:reader.state==='playing',paused:reader.state==='paused',sectionIndex:reader.index,sectionCount:reader.chunks.length,preferenceVersion:version,elapsedSeconds:total*progress,remainingSeconds:total*(1-progress),totalSeconds:total,remainingEstimated:true,progressFraction:progress,premium:{enabled:false,status:'free',checkoutUrl:'https://reader-premium.benotable.de/account'},exportState:{state:'idle'},exportFormats:['mp3','wav','pdf','html'],controls:{canToggle:!!reader.chunks.length},statusKey:error?'reader_error':reader.state==='playing'?'playing':reader.state==='paused'?'paused':'ready',statusKind:error?'error':'info',status:error||undefined},resultReady:false};}
+function update(){if(surface&&!disposed){surface.update(snapshot().state);const link=surface.shadow.querySelector('.premium-checkout');link.hidden=false;link.textContent='KI-Stimmen & Downloads im Datei-Reader öffnen';link.href=chrome.runtime.getURL('reader.html');link.onclick=e=>{e.preventDefault();void handoff('audiobook');};}}
+async function handoff(mode){reader.pause();const reply=await chrome.runtime.sendMessage({action:'open-local-reader',text:reader.text,title,language:document.documentElement.lang||'',mode});if(!reply?.ok)throw Error('handoff_failed');return{ok:true,pending:true,snapshot:snapshot()};}
+const bounded=(n,min,max)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
+async function command(command,value){if(disposed)return{ok:false,code:'closed'};if(location.href!==originalURL)return{ok:false,code:'document_changed'};error='';try{
+ if(command==='toggle')reader.toggle();
+ else if(command==='stop')reader.stop();
+ else if(command==='previousSection')reader.seek(reader.index-1);
+ else if(command==='nextSection')reader.seek(reader.index+1);
+ else if(command==='seekSection'&&Number.isInteger(value))reader.seek(value);
+ else if(command==='seekProgress'&&bounded(value,0,1))reader.seek(Math.floor(value*Math.max(0,reader.chunks.length-1)));
+ else if(command==='restart'){const index=visibleSection();reader.pause();reader.seek(index);reader.play();}
+ else if(command==='speed'&&bounded(value,.8,4)){settings.rate=value;reader.configure({rate:value});}
+ else if(command==='volume'&&bounded(value,0,100)){settings.volume=value/100;if(value>0)settings.muted=false;reader.configure({volume:settings.muted?0:settings.volume});}
+ else if(command==='mute'&&typeof value==='boolean'){settings.muted=value;reader.configure({volume:value?0:settings.volume});}
+ else if(command==='voice'&&typeof value?.id==='string'&&voiceMap.has(value.id)){settings.voice=value.id;settings.language=value.language;voices();}
+ else if(command==='language'&&typeof value==='string'&&(value==='auto'||catalog.some(g=>g.code===value))){settings.language=value;settings.voice='';voices();}
+ else if(command==='uiLanguage'&&locales.languages.some(l=>l.code===value))settings.uiLanguage=value;
+ else if(command==='formatLocale'&&locales.formatLocales.includes(value))settings.formatLocale=value;
+ else if(command==='timeFormat'&&['auto','12h','24h'].includes(value))settings.timeFormat=value;
+ else if(command==='playerTheme'&&['system','light','dark'].includes(value))settings.playerTheme=value;
+ else if(['follow','clickseek'].includes(command)&&typeof value==='boolean'){settings[command==='clickseek'?'clickSeek':command]=value;if(command==='follow'&&value)paint(reader.index,reader.offset);}
+ else if(command==='appearance'&&value&&typeof value==='object'){appearance.update({...settings.appearance,...value});settings.appearance={...settings.appearance,...value};}
+ else if(command==='toggleTheme'){const mode=settings.appearance.mode,dark=mode==='dark'||mode==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches;settings.appearance={...settings.appearance,mode:dark?'light':'dark'};appearance.update(settings.appearance);}
+ else if(command==='openFocus')return handoff('files');
+ else if(command==='export'&&['mp3','wav'].includes(value)||command==='exportDocument'&&['pdf','html'].includes(value))return handoff('audiobook');
+ else return{ok:false,code:'invalid_command'};
+ version++;save();update();return{ok:true,snapshot:snapshot()};
+ }catch{error='Öffne den Datei-Reader für lokale KI-Stimmen und vollständige Premium-Downloads.';update();return{ok:false,code:'unavailable',snapshot:snapshot()};}}
+surface=mountPlayerSurface({mount:host,locales,formattingFactory:createFormatting,appearanceController:appearance,exportPolicy:'licensed',onCommand:(c,v)=>void command(c,v),onClose:()=>{reader.pause();surface.setVisibility(false);},onLocalChange:(k,v)=>{if(k==='barPosition'){settings.bar=v;save();}}});surface.shadow.querySelector('.auto-show-row').hidden=true;
+// Actual document and renderer remain authoritative; no page script can call this isolated-world bridge.
+const bridge={alive:true,url:originalURL,destroy:cleanup,show(){surface.setVisibility(true);update();},instanceId};globalThis.__notableArticle=bridge;
+const listener=(m,sender,respond)=>{if(sender.id!==chrome.runtime.id||m?.channel!=='notable-public-player')return false;if(location.href!==originalURL){respond({ok:false,code:'document_changed'});return false;}if(m.action==='snapshot'){respond({ok:true,instanceId,snapshot:snapshot()});return false;}if(m.instanceId!==instanceId||m.generation!==generation){respond({ok:false,code:'document_changed'});return false;}if(m.action==='visible'&&typeof m.value==='boolean'){if(!m.value)reader.pause();surface.setVisibility(m.value);respond({ok:true,instanceId,snapshot:snapshot()});return false;}if(m.action!=='command'){respond({ok:false,code:'invalid_command'});return false;}command(m.command,m.value).then(respond,()=>respond({ok:false,code:'unavailable'}));return true;};
+chrome.runtime.onMessage.addListener(listener);speechSynthesis.addEventListener('voiceschanged',voices);voices();update();
+function cleanup(){if(disposed)return;disposed=true;bridge.alive=false;reader.stop();chrome.runtime.onMessage.removeListener(listener);speechSynthesis.removeEventListener('voiceschanged',voices);root.removeEventListener('click',sourceAtPoint);surface.destroy();appearance.destroy();wordStyle.remove();CSS.highlights?.delete('notable-reader-current');host.remove();}
+addEventListener('pagehide',cleanup,{once:true});
+})().catch(error=>{globalThis.__notableArticleFailure=error.name;console.warn('Notable Reader initialization failed',error.name);});

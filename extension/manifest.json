@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Notable Reader — Artikel & PDF vorlesen",
   "short_name": "Notable Reader",
-  "version": "2.2.1",
-  "description": "Artikel, PDF, EPUB, Word und Text lokal vorlesen oder als MP3/WAV-Hörbuch speichern. Kostenlos und ohne Produktkonto.",
+  "version": "2.3.0",
+  "description": "Artikel, PDFs und Bücher lokal vorlesen. Audioexport in der Erweiterung mit Premium, auf unserer Website kostenlos.",
   "homepage_url": "https://reader.benotable.de/",
   "permissions": [
     "activeTab",
@@ -30,6 +30,25 @@
     "128": "icons/icon-128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; worker-src 'self'; media-src 'self' blob:; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://*.xethub.hf.co;"
-  }
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; worker-src 'self'; media-src 'self' blob:; connect-src 'self' https://reader-premium.benotable.de https://huggingface.co https://*.huggingface.co https://*.hf.co https://*.xethub.hf.co;"
+  },
+  "host_permissions": [
+    "https://reader-premium.benotable.de/*"
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt956HvSqV4/RXBmiZH2e/4aToYbY6uZoP640QObEfV2APBciAey8J6BsDz4yIaq5gsVs4iPWhT0kabdZTImJy+hbZA64R6yfqcPkRlsgvPVW2kf21dD4hk936cJUirnRlvnlOKKslbjyXOKcyk7GQCcMFSCLxvUZn/ySDqbnO/aHv+t7wE6tDWLeE3h+S3xhH+KGEOIRU304tZWCmYS67hqAMyNp+cdhso2DN+Oqn/qJSD1C7mmQwqti1QLAD8rvneYPARrnfrXQ4OLDJrLDmHClvK17ztiECYdVgPYtQ4pNuRKEOek2XwcBaxCBmRN52W8A+GBHr4b9GbtWP1TcLwIDAQAB",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "player-surface.mjs",
+        "formatting.mjs",
+        "appearance.mjs",
+        "ui-locales.json"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "use_dynamic_url": true
+    }
+  ]
 }

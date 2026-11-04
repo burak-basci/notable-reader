@@ -29,7 +29,8 @@ extension_files=[(file.relative_to(extension).as_posix(),file.read_bytes()) for 
 manifest=json.loads((extension/'manifest.json').read_text())
 assert manifest['manifest_version']==3
 assert set(manifest['permissions'])=={'activeTab','scripting','storage'}
-assert not manifest.get('host_permissions')
+assert set(manifest.get('host_permissions',[]))=={'https://reader-premium.benotable.de/*'}
+assert 'https://reader-premium.benotable.de' in manifest['content_security_policy']['extension_pages']
 assert all(not f.startswith('.') and '..' not in Path(f).parts for f,_ in extension_files)
 records=[archive(OUT/f'notable-reader-extension-{VERSION}.zip',extension_files)]
 

@@ -7,6 +7,6 @@ chrome.runtime.onMessage.addListener((message,sender,respond)=>{
   if(expired.length)await chrome.storage.session.remove(expired);
   const id=crypto.randomUUID(),key='notable-incoming-'+id;
   await chrome.storage.session.set({[key]:{text:message.text,title:typeof message.title==='string'?message.title:'Artikel',language:typeof message.language==='string'?message.language:'',created:Date.now()}});
-  try{const tab=await chrome.tabs.create({url:chrome.runtime.getURL('reader.html')+'#incoming='+id});respond({ok:true,tabId:tab.id});}catch{await chrome.storage.session.remove(key);respond({ok:false});}
+  try{const tab=await chrome.tabs.create({url:chrome.runtime.getURL('reader.html')+(message.mode==='audiobook'?'?mode=audiobook':'')+'#incoming='+id});respond({ok:true,tabId:tab.id});}catch{await chrome.storage.session.remove(key);respond({ok:false});}
  })().catch(()=>respond({ok:false}));return true;
 });

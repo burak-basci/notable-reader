@@ -1,269 +1,122 @@
-/* Notable Reader · Copyright (c) 2026 Burak Basci · MIT */
-const {Reader, cleanText, fingerprint, textFromPdfItems} = globalThis.NotableReaderCore;
+/* Notable Reader · local file engine; one actual shared player, MIT. */
 import {LocalModels,Speech,Utterance,MODELS,totalBytes} from './neural-speech.js';
-const $ = selector => document.querySelector(selector);
-const key = 'notable-reader-v2';
-let converterMode = new URL(location.href).searchParams.get('mode') === 'audiobook';
-let exportBusy = false, exporter = null, exportAbort = null, exportResult = null, exportUrl = '', exportModelTouched = false, exportSelecting = false, importBusy = false;
-const exportLocks = new Map();
-const defaults = {rate:1, volume:1, voice:'', language:'auto', online:false, follow:true, positions:{}};
-let settings;
-try { settings = {...defaults, ...JSON.parse(localStorage.getItem(key) || '{}')}; } catch { settings = {...defaults}; }
-settings.positions = settings.positions && typeof settings.positions === 'object' && !Array.isArray(settings.positions) ? settings.positions : {};
-settings.online = settings.online === true;
-let voices = [], currentFingerprint = '', currentText = '', spans = [], activeSpan = null, documentLanguage = '', pdf = null, pdfPage = 1, pdfRender = null, generation = 0, loadingTask = null, passwordUpdate = null;
-const models=new LocalModels(),speech=new Speech(models);
-const status = (message, error = false) => { $('#status').textContent = message; $('#status').classList.toggle('error', error); };
-function showMobileReadingArea(){
-  if(!matchMedia('(max-width: 800px)').matches)return;
-  requestAnimationFrame(()=>{const area=$('#reading-area');area.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});area.focus({preventScroll:true});});
-}
-function save() {
-  // Retain only metadata for the most recently opened documents, never text.
-  settings.positions = Object.fromEntries(Object.entries(settings.positions).slice(-100));
-  try { localStorage.setItem(key, JSON.stringify(settings)); } catch { /* Private mode or quota: reading still works. */ }
-}
-function detectLanguage(text) {
-  const lower = ` ${text.toLowerCase().slice(0,12000)} `;
-  const lexicons = {de:['und','der','die','das','nicht','ist','für','mit','ein','eine','ohne','liest'],en:['the','and','that','this','with','from','are','is'],fr:['les','des','une','dans','est','pour','avec','pas'],es:['los','las','una','para','con','del','por','que'],it:['della','sono','che','con','per','una','gli','non'],pt:['uma','para','com','não','dos','das','que','por'],nl:['het','een','van','voor','zijn','niet','met','dat']};
-  const scores = Object.entries(lexicons).map(([lang, words]) => [lang, words.reduce((sum, word) => sum + (lower.match(new RegExp(`\\b${word}\\b`,'gu')) || []).length,0)]).sort((a,b)=>b[1]-a[1]);
-  if (/\p{Script=Hiragana}|\p{Script=Katakana}/u.test(lower)) return 'ja';
-  if (/\p{Script=Hangul}/u.test(lower)) return 'ko';
-  if (/\p{Script=Han}/u.test(lower)) return 'zh';
-  if (/\p{Script=Arabic}/u.test(lower)) return 'ar';
-  if (/\p{Script=Cyrillic}/u.test(lower)) return 'ru';
-  return scores[0][1] >= 2 ? scores[0][0] : navigator.language.split('-')[0];
-}
-function availableVoices() { return voices.filter(voice => settings.online || voice.localService === true); }
-function refreshVoices() {
-  voices = speech.getVoices();
-  const available = availableVoices(), languages = [...new Set(available.map(v=>v.lang).filter(Boolean))].sort();
-  const languageSelect = $('#language'); languageSelect.replaceChildren(new Option('Automatisch', 'auto'));
-  const displayNames = typeof Intl.DisplayNames === 'function' ? new Intl.DisplayNames(['de'], {type:'language'}) : null;
-  for (const lang of languages) { let name = lang; try { name = displayNames?.of(lang) || lang; } catch {} languageSelect.add(new Option(`${name} · ${lang}`, lang)); }
-  if (![...languageSelect.options].some(option=>option.value === settings.language)) settings.language = 'auto';
-  languageSelect.value = settings.language;
-  const wanted = (settings.language === 'auto' ? documentLanguage || navigator.language : settings.language).toLowerCase();
-  let matches = available.filter(v=>v.lang.toLowerCase() === wanted);
-  if (!matches.length) matches = available.filter(v=>v.lang.split('-')[0].toLowerCase() === wanted.split('-')[0]);
-  // Explicit language selection never falls through to a different language.
-  if (!matches.length && settings.language === 'auto') matches = available;
-  const select = $('#voice'); select.replaceChildren();
-  if (!matches.length) select.add(new Option('Keine passende Stimme verfügbar', ''));
-  for (const voice of matches) select.add(new Option(`${voice.name} · ${voice.lang}${voice.localService ? ' · lokal' : ' · online'}`, voice.voiceURI));
-  const chosen = matches.find(v=>v.voiceURI===settings.voice) || matches.find(v=>v.default) || matches[0] || null;
-  if (chosen) select.value = chosen.voiceURI;
-  reader.configure({voice:chosen});
-  $('#voice-note').textContent = !available.length ? 'Keine Systemstimme gefunden. Lade unten eine kostenlose lokale KI-Stimme oder installiere eine Systemstimme. Online-Stimmen lassen sich bewusst einschalten.' : chosen?.voiceURI?.startsWith('notable:') ? 'Lokale neuronale Stimme: Text und erzeugtes Audio bleiben auf diesem Gerät.' : chosen?.localService ? `${available.length} Stimme${available.length===1?'':'n'} verfügbar. Gewählte Stimme wird vom Browser als lokal gemeldet.` : 'Online-Stimme: Der Browser oder Stimmenanbieter kann deinen Text verarbeiten. Für vertrauliche Inhalte eine lokale Stimme wählen.';
-  $('#choose-voice').textContent = chosen ? `${chosen.name} ⌄` : 'Stimme wählen ⌄';
-  $('#choose-voice').title = chosen ? `${chosen.name} · Stimme ändern` : 'Stimme wählen';
-  renderExportAvailability();
-}
-const reader = new Reader({
-  speech,Utterance,
-  onstate({state,index,count,error}) {
-    $('#play').textContent = state === 'playing' ? 'Pause' : state === 'paused' ? 'Weiterlesen' : state === 'ended' ? 'Noch einmal' : 'Vorlesen';
-    $('#play').setAttribute('aria-pressed', String(state === 'playing'));
-    $('#play').setAttribute('aria-label', $('#play').textContent); $('#play').title=$('#play').textContent;
-    for (const selector of ['#play','#previous','#next','#stop']) $(selector).disabled = exportBusy || !count;
-    $('#previous').disabled = exportBusy || !count || index === 0; $('#next').disabled = exportBusy || !count || index >= count - 1;
-    $('#progress').style.width = `${count ? (state==='ended'?100:index/count*100) : 0}%`;
-    if (error){status(error,true);if(!reader.voice){$('#voice-settings').open=true;$('#local-models').open=true;}}
-    else if (count) status(`${state==='playing'?'Wird vorgelesen':state==='paused'?'Pausiert':state==='ended'?'Fertig':'Bereit'} · Abschnitt ${index+1} von ${count}`);
-  },
-  onword({start,end,sentence}) {
-    activeSpan?.classList.remove('active'); activeSpan?.removeAttribute('aria-current');
-    activeSpan = spans[sentence]; activeSpan?.classList.add('active'); activeSpan?.setAttribute('aria-current','true');
-    if (globalThis.CSS?.highlights && globalThis.Highlight && activeSpan?.firstChild) {
-      const chunk = reader.chunks[sentence], range = new Range(), node=activeSpan.firstChild;
-      try { range.setStart(node,Math.min(node.length,Math.max(0,start-chunk.start))); range.setEnd(node,Math.min(node.length,Math.max(0,end-chunk.start))); CSS.highlights.set('notable-word',new Highlight(range)); } catch {}
-    }
-    if (settings.follow && activeSpan && reader.state==='playing') {
-      const rect=activeSpan.getBoundingClientRect();
-      if (rect.top<100 || rect.bottom>innerHeight-80) activeSpan.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
-    }
-  },
-  onposition(index) { if (currentFingerprint) { settings.positions[currentFingerprint]=index; save(); } }
-});
-// Exposed for local QA and integrations without making text persistent.
-globalThis.notableReader = reader;
-globalThis.notableModels=models;globalThis.notableSpeech=speech;
-function loadDocument(text, title, language = '') {
-  clearExportResult();
-  currentText = cleanText(text); currentFingerprint = fingerprint(currentText); documentLanguage = language || detectLanguage(currentText);
-  const position = Number(settings.positions[currentFingerprint]) || 0;
-  reader.load(currentText,position); $('#document-title').textContent = title; $('#empty').hidden = !!currentText;
-  const root=$('#reading-text'); root.replaceChildren(); spans=[];
-  let cursor=0;
-  reader.chunks.forEach((chunk,index)=>{
-    root.append(document.createTextNode(reader.text.slice(cursor,chunk.start)));
-    const span=document.createElement('span'); span.className='sentence'; span.tabIndex=0; span.setAttribute('role','button'); span.setAttribute('aria-label',`Ab Abschnitt ${index+1} lesen`); span.textContent=chunk.text;
-    span.addEventListener('click',()=>{if(!exportBusy)reader.seek(index);}); span.addEventListener('keydown',event=>{if(!exportBusy&&['Enter',' '].includes(event.key)){event.preventDefault();reader.seek(index);}});
-    root.append(span); spans.push(span); cursor=chunk.end;
-  });
-  root.append(document.createTextNode(reader.text.slice(cursor)));
-  $('#document-meta').textContent = `${reader.text.length.toLocaleString('de-DE')} Zeichen · ${reader.chunks.length.toLocaleString('de-DE')} Abschnitte · ${documentLanguage.toUpperCase()}`;
-  if(!exportModelTouched)$('#export-model').value = documentLanguage.toLowerCase().startsWith('en') ? 'kokoro' : 'piper';
-  refreshVoices();
-  renderExportAvailability();
-  if(converterMode)openExport(false);
-  if(position>0 && reader.chunks.length) status(`Lesestelle wiederhergestellt · Abschnitt ${reader.index+1} von ${reader.chunks.length}.`);
-  if(!currentText) status('Keine lesbare Textebene gefunden. Bei einem gescannten PDF zuerst eine OCR-Texterkennung durchführen.',true);
-}
-async function renderPdfPage() {
-  if(!pdf)return;
-  pdfRender?.cancel();
-  const thisPdf=pdf, page=await thisPdf.getPage(pdfPage), viewport=page.getViewport({scale:1.5});
-  if(thisPdf!==pdf)return;
-  const canvas=$('#pdf-canvas');canvas.width=viewport.width;canvas.height=viewport.height;
-  $('#pdf-page').textContent=`Seite ${pdfPage} von ${pdf.numPages}`;
-  $('#pdf-previous').disabled=pdfPage<=1; $('#pdf-next').disabled=pdfPage>=pdf.numPages;
-  pdfRender=page.render({canvasContext:canvas.getContext('2d'),viewport});
-  try{await pdfRender.promise;}catch(error){if(error.name!=='RenderingCancelledException')status('Die PDF-Vorschau konnte nicht dargestellt werden.',true);}
-}
-async function importPdf(bytes,title,gen) {
-  const lib = await import('./vendor/pdfjs/pdf.mjs');
-  lib.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdfjs/pdf.worker.mjs', import.meta.url).href;
-  if(gen!==generation)return;
-  loadingTask = lib.getDocument({data:bytes,isEvalSupported:false,cMapUrl:new URL('./vendor/pdfjs/cmaps/',import.meta.url).href,cMapPacked:true,standardFontDataUrl:new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href,wasmUrl:new URL('./vendor/pdfjs/wasm/',import.meta.url).href});
-  loadingTask.onPassword=(updatePassword,reason)=>{passwordUpdate=updatePassword;$('#password-form').hidden=false;status(reason===2?'Das PDF-Passwort war falsch. Bitte erneut eingeben.':'Dieses PDF ist geschützt. Bitte das Passwort eingeben.');$('#pdf-password').focus();};
-  const doc=await loadingTask.promise;
-  if(gen!==generation){await doc.destroy();return;}
-  const pages=[];
-  for(let n=1;n<=doc.numPages;n++){
-    if(gen!==generation){await doc.destroy();return;}
-    status(`PDF wird lokal geöffnet · Seite ${n} von ${doc.numPages}`);
-    const page=await doc.getPage(n), content=await page.getTextContent();
-    pages.push(textFromPdfItems(content.items));page.cleanup();
-  }
-  $('#password-form').hidden=true;$('#pdf-password').value='';passwordUpdate=null;
-  pdf=doc;pdfPage=1;
-  loadDocument(pages.join('\n\n'),title);
-  $('#pdf-preview').hidden=false;
-  if($('#pdf-preview').open) await renderPdfPage();
-}
-$('#password-form').addEventListener('submit',event=>{event.preventDefault();const password=$('#pdf-password').value;$('#pdf-password').value='';if(passwordUpdate)passwordUpdate(password);});
-async function cancelPdf(){passwordUpdate=null;$('#password-form').hidden=true;$('#pdf-password').value='';pdfRender?.cancel();if(loadingTask){try{await loadingTask.destroy();}catch{}}loadingTask=null;pdf=null;$('#pdf-preview').hidden=true;}
-$('#file').addEventListener('change',async event=>{
-  const file=event.target.files?.[0];if(!file||exportBusy)return;
-  const gen=++generation;importBusy=true;renderExportAvailability();reader.stop();await cancelPdf();
-  status('Datei wird lokal geöffnet …');
-  try{
-    if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'))await importPdf(new Uint8Array(await file.arrayBuffer()),file.name,gen);
-    else {const {importTextFile}=await import('./formats.js');const imported=await importTextFile(file);if(gen===generation)loadDocument(imported.text,imported.title||file.name,imported.language||'');}
-  }catch(error){if(gen===generation)status(error.name==='PasswordException'?'Das PDF benötigt ein gültiges Passwort.':/\.(epub|docx?|html?|txt|md|markdown)$/i.test(file.name)?error.message:'Diese Datei konnte nicht geöffnet werden. Bitte eine unbeschädigte Datei in einem unterstützten Format wählen.',true);}
-  event.target.value='';
-  if(gen===generation){importBusy=false;renderExportAvailability();showMobileReadingArea();}
-});
-$('#load-text').addEventListener('click',async()=>{if(exportBusy)return;++generation;importBusy=true;renderExportAvailability();await cancelPdf();loadDocument($('#paste').value,'Dein Text');$('#paste').value='';$('#text-import').open=false;importBusy=false;renderExportAvailability();showMobileReadingArea();});
-function openVoiceSettings(){const area=$('#voice-settings');area.open=true;area.style.scrollMarginTop=($('.reader-toolbar').getBoundingClientRect().height+32)+'px';area.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});area.focus({preventScroll:true});}
-$('#choose-voice').addEventListener('click',event=>{event.preventDefault();openVoiceSettings();});
-$('#settings-toggle').addEventListener('click',()=>{const area=$('#voice-settings');area.open=!area.open;});
-$('#voice-settings').addEventListener('toggle',()=>$('#settings-toggle').setAttribute('aria-expanded',String($('#voice-settings').open)));
-for(const id of ['header-open','empty-open'])$('#'+id).addEventListener('click',()=>{if(!exportBusy)$('#file').click();});
-$('#play').addEventListener('click',()=>{if(!exportBusy)reader.toggle();});
-$('#stop').addEventListener('click',()=>{if(!exportBusy){reader.stop();reader.seek(0);}});
-$('#previous').addEventListener('click',()=>{if(!exportBusy)reader.seek(reader.index-1);});
-$('#next').addEventListener('click',()=>{if(!exportBusy)reader.seek(reader.index+1);});
-$('#rate').value=settings.rate;$('#volume').value=settings.volume;$('#online').checked=settings.online;$('#follow').checked=settings.follow;
-function applySliders(){settings.rate=Math.max(.8,Math.min(4,Number($('#rate').value)||1));settings.volume=Math.max(0,Math.min(1,Number($('#volume').value)));$('#rate-value').textContent=`${settings.rate.toLocaleString('de-DE',{minimumFractionDigits:2})}×`;$('#volume-value').textContent=`${Math.round(settings.volume*100)} %`;reader.configure({rate:settings.rate,volume:settings.volume});save();}
-$('#rate').addEventListener('input',applySliders);$('#volume').addEventListener('input',applySliders);applySliders();
-$('#language').addEventListener('change',()=>{settings.language=$('#language').value;settings.voice='';refreshVoices();save();});
-$('#voice').addEventListener('change',()=>{settings.voice=$('#voice').value;reader.configure({voice:availableVoices().find(v=>v.voiceURI===settings.voice)||null});refreshVoices();save();});
-$('#online').addEventListener('change',()=>{settings.online=$('#online').checked;settings.voice='';refreshVoices();save();});
-$('#follow').addEventListener('change',()=>{settings.follow=$('#follow').checked;save();});
-$('#clear-data').addEventListener('click',()=>{settings={...defaults,positions:{}};try{localStorage.removeItem(key);}catch{}currentFingerprint='';reader.stop();reader.configure({rate:1,volume:1});$('#rate').value=1;$('#volume').value=1;$('#rate-value').textContent='1,00×';$('#volume-value').textContent='100 %';$('#online').checked=false;$('#follow').checked=true;refreshVoices();$('#privacy-status').textContent='Einstellungen und gespeicherte Lesestellen wurden gelöscht.';});
-$('#pdf-preview').addEventListener('toggle',()=>{if($('#pdf-preview').open)renderPdfPage();});
-$('#pdf-previous').addEventListener('click',()=>{if(pdfPage>1){pdfPage--;renderPdfPage();}});$('#pdf-next').addEventListener('click',()=>{if(pdf&&pdfPage<pdf.numPages){pdfPage++;renderPdfPage();}});
-speech.addEventListener('voiceschanged',refreshVoices);refreshVoices();models.restore().catch(()=>{});
-models.addEventListener('status',event=>{$('#model-status').textContent=event.detail.message;$('#model-status').classList.toggle('error',event.detail.error);if(models.downloading){$('#export-status').textContent=event.detail.message;$('#export-status').classList.toggle('error',event.detail.error);}if(reader.state==='playing')status(event.detail.message,event.detail.error);});
-async function installLocalModel(id){
- if(exportBusy||models.downloading)return;
- for(const node of document.querySelectorAll('[data-model]'))node.disabled=true;
- $('#export-download-model').disabled=true;$('#cancel-model').hidden=false;$('#export-cancel-model').hidden=false;
- try{await models.install(id);settings.voice=MODELS[id].voiceURI;settings.language=MODELS[id].lang;refreshVoices();save();}
- catch(error){$('#export-status').textContent=error.name==='AbortError'?'Modelldownload abgebrochen.':error.message;}
- finally{for(const node of document.querySelectorAll('[data-model]'))node.disabled=false;$('#cancel-model').hidden=true;$('#export-cancel-model').hidden=true;renderExportAvailability();}
-}
-for(const button of document.querySelectorAll('[data-model]')){
- const id=button.dataset.model,model=MODELS[id];button.textContent=`${model.name} laden · ${(totalBytes(model)/1e6).toLocaleString('de-DE',{maximumFractionDigits:1})} MB`;
- button.addEventListener('click',()=>installLocalModel(id));
-}
-$('#cancel-model').addEventListener('click',()=>models.cancelDownload());
-$('#export-cancel-model').addEventListener('click',()=>models.cancelDownload());
-$('#clear-models').addEventListener('click',async()=>{reader.stop();await models.clear();settings.voice='';refreshVoices();save();});
-function openExport(scroll=true){
- const area=$('#audio-export');area.hidden=false;area.open=true;
- if(scroll){area.style.scrollMarginTop=($('.reader-toolbar').getBoundingClientRect().height+32)+'px';area.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});area.focus({preventScroll:true});}
- renderExportAvailability();
-}
-function renderExportAvailability(){
- const model=MODELS[$('#export-model').value],installed=models.installed.has(model.id),hasText=!!currentText;
- $('#open-export').disabled=!hasText||exportBusy||importBusy;
- $('#start-export').disabled=!hasText||!installed||exportBusy||exportSelecting||importBusy||models.downloading;
- $('#export-download-model').hidden=installed;$('#export-download-model').disabled=exportBusy||models.downloading;
- $('#export-download-model').textContent=`${model.name} laden · ${(totalBytes(model)/1e6).toLocaleString('de-DE',{maximumFractionDigits:1})} MB`;
- $('#export-document').textContent=hasText?`${$('#document-title').textContent} · gesamter Text · ${currentText.length.toLocaleString('de-DE')} Zeichen`:'Öffne zuerst eine Datei oder füge Text ein.';
- $('#export-note').textContent=installed?'Die Stimme ist auf diesem Gerät bereit. Der gesamte Text wird lokal berechnet. Gerätestimmen sind nur zum direkten Vorlesen verfügbar.':`Für eine Audiodatei brauchst du eine lokale KI-Stimme. Lade ${model.name} einmal ausdrücklich herunter. Dein Dokumenttext wird dabei nicht übertragen.`;
-}
-function clearExportResult(){
- if(exportUrl){URL.revokeObjectURL(exportUrl);exportUrl='';}
- const previous=exportResult;exportResult=null;
- const cleanup=previous?.cleanup?Promise.resolve().then(()=>previous.cleanup()):Promise.resolve();cleanup.catch(()=>{});
- $('#export-result').hidden=true;$('#download-audio').removeAttribute('href');return cleanup;
-}
-function setExportBusy(busy){
- exportBusy=busy;document.body.dataset.exportBusy=String(busy);
- const nodes=document.querySelectorAll('#file,#paste,#load-text,#header-open,#empty-open,#language,#voice,#online,#follow,#clear-models,#clear-data,#rate,#volume,[data-model],#export-model,#export-format,#export-download-model,#clear-export-storage,#clear-export');
- for(const node of nodes){if(busy){exportLocks.set(node,node.disabled);node.disabled=true;}else node.disabled=exportLocks.get(node)===true;}
- if(!busy)exportLocks.clear();
- $('#cancel-export').hidden=!busy;$('#cancel-export').disabled=false;$('#start-export').hidden=busy;$('#export-progress-wrap').hidden=!busy;
- reader.emit();renderExportAvailability();
-}
-function suggestedAudioName(title,format){return (title.replace(/\.[a-z0-9]{1,8}$/i,'').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').trim().slice(0,120)||'notable-reader')+'.'+format;}
-$('#open-export').addEventListener('click',()=>openExport());
-$('#audio-export').addEventListener('toggle',()=>{if(!$('#audio-export').open&&!converterMode)$('#audio-export').hidden=true;});
-$('#header-converter').addEventListener('click',event=>{event.preventDefault();converterMode=true;const url=new URL(location.href);url.searchParams.set('mode','audiobook');history.replaceState(null,'',url.pathname+url.search+url.hash);openExport();});
-$('#clear-export-storage').addEventListener('click',async()=>{if(exportBusy)return;const button=$('#clear-export-storage');button.disabled=true;try{await clearExportResult();const {clearAudiobookStorage}=await import('./audio-export.js');const result=await clearAudiobookStorage();$('#privacy-status').textContent=result.message;}catch{$('#privacy-status').textContent='Temporäre Audiodaten konnten nicht vollständig gelöscht werden. Bitte Browser-Speicher dieser App prüfen.';}finally{button.disabled=false;}});
-$('#clear-export').addEventListener('click',async()=>{if(exportBusy)return;try{await clearExportResult();$('#export-status').textContent='Temporäre Audiodaten wurden auf diesem Gerät gelöscht.';}catch{$('#export-status').textContent='Die temporäre Audiodatei konnte nicht vollständig gelöscht werden. Bitte Browser-Speicher dieser App löschen.';}});
-$('#export-model').addEventListener('change',()=>{exportModelTouched=true;renderExportAvailability();});
-$('#export-download-model').addEventListener('click',()=>installLocalModel($('#export-model').value));
-$('#cancel-export').addEventListener('click',()=>{exportAbort?.abort();exporter?.cancel();$('#export-status').textContent='Export wird abgebrochen …';});
-$('#start-export').addEventListener('click',async()=>{
- if(exportBusy||exportSelecting||importBusy||!currentText||!models.installed.has($('#export-model').value))return;
- const title=$('#document-title').textContent,format=$('#export-format').value,modelId=$('#export-model').value,text=reader.text;
- reader.pause();models.cancelSynthesis();clearExportResult();exportAbort=new AbortController();exportSelecting=true;setExportBusy(true);$('#export-status').classList.remove('error');$('#export-progress').value=0;
- let sink=null;
- // Invoke the native picker in the user's click gesture, before module loading.
- if(typeof window.showSaveFilePicker==='function'){
-  try{const handle=await window.showSaveFilePicker({suggestedName:suggestedAudioName(title,format),types:[{description:format==='mp3'?'MP3-Hörbuch':'WAV-Audio',accept:{[format==='mp3'?'audio/mpeg':'audio/wav']:['.'+format]}}]});sink=await handle.createWritable();}
-  catch(error){if(error.name==='AbortError'){exportSelecting=false;exportAbort=null;setExportBusy(false);$('#export-status').textContent='Speichern abgebrochen. Dein Dokument bleibt geöffnet.';return;}$('#export-status').textContent='Die Dateiauswahl ist hier nicht verfügbar. Das fertige Hörbuch kannst du anschließend herunterladen.';}
- }
- exportSelecting=false;$('#export-status').textContent='Hörbuch wird auf diesem Gerät vorbereitet …';
+import {BrowserPlayer,documentHtml,documentPdf} from './browser-player.mjs';
+import * as premium from './premium-browser.mjs';
+const {Reader,cleanText,fingerprint,textFromPdfItems}=globalThis.NotableReaderCore,$=s=>document.querySelector(s),key='notable-reader-v2',isExtension=location.protocol==='chrome-extension:';
+const defaults={rate:1,volume:1,muted:false,voice:'',language:'auto',online:false,follow:true,clickSeek:true,uiLanguage:['de','en','fr','es','it','pt'].includes(navigator.language.split('-')[0])?navigator.language.split('-')[0]:'de',formatLocale:'auto',timeFormat:'auto',playerTheme:'system',positions:{}};
+let settings;try{settings={...defaults,...JSON.parse(localStorage.getItem(key)||'{}')};}catch{settings={...defaults};}settings.positions=settings.positions&&typeof settings.positions==='object'&&!Array.isArray(settings.positions)?settings.positions:{};settings.online=settings.online===true;
+const models=new LocalModels(),speech=new Speech(models);let player,currentFingerprint='',documentLanguage='',currentText='',spans=[],activeSpan=null,pdf=null,pdfPage=1,pdfRender=null,pdfPaintSerial=0,generation=0,loadingTask=null,passwordUpdate=null,importBusy=false,exportBusy=false,exportAbort=null,exporter=null,exportResult=null,exportUrl='',pendingModel=null;
+const instanceId=crypto.randomUUID();let documentGeneration=crypto.randomUUID(),closed=false,resultGeneration=null,resultKind=null;
+const status=(text,error=false)=>{$('#status').textContent=text;$('#status').classList.toggle('error',error);};
+const save=()=>{settings.positions=Object.fromEntries(Object.entries(settings.positions).slice(-100));try{localStorage.setItem(key,JSON.stringify(settings));}catch{}};
+function detectLanguage(text){const lower=' '+text.toLowerCase().slice(0,12000)+' ',lexicons={de:['und','der','die','das','nicht','ist','für','mit','ein','eine'],en:['the','and','that','this','with','from','are','is'],fr:['les','des','une','dans','est','pour','avec'],es:['los','las','una','para','con','del','por'],it:['della','sono','che','con','per','una'],pt:['uma','para','com','não','dos','das']};const scores=Object.entries(lexicons).map(([lang,words])=>[lang,words.reduce((sum,w)=>sum+(lower.match(new RegExp('\\b'+w+'\\b','gu'))||[]).length,0)]).sort((a,b)=>b[1]-a[1]);if(/\p{Script=Hiragana}|\p{Script=Katakana}/u.test(lower))return'ja';if(/\p{Script=Han}/u.test(lower))return'zh';if(/\p{Script=Arabic}/u.test(lower))return'ar';return scores[0][1]>=2?scores[0][0]:navigator.language.split('-')[0];}
+function markWord({start,end,sentence}){activeSpan?.classList.remove('active');activeSpan?.removeAttribute('aria-current');activeSpan=spans[sentence];activeSpan?.classList.add('active');activeSpan?.setAttribute('aria-current','true');if(CSS?.highlights&&globalThis.Highlight&&activeSpan?.firstChild){const chunk=reader.chunks[sentence],node=activeSpan.firstChild,range=new Range();try{range.setStart(node,Math.max(0,Math.min(node.length,start-chunk.start)));range.setEnd(node,Math.max(0,Math.min(node.length,end-chunk.start)));CSS.highlights.set('notable-word',new Highlight(range));}catch{}}
+ if(settings.follow&&activeSpan){const rect=activeSpan.getBoundingClientRect(),bar=player?.surface.bar.getBoundingClientRect(),bottom=bar?.top??innerHeight-180;if(rect.top<30||rect.bottom>bottom-20)activeSpan.scrollIntoView({block:'center',behavior:'instant'});}}
+const reader=new Reader({speech,Utterance,onstate:({state,index,count,error})=>{if(error){status(error,true);player?.message(error,true);}else if(count)status((state==='playing'?'Wird vorgelesen':state==='paused'?'Pausiert':state==='ended'?'Fertig':'Bereit')+' · Abschnitt '+(index+1)+' von '+count);player?.update();},onword:event=>{markWord(event);player?.update();},onposition:index=>{if(currentFingerprint){settings.positions[currentFingerprint]=index;save();}}});
+async function clearExportResult(){if(exportUrl){URL.revokeObjectURL(exportUrl);exportUrl='';}const previous=exportResult;exportResult=null;resultGeneration=null;resultKind=null;if(player)player.setJob(player.job.state==='complete'?{state:'idle'}:{...player.job,resultReady:false});$('#export-result').hidden=true;$('#download-audio').removeAttribute('href');await previous?.cleanup?.();}
+function lock(value){exportBusy=value;document.body.dataset.exportBusy=String(value);for(const n of document.querySelectorAll('#file,#paste,#load-text,#header-open,#empty-open,#online,#clear-models,#clear-data,#clear-export-storage'))n.disabled=value;player?.setBusy(value);}
+function safeName(title,format){return(title.replace(/\.[a-z0-9]{1,8}$/i,'').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_').trim().slice(0,100)||'notable-reader')+'.'+format;}
+function showResult(result,note='',kind='audio'){exportResult=result;resultGeneration=documentGeneration;resultKind=kind;exportUrl=URL.createObjectURL(result.blob);$('#download-audio').href=exportUrl;$('#download-audio').download=result.filename;$('#export-filename').textContent=result.filename;$('#export-status').textContent=note||'Die vollständige Datei ist bereit.';$('#export-result').hidden=false;status('Die vollständige Datei ist zum Herunterladen bereit.');}
+async function showPremium(detail={}){const state=detail.status||await player.refreshPremium();for(const [id,field]of [['premium-checkout','checkoutUrl'],['premium-lifetime','lifetimeUrl'],['premium-account','accountUrl'],['premium-donate','donationUrl']]){const a=$('#'+id);let url=null;try{const u=new URL(state[field]);if(u.protocol==='https:')url=u.href;}catch{}a.hidden=!url;if(url)a.href=url;else a.removeAttribute('href');}$('#premium-status').textContent=detail.code==='premium_unavailable'?'Die Lizenzprüfung ist gerade nicht erreichbar. Lesen bleibt möglich.':'Downloads in dieser Erweiterung benötigen eine aktive Freigabe.';if(!$('#premium-dialog').open)$('#premium-dialog').showModal();}
+function requestModel(id,action={}){if(exportBusy)return;pendingModel={...action,id,generation};$('#model-choice').value=id;$('#model-reason').textContent=action.format?'Gerätestimmen liefern keine Audiodatei. Dieses Hörbuch wird vollständig mit einer lokalen KI-Stimme berechnet.':action.play?'Diese KI-Stimme wird erst nach deinem ausdrücklichen Klick geladen und zum Vorlesen verwendet.':'Die gewählte KI-Stimme ist noch nicht auf diesem Gerät gespeichert.';renderModelConsent();if(!$('#model-consent').open)$('#model-consent').showModal();}
+function renderModelConsent(){const model=MODELS[$('#model-choice').value];$('#model-size').textContent=model.name+' · '+(totalBytes(model)/1e6).toLocaleString('de-DE',{maximumFractionDigits:1})+' MB · '+(models.installed.has(model.id)?'bereits auf diesem Gerät':'Download nur nach deinem Klick');$('#confirm-model').textContent=pendingModel?.format?'Stimme vorbereiten & '+pendingModel.format.toUpperCase()+' erstellen':pendingModel?.play?'Stimme vorbereiten & vorlesen':'Stimme vorbereiten';}
+$('#model-choice').addEventListener('change',renderModelConsent);
+$('#confirm-model').addEventListener('click',async()=>{if(models.downloading)return;const action=pendingModel||{},id=$('#model-choice').value;$('#confirm-model').disabled=true;$('#cancel-model').hidden=false;try{if(!models.installed.has(id))await models.install(id);settings.voice=MODELS[id].voiceURI;settings.language=MODELS[id].lang.toLowerCase();save();player.refreshVoices();$('#model-consent').close();pendingModel=null;if(action.generation!==generation){status('Die Datei wurde inzwischen geändert. Die Stimme ist bereit; starte bewusst im neuen Dokument.');return;}if(action.format)await startExport(action.format,'audio');else if(action.play)await player.command('toggle');}catch(error){$('#model-status').textContent=error.name==='AbortError'?'Download abgebrochen.':error.message;}finally{$('#confirm-model').disabled=false;$('#cancel-model').hidden=true;renderModelConsent();}});
+$('#cancel-model').addEventListener('click',()=>models.cancelDownload());$('#model-consent').addEventListener('close',()=>{if(models.downloading)models.cancelDownload();pendingModel=null;});
+async function startExport(format,kind='audio'){
+ if(exportBusy||importBusy||!reader.text||!['mp3','wav','pdf','html'].includes(format))return;kind=['mp3','wav'].includes(format)?'audio':'document';const sourceGeneration=generation,text=reader.text,title=$('#document-title').textContent,appearance={...player.appearance.defaults,...settings.appearance},abort=new AbortController();exportAbort=abort;const checkCurrent=()=>{if(abort.signal.aborted||sourceGeneration!==generation||reader.text!==text)throw new DOMException('Abgebrochen','AbortError');};lock(true);player.setJob({state:'running',kind,phase:'preparing',percent:0,completedChunks:0,totalChunks:kind==='audio'?reader.chunks.length:1});
  try{
-  if(!exporter){const {AudiobookExport}=await import('./audio-export.js');exporter=new AudiobookExport({models});}
-  if(exportAbort.signal.aborted)throw new DOMException('Abgebrochen','AbortError');
-  const result=await exporter.exportBook({text,modelId,format,title,signal:exportAbort.signal,sink,onProgress:info=>{
-   $('#cancel-export').disabled=info.phase==='saving'||info.phase==='done';
-   $('#export-progress').value=Math.max(0,Math.min(100,Number(info.percent)||0));
-   $('#export-status').textContent=info.message||`${Math.round(Number(info.percent)||0)} % · Abschnitt ${info.completedChunks} von ${info.totalChunks}`;
-  }});
-  exportResult=result;
-  const duration=Number(result.duration)||0,minutes=Math.round(duration/60),size=(result.bytes/1e6).toLocaleString('de-DE',{maximumFractionDigits:1});
-  if(result.blob){exportUrl=URL.createObjectURL(result.blob);$('#download-audio').href=exportUrl;$('#download-audio').download=result.filename;$('#export-result').hidden=false;$('#export-file-meta').textContent=`${result.filename} · ${size} MB · ${minutes} Min. · kompletter Text`;$('#export-status').textContent='Dein vollständiges Hörbuch ist bereit. Jetzt die Audiodatei herunterladen.';}
-  else $('#export-status').textContent=`Hörbuch gespeichert · ${size} MB · ${minutes} Min. · kompletter Text.`;
- }catch(error){
-  if(sink){try{await sink.abort();}catch{}}
-  $('#export-status').textContent=error.name==='AbortError'?'Export abgebrochen. Es wurde kein vollständiges Hörbuch gespeichert.':error.message||'Das Hörbuch konnte nicht erstellt werden. Bitte erneut versuchen.';
-  $('#export-status').classList.toggle('error',error.name!=='AbortError');
- }finally{exportAbort=null;setExportBusy(false);}
-});
-if(converterMode)openExport(false);
-if(location.protocol==='chrome-extension:'&&/^#incoming=[a-f0-9-]{36}$/.test(location.hash)){
- const id=location.hash.slice(10),key='notable-incoming-'+id;
- chrome.storage.session.get(key).then(async values=>{const document=values[key];await chrome.storage.session.remove(key);history.replaceState(null,'',location.pathname);if(document&&typeof document.text==='string'&&Date.now()-document.created<300000)loadDocument(document.text,document.title||'Artikel',document.language||'');else status('Der temporäre Artikel ist abgelaufen. Bitte die Seite erneut über die Erweiterung öffnen.',true);}).catch(()=>status('Der temporäre Artikel konnte nicht geöffnet werden.',true));
+  // Authoritative boundary on every real entry, including direct programmatic calls.
+  await player.authorize();checkCurrent();
+  let modelId=null;if(kind==='audio'){
+   const chosen=player.voiceMap.get(player.voiceId),lang=documentLanguage.toLowerCase().split('-')[0];modelId=chosen?.kind&&models.installed.has(chosen.id)?chosen.id:Object.values(MODELS).find(m=>m.lang.toLowerCase().startsWith(lang)&&models.installed.has(m.id))?.id;
+   if(!modelId){player.setJob({state:'idle'});lock(false);requestModel(lang==='en'?'kokoro':'piper',{format});return;}
+  }
+  player.captureOffset();reader.pause();models.cancelSynthesis();await clearExportResult();checkCurrent();
+  // No picker before entitlement/consent. OPFS-backed result supports an actual browser download.
+  await player.authorize();checkCurrent();
+  if(kind==='audio'){
+   if(!exporter){const {AudiobookExport}=await import('./audio-export.js');checkCurrent();exporter=new AudiobookExport({models});}
+   const result=await exporter.exportBook({text,modelId,format,title,signal:exportAbort.signal,onProgress:info=>{player.setJob({state:'running',kind:'audio',...info});status(info.message||'Hörbuch wird lokal berechnet …');}});
+   try{checkCurrent();}catch(error){await result.cleanup?.();throw error;}showResult(result,'Vollständiger Text · '+(result.bytes/1e6).toLocaleString('de-DE',{maximumFractionDigits:1})+' MB · Originaltempo1×');player.setJob({state:'complete',filename:result.filename,percent:100,resultReady:true});
+  }else{
+   let blob,note='Vollständiger bereinigter Text, zum Herunterladen bereit.';if(format==='html')blob=documentHtml(text,title,appearance);else{const result=await documentPdf(text,title,appearance,{signal:exportAbort.signal,onProgress:info=>player.setJob({state:'running',kind:'document',...info})});blob=result.blob;note=result.pages+' vollständige Seiten · PDF als Rasterdarstellung, ohne durchsuchbare Textebene.';}
+   checkCurrent();const result={blob,filename:safeName(title,format),bytes:blob.size,cleanup:async()=>{}};showResult(result,note,'document');player.setJob({state:'complete',filename:result.filename,percent:100,resultReady:true});
+  }
+ }catch(error){if(abort.signal.aborted||sourceGeneration!==generation||reader.text!==text)error=new DOMException('Abgebrochen','AbortError');if(error.name==='PremiumError'){await showPremium({code:error.code,status:player.premium});player.setJob({state:'locked'});}else{const cancelled=error.name==='AbortError';status(cancelled?'Export abgebrochen. Dein Dokument bleibt geöffnet.':error.message||'Export konnte nicht abgeschlossen werden.',!cancelled);player.setJob({state:cancelled?'cancelled':'error',errorKey:cancelled?'':'export_failed'});}}
+ finally{exportAbort=null;lock(false);}
 }
-document.addEventListener('keydown',event=>{if(exportBusy)return;if(event.altKey&&event.code==='Space'){event.preventDefault();reader.toggle();}if(event.key==='Escape'&&reader.state==='playing')reader.pause();});
-document.addEventListener('wheel',event=>{if(event.isTrusted&&reader.state==='playing'){settings.follow=false;$('#follow').checked=false;save();}},{passive:true});
-window.addEventListener('pagehide',()=>{reader.stop();exportAbort?.abort();exporter?.cancel();clearExportResult();});
-if(['https:','http:'].includes(location.protocol)&&isSecureContext&&'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+player=await BrowserPlayer.create({reader,models,speech,settings,save,getLanguage:()=>documentLanguage||navigator.language,getTitle:()=>$('#document-title').textContent,onNeedModel:requestModel,onExport:startExport,onDownloadResult:downloadResult,onCancel:()=>{exportAbort?.abort();exporter?.cancel();models.cancelDownload();},onMessage:status,onVisibility:visible=>{$('#show-player').hidden=visible;},onFocus:()=>document.body.toggleAttribute('data-focus')});
+player.addEventListener('premium-needed',event=>void showPremium(event.detail));settings.appearance={...player.appearance.defaults,...settings.appearance};
+async function loadDocument(text,title,language='',expectedGeneration){
+ await clearExportResult();if(!Number.isSafeInteger(expectedGeneration)||expectedGeneration!==generation)return;documentGeneration=crypto.randomUUID();currentText=cleanText(text);documentLanguage=language||detectLanguage(currentText);currentFingerprint=fingerprint(currentText);const position=Number(settings.positions[currentFingerprint])||0;reader.load(currentText,position);$('#document-title').textContent=title;$('#empty').hidden=!!currentText;const root=$('#reading-text');root.replaceChildren();spans=[];let cursor=0;
+ reader.chunks.forEach((chunk,index)=>{root.append(document.createTextNode(reader.text.slice(cursor,chunk.start)));const span=document.createElement('span');span.className='sentence';span.tabIndex=0;span.setAttribute('role','button');span.setAttribute('aria-label','Ab Abschnitt '+(index+1)+' lesen');span.textContent=chunk.text;const seek=()=>{if(!exportBusy&&settings.clickSeek!==false&&!String(getSelection()))reader.seek(index);};span.addEventListener('click',seek);span.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();seek();}});root.append(span);spans.push(span);cursor=chunk.end;});root.append(document.createTextNode(reader.text.slice(cursor)));$('#document-meta').textContent=reader.text.length.toLocaleString('de-DE')+' Zeichen · '+reader.chunks.length.toLocaleString('de-DE')+' Abschnitte · '+documentLanguage.toUpperCase();player.refreshVoices();player.appearance.refresh();player.surface.setVisibility(true);$('#show-player').hidden=true;player.setJob({state:'idle'});player.lastError='';player.update();if(!currentText)status('Keine lesbare Textebene. Gescannte PDFs benötigen OCR.',true);else if(position)status('Lesestelle wiederhergestellt · Abschnitt '+(reader.index+1)+' von '+reader.chunks.length);if(new URL(location.href).searchParams.get('mode')==='audiobook')player.surface.openDownload();
+}
+async function renderPdfPage(){if(!pdf)return;pdfRender?.cancel();const serial=++pdfPaintSerial,gen=generation,thisPdf=pdf,pageNumber=pdfPage,page=await thisPdf.getPage(pageNumber);if(thisPdf!==pdf||gen!==generation||serial!==pdfPaintSerial)return;const viewport=page.getViewport({scale:1.5}),canvas=$('#pdf-canvas');canvas.width=viewport.width;canvas.height=viewport.height;$('#pdf-page').textContent='Seite '+pageNumber+' von '+pdf.numPages;$('#pdf-previous').disabled=pageNumber<=1;$('#pdf-next').disabled=pageNumber>=pdf.numPages;const task=page.render({canvasContext:canvas.getContext('2d'),viewport});pdfRender=task;try{await task.promise;}catch(error){if(gen===generation&&serial===pdfPaintSerial&&error.name!=='RenderingCancelledException')status('Die PDF-Vorschau konnte nicht dargestellt werden.',true);}}
+async function importPdf(bytes,title,gen){
+ const dispose=async doc=>{try{await doc.destroy();}catch{}};
+ const lib=await import('./vendor/pdfjs/pdf.mjs');if(gen!==generation)return;
+ lib.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdfjs/pdf.worker.mjs',import.meta.url).href;
+ const task=lib.getDocument({data:bytes,isEvalSupported:false,cMapUrl:new URL('./vendor/pdfjs/cmaps/',import.meta.url).href,cMapPacked:true,standardFontDataUrl:new URL('./vendor/pdfjs/standard_fonts/',import.meta.url).href,wasmUrl:new URL('./vendor/pdfjs/wasm/',import.meta.url).href});loadingTask=task;
+ task.onPassword=(updatePassword,reason)=>{if(gen!==generation)return;passwordUpdate=updatePassword;$('#password-form').hidden=false;status(reason===2?'Das PDF-Passwort war falsch.':'Dieses PDF benötigt ein Passwort.');$('#pdf-password').focus();};
+ const doc=await task.promise;if(gen!==generation){await dispose(doc);return;}
+ const pages=[];for(let n=1;n<=doc.numPages;n++){
+  if(gen!==generation){await dispose(doc);return;}status('PDF wird lokal geöffnet · Seite '+n+' von '+doc.numPages);
+  const page=await doc.getPage(n);if(gen!==generation){page.cleanup();await dispose(doc);return;}
+  const content=await page.getTextContent();if(gen!==generation){page.cleanup();await dispose(doc);return;}
+  pages.push(textFromPdfItems(content.items));page.cleanup();
+ }
+ if(gen!==generation){await dispose(doc);return;}
+ $('#password-form').hidden=true;$('#pdf-password').value='';passwordUpdate=null;pdf=doc;pdfPage=1;
+ await loadDocument(pages.join('\n\n'),title,'',gen);if(gen!==generation){if(pdf===doc)pdf=null;await dispose(doc);return;}
+ $('#pdf-preview').hidden=false;if($('#pdf-preview').open)await renderPdfPage();
+}
+async function cancelPdf(){pdfPaintSerial++;passwordUpdate=null;$('#password-form').hidden=true;$('#pdf-password').value='';pdfRender?.cancel();if(loadingTask){try{await loadingTask.destroy();}catch{}}loadingTask=null;pdf=null;$('#pdf-preview').hidden=true;}
+$('#password-form').addEventListener('submit',event=>{event.preventDefault();const password=$('#pdf-password').value;$('#pdf-password').value='';passwordUpdate?.(password);});
+$('#file').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file||exportBusy)return;const gen=++generation;importBusy=true;reader.stop();await cancelPdf();if(gen!==generation)return;status('Datei wird lokal geöffnet …');try{if(file.type==='application/pdf'||/\.pdf$/i.test(file.name)){const bytes=await file.arrayBuffer();if(gen!==generation)return;await importPdf(new Uint8Array(bytes),file.name,gen);}else{const {importTextFile}=await import('./formats.js');if(gen!==generation)return;const imported=await importTextFile(file);if(gen===generation)await loadDocument(imported.text,imported.title||file.name,imported.language||'',gen);}}catch(error){if(gen===generation)status(error.name==='PasswordException'?'Das PDF benötigt ein gültiges Passwort.':error.message||'Die Datei konnte nicht geöffnet werden.',true);}finally{event.target.value='';if(gen===generation)importBusy=false;}});
+$('#load-text').addEventListener('click',async()=>{if(exportBusy)return;const gen=++generation,text=$('#paste').value;importBusy=true;await cancelPdf();if(gen!==generation)return;await loadDocument(text,'Dein Text','',gen);if(gen===generation)importBusy=false;});
+for(const id of ['header-open','empty-open'])$('#'+id).addEventListener('click',()=>{if(!exportBusy)$('#file').click();});
+$('#show-player').addEventListener('click',()=>{player.surface.setVisibility(true);$('#show-player').hidden=true;});
+$('#header-converter').addEventListener('click',()=>{player.surface.setVisibility(true);if(!reader.text){$('#paste').focus();status('Öffne zuerst ein Buch oder füge den vollständigen Text ein. Danach findest du MP3/WAV im Downloadmenü.');return;}player.surface.openDownload();});
+$('#pdf-previous').addEventListener('click',()=>{if(pdfPage>1){pdfPage--;renderPdfPage();}});$('#pdf-next').addEventListener('click',()=>{if(pdf&&pdfPage<pdf.numPages){pdfPage++;renderPdfPage();}});$('#pdf-preview').addEventListener('toggle',()=>{if($('#pdf-preview').open)renderPdfPage();});
+$('#online').checked=settings.online;$('#online').addEventListener('change',()=>{settings.online=$('#online').checked;player.refreshVoices();save();});
+$('#clear-models').addEventListener('click',async()=>{if(exportBusy)return;reader.stop();await models.clear();settings.voice='';player.refreshVoices();save();});
+$('#clear-data').addEventListener('click',()=>{if(exportBusy)return;reader.stop();Object.keys(settings).forEach(k=>delete settings[k]);Object.assign(settings,defaults,{positions:{},appearance:{...player.appearance.defaults}});localStorage.removeItem(key);currentFingerprint='';$('#online').checked=false;reader.configure({rate:1,volume:1});player.refreshVoices();player.update();$('#privacy-status').textContent='Einstellungen und Lesestellen gelöscht. Modelle bleiben auf deinem Gerät.';});
+$('#clear-export-storage').addEventListener('click',async()=>{if(exportBusy)return;await clearExportResult();const {clearAudiobookStorage}=await import('./audio-export.js');const result=await clearAudiobookStorage();$('#privacy-status').textContent=result.message;});$('#clear-export').addEventListener('click',()=>{if(!exportBusy)clearExportResult();});
+models.addEventListener('status',event=>{$('#model-status').textContent=event.detail.message;status(event.detail.message,event.detail.error);});speech.addEventListener('voiceschanged',()=>player.refreshVoices());models.restore().then(()=>player.refreshVoices()).catch(()=>{});
+if(isExtension){$('#access-note').textContent='Lesen kostenlos · Downloads mit Premium. Kein Dokumentupload.';$('#footer-access').textContent='Erweiterung: lokale Dateien · Premiumdownloads';$('#premium-open').hidden=false;$('#premium-open').addEventListener('click',()=>void showPremium());}
+$('#activate-form').addEventListener('submit',async event=>{event.preventDefault();const code=$('#activation-code').value.trim();$('#activation-code').value='';try{await premium.activate(code);await player.refreshPremium();$('#premium-status').textContent='Aktiviert. Downloads sind nach gültiger Lizenzprüfung freigeschaltet.';$('#premium-dialog').close();}catch{$('#premium-status').textContent='Der Code konnte nicht aktiviert werden. Bitte Code und Verbindung prüfen.';}});
+if(isExtension&&/^#incoming=[a-f0-9-]{36}$/.test(location.hash)){const incomingGen=++generation,incoming='notable-incoming-'+location.hash.slice(10);chrome.storage.session.get(incoming).then(async values=>{const doc=values[incoming];await chrome.storage.session.remove(incoming);if(incomingGen!==generation)return;history.replaceState(null,'',location.pathname);if(doc&&typeof doc.text==='string'&&Date.now()-doc.created<300000)await loadDocument(doc.text,doc.title||'Artikel',doc.language||'',incomingGen);else status('Dieser temporäre Artikel ist abgelaufen. Bitte erneut öffnen.',true);}).catch(()=>{if(incomingGen===generation)status('Der temporäre Artikel konnte nicht geöffnet werden.',true);});}
+window.addEventListener('pagehide',()=>{closed=true;reader.stop();exportAbort?.abort();exporter?.cancel();clearExportResult();player.destroy();});document.addEventListener('keydown',event=>{if(exportBusy)return;if(event.altKey&&event.code==='Space'){event.preventDefault();player.command('toggle');}if(event.key==='Escape'&&reader.state==='playing')reader.pause();});
+const manualScroll=event=>{if(!event.isTrusted||event.composedPath().includes(player.surface.host)||reader.state!=='playing'||!settings.follow)return;settings.follow=false;save();player.update();};document.addEventListener('wheel',manualScroll,{passive:true});document.addEventListener('touchmove',manualScroll,{passive:true});
+// No document bytes, Blob URLs or bearer capabilities are exposed to the own-popup consumer.
+function downloadResult(){if(closed||importBusy||exportBusy||!exportResult||resultGeneration!==documentGeneration||!exportUrl)return false;const link=$('#download-audio');if(link.getAttribute('href')!==exportUrl||link.download!==exportResult.filename)return false;link.click();return true;}
+const snapshot=()=>{const state=structuredClone(player.snapshot()),ready=!closed&&!importBusy&&reader.text.length>0,resultReady=!closed&&!importBusy&&!!exportResult&&resultGeneration===documentGeneration;if(!ready)state.controls.canToggle=false;state.exportState.resultReady=resultReady;return{generation:documentGeneration,ready,title:$('#document-title').textContent,visible:!closed&&player.surface.getActualVisible(),state,resultReady,filename:resultReady?exportResult.filename:null,kind:resultReady?resultKind:null};};
+const globalCommands=new Set(['speed','volume','mute','voice','language','follow','clickseek','uiLanguage','formatLocale','timeFormat','playerTheme','appearance','toggleTheme']);
+const documentCommands=new Set(['toggle','restart','previousSection','nextSection','seekSection','seekChapter','seekProgress','openFocus','export','exportDocument','downloadResult']);
+const commands=new Set([...globalCommands,...documentCommands,'stop','cancelExport']);
+function invalidValue(command,value){const finite=(min,max)=>typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max;
+ if(['mute','follow','clickseek'].includes(command))return typeof value!=='boolean';
+ if(command==='speed')return!finite(.8,4);if(command==='volume')return!finite(0,150)||value%5!==0;if(command==='seekProgress')return!finite(0,1);
+ if(['seekSection','seekChapter'].includes(command))return!Number.isInteger(value)||value<0||value>=(command==='seekSection'?reader.chunks.length:(player.chapters||[]).length);
+ if(command==='export')return!['mp3','wav'].includes(value);if(command==='exportDocument')return!['pdf','html'].includes(value);
+ if(command==='uiLanguage')return!player.locales.languages.some(item=>(typeof item==='string'?item:item.code)===value);
+ if(command==='formatLocale')return!player.locales.formatLocales.includes(value);
+ if(command==='timeFormat')return!['auto','12h','24h'].includes(value);if(command==='playerTheme')return!['system','light','dark'].includes(value);
+ if(command==='voice')return!value||typeof value!=='object'||!player.catalog.some(group=>group.code===value.language&&group.voices.some(voice=>voice.id===value.id));
+ if(command==='language')return value!=='auto'&&!player.catalog.some(group=>group.code===value);
+ if(command==='appearance'){const defs=player.appearance.defaults;if(!value||typeof value!=='object'||Array.isArray(value)||!Object.keys(value).length)return true;const ranges={brightness:[50,150],contrast:[50,150],sepia:[0,100],grayscale:[0,100],imageBrightness:[25,150],fontSize:[12,32],lineHeight:[1.2,2.4],contentWidth:[480,1200]};for(const[k,v]of Object.entries(value)){if(!(k in defs))return true;if(k in ranges){if(typeof v!=='number'||!Number.isFinite(v)||v<ranges[k][0]||v>ranges[k][1])return true;}else if(/^(background|text|link|lightBackground|lightText|lightLink)$/.test(k)){if(!/^#[a-f0-9]{6}$/i.test(v))return true;}else if(k==='mode'){if(!['off','dark','light','auto'].includes(v))return true;}else if(k==='imageMode'){if(!['preserve','dim','invert','smart'].includes(v))return true;}else if(k==='fontFamily'){if(!['system','sans','serif','mono'].includes(v))return true;}else if(k==='pdfDpi'){if(![96,144,192].includes(v))return true;}else if(typeof defs[k]!==typeof v)return true;}return false;}
+ return false;
+}
+const guard=expected=>closed?'closed':expected!==documentGeneration?'stale_generation':importBusy?'import_busy':null;
+const reply=(ok,code,extra={})=>({ok,...(code?{code}:{}),...extra,snapshot:snapshot()});
+const bridge=Object.freeze({version:1,instanceId,getSnapshot:snapshot,
+ async execute(command,value,expected){let code=guard(expected);if(code)return reply(false,code);if(!commands.has(command))return reply(false,'invalid_command');if(invalidValue(command,value))return reply(false,'invalid_value');if(documentCommands.has(command)&&!reader.text)return reply(false,'unavailable');if(exportBusy&&!['cancelExport','stop'].includes(command))return reply(false,'import_busy');if(command==='downloadResult'){const ok=downloadResult();return reply(ok,ok?null:'unavailable');}
+  if(command==='export'||command==='exportDocument'){void player.command(command,value).catch(()=>{});return reply(true,null,{pending:true});}
+  await player.command(command,value);code=guard(expected);return reply(!code,code);
+ },
+ async activate(code,expected){let error=guard(expected);if(error)return reply(false,error);if(typeof code!=='string'||!code.trim()||code.length>200)return reply(false,'invalid_value');try{await premium.activate(code.trim());error=guard(expected);if(error)return reply(false,error);await player.refreshPremium();error=guard(expected);return reply(!error,error);}catch{return reply(false,guard(expected)||'activation_failed');}},
+ async setVisible(visible,expected){const error=guard(expected);if(error)return reply(false,error);if(typeof visible!=='boolean')return reply(false,'invalid_value');player.setVisible(visible);return reply(true);}
+});
+globalThis.notableReader=reader;globalThis.notableModels=models;globalThis.notableSpeech=speech;globalThis.notableFileApp={player,loadDocument:async(text,title,language='')=>{if(closed||exportBusy)return;const gen=++generation;importBusy=true;reader.stop();try{return await loadDocument(text,title,language,gen);}finally{if(gen===generation)importBusy=false;}},startExport,clearExportResult,get busy(){return exportBusy;},get result(){return exportResult;},get settings(){return settings;}};Object.defineProperty(globalThis.notableFileApp,'bridge',{value:bridge,writable:false,configurable:false,enumerable:true});
+if(['https:','http:'].includes(location.protocol)&&isSecureContext&&'serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});

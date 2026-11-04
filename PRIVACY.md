@@ -1,6 +1,6 @@
 # Product privacy
 
-Version 2.2.0, 3 November 2026. Operator: Burak Basci. The full website and
+Version 2.3.0, 4 November 2026. Operator: Burak Basci. The full website and
 payment privacy notice is https://reader.benotable.de/privacy.
 
 The reader processes user-selected documents and article text in the browser.
@@ -27,7 +27,7 @@ terms. Notable Reader does not operate those voices or receive their audio.
 Clicking website/support links makes a normal external navigation. The website
 host and payment provider can process connection/payment data as described
 in the website privacy notice. The product contains no analytics trackers,
-advertising scripts, product account or telemetry endpoint.
+advertising scripts, mandatory reading account or telemetry endpoint. Premium uses the separate payment and license service below.
 
 Optional neural voices download only on a deliberate click. The download requests
 public files from huggingface.co and its delivery CDN, without credentials or
@@ -49,3 +49,21 @@ clears this session store. It is never copied into persistent settings.
 MP3/WAV export uses the deliberately downloaded local neural model and an on-device encoder. Native browser/system voices do not expose exportable audio and are not recorded. Document text and generated audio are not uploaded. The entire opened text is processed in sequential chunks; the original document text is not persisted by the export module.
 
 Depending on browser capabilities, audio is written to an explicitly selected file, temporary Origin Private File System storage, IndexedDB (`notable-reader-audiobook-exports`) or a bounded memory fallback. These local temporary audio files can remain after a browser crash. The export cleanup button removes unused temporary exports while protecting active jobs in other tabs where browser locks are supported. Browser/site storage controls can clear these stores. A finished file downloaded to the user's own folder remains there until the user deletes it.
+
+## Extension Premium and payments
+
+Reading and all website exports remain free without a mandatory account. Downloads
+in the extension require Premium (€2.99 monthly or lifetime access from one payment
+of at least €50). The extension connects only to https://reader-premium.benotable.de
+for activation, renewal and payment management. It stores a random device identifier
+and a short-lived Ed25519-signed entitlement locally, separately from document settings.
+Activation uses a code from the payment flow; renewal submits the signed entitlement
+and device identifier. No document text, document URL, filename or audio is included.
+A changed, expired, incorrectly signed or differently bound entitlement cannot
+authorize an extension export. Website exports make no license request.
+
+Stripe collects the checkout email and necessary payment information; the license
+service associates payment references with an opaque device identifier. Payment
+management opens Stripe's existing email-based billing portal. No additional Reader
+password is needed. Deleting local license data requires reactivation; removing
+local data does not cancel a paid subscription. Use the billing portal to cancel.
