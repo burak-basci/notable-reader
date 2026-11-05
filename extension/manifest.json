@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Notable Reader — Artikel & PDF vorlesen",
   "short_name": "Notable Reader",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Artikel, PDFs und Bücher lokal vorlesen. Audioexport in der Erweiterung mit Premium, auf unserer Website kostenlos.",
   "homepage_url": "https://reader.benotable.de/",
   "permissions": [

@@ -63,7 +63,7 @@
       const utterance = new this.Utterance(chunk.text.slice(startOffset));
       this.utterance = utterance; utterance.voice = this.voice; utterance.lang = this.voice.lang;
       utterance.rate = this.rate; utterance.volume = this.volume;
-      this.onword({start: chunk.start + startOffset, end: chunk.end, sentence: this.index});
+      this.onword({start: chunk.start + startOffset, end: chunk.start + startOffset + (chunk.text.slice(startOffset).match(/^\S+/u)?.[0].length || 1), sentence: this.index});
       this.onposition(this.index);
       utterance.onboundary = event => {
         if (gen !== this.generation || this.state !== 'playing') return;
@@ -86,11 +86,13 @@
     }
     pause() { if (this.state !== 'playing') return; this.cancel(); this.state = 'paused'; this.emit(); }
     toggle() { if (this.state === 'playing') this.pause(); else { if (this.state === 'ended') { this.index = 0; this.offset = 0; } this.play(); } }
-    seek(index) {
+    seek(index, offset = 0) {
       const resume = this.state === 'playing'; this.cancel(); this.offset = 0;
       this.index = Math.max(0, Math.min(Number(index) || 0, this.chunks.length - 1));
+      const chunk = this.chunks[this.index];this.offset=Number.isSafeInteger(offset)&&offset>=0?Math.min(offset,Math.max(0,(chunk?.text.length||1)-1)):0;
+      while(this.offset>0&&!/\s/u.test(chunk.text[this.offset-1]))this.offset--;
       this.state = resume ? 'playing' : 'paused'; this.emit(); this.onposition(this.index);
-      if (this.chunks[this.index]) this.onword({start: this.chunks[this.index].start, end: this.chunks[this.index].end, sentence: this.index});
+      if (chunk) this.onword({start: chunk.start + this.offset, end: chunk.start + this.offset + (chunk.text.slice(this.offset).match(/^\S+/u)?.[0].length || 1), sentence: this.index});
       if (resume) this.speak();
     }
     configure({rate = this.rate, volume = this.volume, voice = this.voice} = {}) {

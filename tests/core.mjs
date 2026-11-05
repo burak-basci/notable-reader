@@ -17,7 +17,7 @@ reader.load('First sentence here. Second sentence there.');reader.configure({voi
 let first=speech.queue.at(-1);check(first.volume===0&&first.rate===3.25,'mute and speed passed to actual utterance');check(reader.state==='playing','playing state');
 first.onboundary({charIndex:6,charLength:8});reader.pause();check(reader.state==='paused','pause state');reader.play();let resumed=speech.queue.at(-1);check(resumed.text==='sentence here.','resume from last reported word');
 first.onend();check(reader.index===0,'cancelled generation cannot move position');resumed.onend();check(reader.index===1,'end advances to next chunk');
-reader.seek(0);let seekUtterance=speech.queue.at(-1);check(seekUtterance.text==='First sentence here.','seek cancels and restarts desired chunk');
+reader.pause();reader.seek(1);check(words.at(-1).end-words.at(-1).start==='Second'.length,'paused seek highlights only the next first word');reader.seek(1,7);check(reader.offset===7&&words.at(-1).start===reader.chunks[1].start+7,'chapter seek preserves an exact word offset in a shared section');reader.play();reader.seek(0);let seekUtterance=speech.queue.at(-1);check(seekUtterance.text==='First sentence here.','seek cancels and restarts desired chunk');
 reader.configure({rate:4});check(speech.queue.at(-1).rate===4,'speed change applies during playback');
 speech.queue.at(-1).onerror({error:'interrupted'});check(reader.state==='error','unexpected interruption is visible');
 reader.stop();reader.configure({voice:null});reader.play();check(reader.state==='error'&&states.at(-1).error.includes('Stimme'),'missing voice visible');

@@ -1,13 +1,14 @@
 {
   "name": "notable-reader",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "private": true,
   "description": "Local document reader and MP3/WAV audiobook converter with optional on-device AI voices",
   "license": "GPL-3.0-or-later",
   "scripts": {
     "test:core": "node tests/core.mjs",
     "test:browser": "node tests/browser.cjs",
-    "release": "python3 tools/release.py"
+    "release": "python3 tools/release.py",
+    "test:voice": "node tests/voice-arrival.cjs"
   },
   "devDependencies": {
     "playwright-core": "1.64.1"

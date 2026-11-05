@@ -44,6 +44,16 @@ for name,data in extension_files:
 index=(web/'reader.html').read_text()
 index=index.replace('<title>', '<link rel="canonical" href="https://reader.benotable.de/app/"><title>',1)
 (web/'index.html').write_text(index)
+# Generated corresponding-source disclosure follows the actual release, never a historic web patch.
+(web/'WEB-SOURCE-NOTICE.md').write_text(f"""# Notable Reader {VERSION} – Web-App-Quellen
+
+Diese Web-App wird aus dem öffentlichen Reader {VERSION} gebaut. Die Oberfläche und Module entsprechen demselben offenen Produktstand. Die Web-App bietet Downloads kostenlos; im Erweiterungskontext prüft derselbe Code Premium. Dokumente und Audio werden lokal verarbeitet.
+
+Vollständige Quellen, Fremdkomponentenquellen und Buildhinweise:
+https://github.com/burak-basci/notable-reader/releases/download/v{VERSION}/notable-reader-source-{VERSION}.zip
+
+Reproduzieren: Quellen entpacken und `python3 tools/release.py` ausführen. Das Ergebnis liegt in `releases/webapp/`. Gegenüber der Erweiterung entfallen deren Manifest, Background-/Popup-/Content-Skripte und der Artikelparser. `reader.html` wird zusätzlich als `index.html` mit kanonischem Link auf https://reader.benotable.de/app/ bereitgestellt; das Offlineverzeichnis wird für die Web-Dateiliste erzeugt. Der Service-Worker verwendet den zur Version gehörenden App-Cache; optionale Sprachmodelle behalten ihren getrennten Cache. Die Quelldateien werden unter GPL-3.0-or-later bereitgestellt, abweichende Fremdlizenzen stehen in THIRD_PARTY_NOTICES.md.
+""")
 # Match the web-app cache list to the webapp allowlist exactly.
 web_assets=['./','./index.html']+['./'+f.relative_to(web).as_posix() for f in web.rglob('*') if f.is_file() and f.name not in ['sw.js','offline-assets.json','index.html','neural-worker.js'] and '/vendor/neural/' not in str(f) and f.name!='lamejs-corresponding-source.tar.gz']
 (web/'offline-assets.json').write_text(json.dumps(sorted(web_assets),indent=2)+'\n')

@@ -2,7 +2,7 @@
 
 Artikel, Textauswahl und lokale Dokumente vorlesen. Kostenlose Basis, keine
 Registrierung, keine Werbung, keine Textkontingente. Die Web-App bietet kostenlose lokale Downloads. In der Erweiterung sind Downloads
-Premium: 2,99 € monatlich oder eine einzelne Unterstützung ab 50 € für Lifetime.
+Premium: 2,99 € monatlich oder eine einzelne Unterstützung ab 100 € für Lifetime.
 Lesen bleibt kostenlos; ein Dokumentupload oder ein Pflichtkonto ist nicht nötig.
 
 - **Web-App:** https://reader.benotable.de/app/
@@ -200,3 +200,11 @@ Das Releasepaket enthält keine Modellgewichte und
 keine Komponenten des getrennten Python-/CUDA-Companions. Der bisherige lokale
 Companion bleibt eine eigenständige Installation für dessen natürliche
 Offline-Stimmen und Dokumentintegration.
+
+## Ruhige Darstellung und Dokumentdownloads
+
+Die gemeinsame Papier-/Grün-Steuerung bleibt in Artikel, Datei-App, Fokusansicht und Erweiterungsmenü an denselben Stellen. Die Dokumentpalette ist von der Playerfarbe getrennt; Sprache, Region,12-/24-Stundenformat, Kapitel, Restdauer und die Prognose nach dem Fortsetzen sind einstellbar.
+
+HTML- und EPUB-Dateien übernehmen lokal enthaltene PNG-/JPEG-/WebP-Abbildungen in die bereinigte Textfassung. Externe Bildadressen werden nicht nachgeladen. Bei Artikeln können nur bereits geladene Bilder übernommen werden, deren Pixel der Browser freigibt; ausgelassene Bilder werden deutlich gemeldet. PDFs behalten eine gesonderte Originalvorschau und liefern verfügbare Rasterabbildungen für die Lesefassung. Komplexe, nicht trennbare Grafik kann als ausdrücklich beschriftete Seitenabbildung erscheinen. Wiederkehrende Randzeilen werden konservativ bereinigt; echte Kapitel und vorhandene Lesestellen werden zugeordnet.
+
+Der gleiche Downloadknopf bietet HTML und eine gerasterte PDF-Fassung mit gewählter Darstellung. Diese bereinigte PDF ist keine originalgetreue Ausgabe mit durchsuchbarer Textebene. Ein Abbruch oder Fehler stellt kein unvollständiges Ergebnis bereit. Browser-Dateiwerkzeuge zeigen18 tatsächlich unterstützte Darstellungsfelder; die zusätzliche native Originalseitensteuerung unterstützt20. Nicht unterstützte Optionen werden nicht als wirkungslose Checkboxen angeboten.

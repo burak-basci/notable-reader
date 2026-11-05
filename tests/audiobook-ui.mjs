@@ -60,19 +60,19 @@ try{
  await page.evaluate(()=>notableModels.install('piper'));
  await page.locator('#file').setInputFiles(path.join(fixtures,'public-reading-test.epub'));await page.waitForFunction(()=>notableReader.text.includes('Chapter One'));
  const full=await page.evaluate(()=>({text:notableReader.text,characters:notableReader.text.length,index:notableReader.index}));assert(full.text.indexOf('Chapter Two')<full.text.indexOf('Chapter One'));
- await page.locator('#rate').fill('3');await page.locator('#volume').fill('0.2');
+ await page.evaluate(async()=>{await notableFileApp.player.command('speed',3);await notableFileApp.player.command('volume',20);await notableFileApp.player.command('voice',{id:'notable:piper:thorsten-high',language:'de-de'});});
  await page.evaluate(()=>{notableReader.seek(notableReader.chunks.length-1);window.qaRealAudio=[];notableModels.addEventListener('audio',e=>qaRealAudio.push(e.detail));});
  // After loading the app, model and engine, actual inference and downloads work
  // with all network transport offline, including a fresh reload.
  await page.reload();await page.waitForFunction(()=>notableReader&&notableModels.installed.has('piper'));await context.setOffline(true);
  await page.locator('#file').setInputFiles(path.join(fixtures,'public-reading-test.epub'));await page.waitForFunction(()=>notableReader.text.includes('Chapter One'));
  await page.evaluate(()=>{notableReader.seek(notableReader.chunks.length-1);window.qaRealAudio=[];notableModels.addEventListener('audio',e=>qaRealAudio.push(e.detail));});
- await page.locator('#export-model').selectOption('piper');
+ await page.evaluate(()=>notableFileApp.player.command('voice',{id:'notable:piper:thorsten-high',language:'de-de'}));
  for(const format of ['mp3','wav']){
-  await page.locator('#export-format').selectOption(format);await page.locator('#start-export').click();
-  await page.waitForFunction(()=>document.body.dataset.exportBusy==='true');assert(await page.locator('#file').isDisabled());assert(await page.locator('#play').isDisabled());
+  await page.locator('#header-converter').click();await page.locator('.export-'+format).click();
+  await page.waitForFunction(()=>document.body.dataset.exportBusy==='true');assert(await page.locator('#file').isDisabled());assert(await page.locator('.bar .primary').isDisabled());
   await page.waitForFunction(()=>document.body.dataset.exportBusy==='false',null,{timeout:240000});
-  assert(!await page.locator('#export-result').isHidden(),await page.locator('#export-status').innerText());assert((await page.locator('#export-status').innerText()).includes('vollständiges'));
+  assert(!await page.locator('#export-result').isHidden(),await page.locator('#export-status').innerText());assert.match(await page.locator('#export-status').innerText(),/vollständiger text/i);
   const pending=page.waitForEvent('download');await page.locator('#download-audio').click();const download=await pending,file=path.join(out,'real-ui-complete-epub.'+format);await download.saveAs(file);
   const probe=spawnSync('ffprobe',['-v','error','-show_entries','stream=codec_name,sample_rate,channels:format=duration','-of','json',file],{encoding:'utf8'});assert.equal(probe.status,0);const info=JSON.parse(probe.stdout);assert.equal(info.streams[0].codec_name,format==='mp3'?'mp3':'pcm_s16le');assert.equal(info.streams[0].channels,1);
   const decoded=spawnSync('ffmpeg',['-v','error','-i',file,'-f','f32le','-ac','1','-'],{maxBuffer:16*1024*1024});assert.equal(decoded.status,0);let peak=0;for(let i=0;i<decoded.stdout.length;i+=4)peak=Math.max(peak,Math.abs(decoded.stdout.readFloatLE(i)));assert(peak>.005);
@@ -81,7 +81,7 @@ try{
   console.log('PASS actual-ui-whole-epub-offline-export '+format);
   await page.locator('#clear-export').click();assert(await page.locator('#export-result').isHidden());await page.evaluate(()=>{qaRealAudio=[];});
  }
- await page.locator('#start-export').click();await page.waitForFunction(()=>document.body.dataset.exportBusy==='true');await page.locator('#cancel-export').click();await page.waitForFunction(()=>document.body.dataset.exportBusy==='false');assert(await page.locator('#export-result').isHidden());assert((await page.locator('#export-status').innerText()).includes('abgebrochen'));assert(!await page.locator('#file').isDisabled());results.push({check:'real-model-export-cancel-rolls-back-ui-and-file'});
+ await page.locator('#header-converter').click();await page.locator('.export-mp3').click();await page.waitForFunction(()=>document.body.dataset.exportBusy==='true');await page.locator('.export-cancel').click();await page.waitForFunction(()=>document.body.dataset.exportBusy==='false');assert(await page.locator('#export-result').isHidden());assert.match(await page.locator('#status').innerText(),/abgebrochen/i);assert(!await page.locator('#file').isDisabled());results.push({check:'real-model-export-cancel-rolls-back-ui-and-file'});
  assert(requests.every(r=>r.method==='GET'&&new URL(r.url).origin===base));assert.deepEqual(errors,[]);await page.screenshot({path:path.join(out,'actual-ui-offline-export.png'),fullPage:true});
  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,checkedAt:new Date().toISOString(),results,requests,errors},null,2));console.log('AUDIOBOOK UI INTEGRATION PASSED');
 }finally{await context?.close();fs.rmSync(profile,{recursive:true,force:true});await new Promise(resolve=>server.close(resolve));}
