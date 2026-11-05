@@ -412,7 +412,13 @@
       "freeExport": "Kostenloser Download",
       "extFilePlayerConnected": "Browser-Reader verbunden",
       "exportReady": "Bereit: {filename}",
-      "downloadReadyFile": "Fertige Datei herunterladen"
+      "downloadReadyFile": "Fertige Datei herunterladen",
+      "extDonationHeading": "Reader mit einer Spende unterstützen",
+      "extDonationIntro": "Du entscheidest selbst, welchen Betrag du geben möchtest.",
+      "extDonationAction": "Spendenbetrag frei wählen ↗",
+      "extDonationLifetime": "Eine einzelne Zahlung ab 100 € gibt Premium auf Lebenszeit. Kleinere Beträge werden nicht addiert.",
+      "extDonationNoReceipt": "Freiwillige Unterstützung, keine Spendenbescheinigung.",
+      "extDonationLinkLabel": "Notable Reader über Stripe mit einem frei gewählten Betrag unterstützen"
     },
     "en": {
       "reader": "Read aloud",
@@ -799,7 +805,13 @@
       "freeExport": "Free download",
       "extFilePlayerConnected": "Browser reader connected",
       "exportReady": "Ready: {filename}",
-      "downloadReadyFile": "Download the ready file"
+      "downloadReadyFile": "Download the ready file",
+      "extDonationHeading": "Support Reader with a donation",
+      "extDonationIntro": "Choose how much you would like to contribute.",
+      "extDonationAction": "Choose your donation amount ↗",
+      "extDonationLifetime": "A single payment of €100 or more grants lifetime Premium. Smaller payments are not added together.",
+      "extDonationNoReceipt": "Voluntary support; no charitable donation certificate.",
+      "extDonationLinkLabel": "Support Notable Reader through Stripe with an amount of your choice"
     },
     "fr": {
       "reader": "Lecture audio",
@@ -1186,7 +1198,13 @@
       "freeExport": "Téléchargement gratuit",
       "extFilePlayerConnected": "Lecteur du navigateur connecté",
       "exportReady": "Fichier prêt : {filename}",
-      "downloadReadyFile": "Télécharger le fichier prêt"
+      "downloadReadyFile": "Télécharger le fichier prêt",
+      "extDonationHeading": "Soutenir Reader par un don",
+      "extDonationIntro": "Vous choisissez librement le montant de votre soutien.",
+      "extDonationAction": "Choisir le montant de mon don ↗",
+      "extDonationLifetime": "Un versement unique de 100 € ou plus donne accès à Premium à vie. Les petits versements ne se cumulent pas.",
+      "extDonationNoReceipt": "Soutien volontaire, sans reçu fiscal pour don.",
+      "extDonationLinkLabel": "Soutenir Notable Reader via Stripe avec le montant de votre choix"
     },
     "es": {
       "reader": "Leer en voz alta",
@@ -1573,7 +1591,13 @@
       "freeExport": "Descarga gratuita",
       "extFilePlayerConnected": "Lector del navegador conectado",
       "exportReady": "Listo: {filename}",
-      "downloadReadyFile": "Descargar el archivo listo"
+      "downloadReadyFile": "Descargar el archivo listo",
+      "extDonationHeading": "Apoya Reader con una donación",
+      "extDonationIntro": "Tú eliges cuánto quieres aportar.",
+      "extDonationAction": "Elegir libremente el importe ↗",
+      "extDonationLifetime": "Un único pago de 100 € o más da acceso a Premium de por vida. Los pagos menores no se suman.",
+      "extDonationNoReceipt": "Apoyo voluntario; no se emite certificado fiscal de donación.",
+      "extDonationLinkLabel": "Apoyar Notable Reader mediante Stripe con el importe que elijas"
     },
     "it": {
       "reader": "Lettura ad alta voce",
@@ -1960,7 +1984,13 @@
       "freeExport": "Download gratuito",
       "extFilePlayerConnected": "Lettore del browser collegato",
       "exportReady": "Pronto: {filename}",
-      "downloadReadyFile": "Scarica il file pronto"
+      "downloadReadyFile": "Scarica il file pronto",
+      "extDonationHeading": "Sostieni Reader con una donazione",
+      "extDonationIntro": "Scegli liberamente quanto vuoi contribuire.",
+      "extDonationAction": "Scegli l’importo della donazione ↗",
+      "extDonationLifetime": "Un singolo pagamento di almeno 100 € dà accesso a Premium a vita. Gli importi inferiori non si sommano.",
+      "extDonationNoReceipt": "Sostegno volontario, senza ricevuta fiscale per donazioni.",
+      "extDonationLinkLabel": "Sostieni Notable Reader tramite Stripe con un importo a tua scelta"
     },
     "pt": {
       "reader": "Leitura em voz alta",
@@ -2347,7 +2377,13 @@
       "freeExport": "Transferência gratuita",
       "extFilePlayerConnected": "Leitor do navegador ligado",
       "exportReady": "Pronto: {filename}",
-      "downloadReadyFile": "Transferir o ficheiro pronto"
+      "downloadReadyFile": "Transferir o ficheiro pronto",
+      "extDonationHeading": "Apoia o Reader com um donativo",
+      "extDonationIntro": "Escolhe livremente o valor com que queres contribuir.",
+      "extDonationAction": "Escolher o valor do donativo ↗",
+      "extDonationLifetime": "Um único pagamento de 100 € ou mais dá acesso vitalício ao Premium. Os pagamentos menores não são somados.",
+      "extDonationNoReceipt": "Apoio voluntário, sem comprovativo fiscal de donativo.",
+      "extDonationLinkLabel": "Apoiar o Notable Reader através do Stripe com um valor à tua escolha"
     }
   },
   "formatLocales": [

@@ -1,6 +1,6 @@
 {
   "name": "notable-reader",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "private": true,
   "description": "Local document reader and MP3/WAV audiobook converter with optional on-device AI voices",
   "license": "GPL-3.0-or-later",
