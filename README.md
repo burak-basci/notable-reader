@@ -201,6 +201,10 @@ keine Komponenten des getrennten Python-/CUDA-Companions. Der bisherige lokale
 Companion bleibt eine eigenständige Installation für dessen natürliche
 Offline-Stimmen und Dokumentintegration.
 
+## Korrektur in 2.3.2
+
+Abgebrochene oder überholte PDF-Abbildungsberechnungen erzeugen keine bleibenden Fehlerhinweise. Ein erfolgreicher neuer Bildaufbau stellt die ursprüngliche Beschriftung wieder her; echte aktuelle Fehler bleiben sichtbar. Die getrennten Prüfungen `test:figure-paint` und `test:figure-paint-browser` decken Abbruch, Wiederholung und rasche Darstellungswechsel ab.
+
 ## Ruhige Darstellung und Dokumentdownloads
 
 Die gemeinsame Papier-/Grün-Steuerung bleibt in Artikel, Datei-App, Fokusansicht und Erweiterungsmenü an denselben Stellen. Die Dokumentpalette ist von der Playerfarbe getrennt; Sprache, Region,12-/24-Stundenformat, Kapitel, Restdauer und die Prognose nach dem Fortsetzen sind einstellbar.
