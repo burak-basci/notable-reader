@@ -43,12 +43,6 @@
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; worker-src 'self'; media-src 'self' blob:; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://*.xethub.hf.co;"
   },
   "minimum_chrome_version": "123",
-  "cross_origin_embedder_policy": {
-    "value": "require-corp"
-  },
-  "cross_origin_opener_policy": {
-    "value": "same-origin"
-  },
   "commands": {
     "_execute_action": {
       "suggested_key": {
