@@ -117,9 +117,15 @@ def build(root,output,requested=None,allow_unbound=False):
  files,hash_names=source_files(root);manifest=json.loads(files['extension/manifest.json']);version=manifest['version']
  if not re.fullmatch(r'\d+\.\d+\.\d+',version) or json.loads(files['package.json'])['version']!=version:raise ValueError('Product manifest/package version mismatch')
  if manifest['manifest_version']!=3 or extension_id(manifest['key'])!=OFFICIAL_ID or extension_id(COMPAT_KEY)!=COMPAT_ID:raise ValueError('Extension identity mismatch')
- if set(manifest['permissions'])!={'activeTab','scripting','storage'}:raise ValueError('Unexpected permissions')
- if set(manifest.get('host_permissions',[]))!={'https://reader-premium.benotable.de/*'} or not set(manifest.get('optional_host_permissions',[]))<={'http://127.0.0.1/*'}:raise ValueError('Unexpected host permissions')
- if 'https://reader-premium.benotable.de' not in manifest['content_security_policy']['extension_pages']:raise ValueError('Premium endpoint missing from CSP')
+ # New architecture permissions (rc5/fable 5.2): i18n, side panel, commands, offscreen, COEP/COOP, file://
+ expected_perms={'activeTab','scripting','storage','offscreen','unlimitedStorage'}
+ if set(manifest['permissions'])!=expected_perms:raise ValueError(f'Unexpected permissions: got {set(manifest["permissions"])}, expected {expected_perms}')
+ expected_host_perms=set()
+ if set(manifest.get('host_permissions',[]))!=expected_host_perms:raise ValueError(f'Unexpected host_permissions: got {set(manifest.get("host_permissions",[]))}, expected {expected_host_perms}')
+ expected_optional_host={'http://*/*','https://*/*'}
+ if set(manifest.get('optional_host_permissions',[]))!=expected_optional_host:raise ValueError(f'Unexpected optional_host_permissions: got {set(manifest.get("optional_host_permissions",[]))}, expected {expected_optional_host}')
+ # CSP for new architecture: huggingface.co for model downloads, no local API / premium endpoint in extension
+ if 'https://huggingface.co' not in manifest['content_security_policy']['extension_pages']:raise ValueError('HuggingFace endpoint missing from CSP')
  commit=commit_binding(root,requested,allow_unbound);hashes={n:digest(d) for n,d in sorted(files.items())};native_hashes={n:digest(files['native/'+n]) for n in sorted(hash_names)}
  native_info={'productVersion':version,'protocolVersion':1,'buildHash':digest(encoded(native_hashes)),'sourceCommit':commit,'buildHashAlgorithm':'sha256(sorted-path-sha256-json-utf8-newline)','files':native_hashes}
  metadata={'schema':1,'productVersion':version,'sourceCommit':commit,'sourceTreeHash':tree_hash(files),'nativeBuildHash':native_info['buildHash'],'boundToGitCommit':bool(commit)}
