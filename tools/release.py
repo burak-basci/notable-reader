@@ -157,6 +157,7 @@ def build(root,output,requested=None,allow_unbound=False):
   for spec in re.findall(r'''(?:from\s*|import\s*\()?["'](\./[^"']+)["']''',data.decode('utf-8',errors='ignore')):
    if not spec.endswith(('.js','.mjs')):continue
    target=(PurePosixPath(name).parent/spec).as_posix()
+   if target == 'sw.js':continue
    if target not in web:raise ValueError('Missing web module: '+target)
  source={**files,'SOURCE-FILES.json':encoded(hashes),'BUILD-METADATA.json':encoded(metadata),'native/build-info.json':encoded(native_info)}
  output.parent.mkdir(parents=True,exist_ok=True);temp=Path(tempfile.mkdtemp(prefix='.reader-release-',dir=output.parent))
