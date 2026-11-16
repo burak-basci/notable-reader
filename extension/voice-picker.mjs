@@ -148,6 +148,13 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   background:var(--reader-accent);color:var(--reader-on-accent,#fff);
      font:700 9px/13px ui-sans-serif,system-ui,sans-serif;
    text-align:center;pointer-events:none}
+  .voice-btn[data-recommended]{position:relative}
+  .voice-btn[data-recommended]::before{content:'★';position:absolute;top:-6px;left:-6px;width:14px;height:14px;
+     border-radius:50%;
+  background:var(--reader-accent);color:var(--reader-on-accent,#fff);
+     font:700 10px/14px ui-sans-serif,system-ui,sans-serif;
+   text-align:center;pointer-events:none}
+  .voice-btn[data-recommended][data-missing]::before{left:auto;right:20px}
   .voice-btn .vn{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:clip;white-space:nowrap;line-height:1.3;text-align:left;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 14px),transparent)}.voice-btn>small.vp-code{display:block;flex:none;width:2.2em;margin:0;text-align:center;font-size:10px;letter-spacing:.03em}
   @media(max-width:420px){.voice-btn>.language-icon,.voice-btn>.chevron{display:none}.voice-btn[data-static]>.language-icon{display:none}.voice .voice-btn.voice-btn{gap:3px;padding-left:5px;padding-right:5px}.voice-btn>small.vp-code{width:1.7em}.voice-btn .vp-bar-q{min-width:0}.voice-btn .vp-bar-elo{font-size:10px}
    .vp-lang{width:120px}.vp-row{gap:2px}.vp-row .vp-opt{gap:3px}.vp-meta{font-size:9.5px}
@@ -366,7 +373,10 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   if(LEVEL[e.entry?.tier])barQ.dataset.level=String(LEVEL[e.entry.tier]);else barQ.removeAttribute('data-level');
     const lang=uiName(e.activeBase),text=uiText('voice_bar_label',{voice:label||uiText('voice'),language:lang,mode:uiText(e.auto?'voice_mode_auto':'voice_mode_fixed'),tier:tierLabel(e.entry)}).replace(/,\s*\./,'.').replace(/\s+\./g,'.');
   const missing=!!e.entry&&!e.current?.system&&!e.entry.installed&&e.entry.progress<0;
-  btn.title=(e.noVoiceForPage?uiText('voice_none_for',{language:uiName(e.detectedBase)}):text)+(missing?' · '+uiText('voice_missing',{mb:e.entry.mb}):'');btn.setAttribute('aria-label',btn.title);btn.toggleAttribute('data-warn',!!e.noVoiceForPage);btn.toggleAttribute('data-missing',missing);
+  const activeBase=e.activeBase;
+  const recVoice=e.rows.find(r=>baseOf(r.code)===activeBase)?.voices.find(v=>v.recommended&&!v.installed);
+  const hasRecommended=!!recVoice;
+  btn.title=(e.noVoiceForPage?uiText('voice_none_for',{language:uiName(e.detectedBase)}):text)+(missing?' · '+uiText('voice_missing',{mb:e.entry.mb}):'')+(hasRecommended?' · '+uiText('model_recommended'):'');btn.setAttribute('aria-label',btn.title);btn.toggleAttribute('data-warn',!!e.noVoiceForPage);btn.toggleAttribute('data-missing',missing);btn.toggleAttribute('data-recommended',hasRecommended);
   btn.removeAttribute('data-static');btn.tabIndex=0;btn.setAttribute('aria-haspopup','dialog');btn.setAttribute('aria-expanded',String(open));btn.setAttribute('aria-controls',ID+'-panel');
  };
  panel.id=ID+'-panel';

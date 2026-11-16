@@ -333,9 +333,8 @@ export class PageSession {
     const smaller = picks.map(pick => pick.model).filter(m => m.id !== primary.id && mbOf(m) < mbOf(primary)).at(-1);
     return {reason: this.voiceUsable() ? 'better' : 'none', primary: primary.id, smaller: smaller?.id || null};
   }
-  /* Play met a voice that is not on the device, or a clearly better one is offered: one non-modal card at the bar asks.
-     Nothing is downloaded or stored before the listener answers. Offline a download could only fail: the offline
-     text instead. */
+  /* Play met a voice that is not on the device: auto-download the best recommended voice and start reading.
+     No voice card is shown - the recommended voice is downloaded immediately. */
   askVoice(at, wanted = null) {
     if (globalThis.navigator?.onLine === false) {
       this.errorParams = null; this.fail('offline_download'); return false;
@@ -343,8 +342,11 @@ export class PageSession {
     const card = this.voiceChoices(wanted);
     if (!card) { this.fail('voice_none_chosen'); return false; }
     if (VOICE_ERRORS.has(this.lastError)) this.lastError = '';
+    // Auto-download the primary (recommended) voice and start playing
     this.voiceCard = {...card, at: {chunk: at.chunk, word: at.word}, downloading: ''};
-    this.changed(); return false;
+    this.changed();
+    void this.takeVoice(card.primary);
+    return false;
   }
   /* "Download" on the card: the card turns into the progress line, the voice is selected once it is on the device and
      reading starts where Play was pressed. */
@@ -1095,6 +1097,8 @@ export class PageSession {
   }
   cardView() {
     const card = this.voiceCard; if (!card) return null;
+    // Don't show the voice card for 'none' reason (auto-download handles it)
+    if (card.reason === 'none') return null;
     const smaller = card.smaller ? this.voiceView(card.smaller) : null;
     return {reason: card.reason, primary: this.voiceView(card.primary), smaller, downloading: card.downloading || ''};
   }
