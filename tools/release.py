@@ -21,7 +21,9 @@ def tree_hash(files):return digest(encoded({n:digest(d) for n,d in sorted(files.
 def safe_path(name):
  p=PurePosixPath(name)
  if not name or '\\' in name or p.is_absolute() or '..' in p.parts or name!=p.as_posix():raise ValueError('Unsafe source path')
- if any(x in EXCLUDED or x.startswith('.') and x!='.gitignore' and not name.startswith('third_party_sources/') for x in p.parts):raise ValueError('Runtime/private path rejected: '+name)
+ # Only exclude top-level directories in EXCLUDED
+ top_part = p.parts[0] if p.parts else ''
+ if (top_part in EXCLUDED or (top_part.startswith('.') and top_part!='.gitignore' and not name.startswith('third_party_sources/'))):raise ValueError('Runtime/private path rejected: '+name)
  if p.name in {'settings.json','positions.json','premium.json','control.sock'} or p.suffix in {'.log','.pyc','.sqlite','.db','.jsonl'}:raise ValueError('Runtime/private file rejected: '+name)
  if p.suffix in {'.pem','.key'} and name!='native/premium-public.pem':raise ValueError('Non-public key rejected')
  return p
@@ -50,7 +52,11 @@ def discover(root):
  for directory in sorted(DIRS):
   for p in (root/directory).rglob('*'):
    n=p.relative_to(root).as_posix()
-   if any(x in EXCLUDED for x in p.relative_to(root).parts) or n in GENERATED:continue
+   # Exclude __pycache__ anywhere, other EXCLUDED only at top-level
+   parts = p.relative_to(root).parts
+   if '__pycache__' in parts:continue
+   top_part = parts[0] if parts else ''
+   if top_part in EXCLUDED or n in GENERATED:continue
    if p.is_symlink():raise ValueError('Symlink source rejected: '+n)
    if not p.is_file():continue
    if directory=='native' and n not in allowed:raise ValueError('Unallowlisted native source: '+n)
