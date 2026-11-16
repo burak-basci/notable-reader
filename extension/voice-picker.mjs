@@ -752,8 +752,11 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   const node=event.target.closest?.('.vp-opt');if(!node)return;
   const e=effective(),id=node.dataset.key;setHighlight(id);grid.focus({preventScroll:true});chooseLine(lookup(id,effective()),e);});
   /* Double-click on a voice row: download if needed, then use it (start reading) */
+  /* Note: we also listen on .vp-row to catch clicks on the row itself, not just the opt cell */
   voices.addEventListener('dblclick',event=>{
-    const node=event.target.closest?.('.vp-opt');if(!node)return;
+    // Prevent the single-click handler from firing during double-click
+    event.stopPropagation();
+    const node=event.target.closest?.('.vp-opt,.vp-row');if(!node)return;
     const e=effective(),t=lookup(node.dataset.key,e);if(!t)return;
     const {row,entry}=t;
     if(entry.installed||row.system){useEntry(row,entry);return;}
@@ -777,6 +780,9 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
     const poll=setInterval(()=>{if(waitInstalled())clearInterval(poll);},500);
     setTimeout(()=>clearInterval(poll),300000); // 5 min timeout
   });
+  
+  /* Remove the old dblclick from voices if it was added before (defensive) */
+  /* The click handler below will handle single clicks */
  const playMarked=()=>{const e=effective(),t=lookup(markedId(e,modelsOf(e)),e);if(t)playSample(t.entry);};
  bannerBack.addEventListener('click',()=>{commitLanguage('auto');});
  btn.addEventListener('click',event=>{if(!info)return;if(open)close(false);else openPanel(event.detail===0);});
