@@ -153,7 +153,7 @@ def build(root,output,requested=None,allow_unbound=False):
  web['offline-assets.json']=offline_assets(web,True)
  # A daemon-free entry still needs its shared entitlement/runtime-selection imports.
  for name,data in web.items():
-  if name.startswith('vendor/') or not name.endswith(('.js','.mjs')):continue
+  if name.startswith('vendor/') or name == 'sw.js' or not name.endswith(('.js','.mjs')):continue
   for spec in re.findall(r'''(?:from\s*|import\s*\()?["'](\./[^"']+)["']''',data.decode('utf-8',errors='ignore')):
    if not spec.endswith(('.js','.mjs')):continue
    target=(PurePosixPath(name).parent/spec).as_posix()
