@@ -143,13 +143,8 @@ def build(root,output,requested=None,allow_unbound=False):
   if n in WEB_ROOTS or n.startswith(('vendor/','icons/')):
    if n not in WEB_EXCLUDED and not shell_file(n):
     web[n]=d
-  # Also check tools/reader/ for web root files
-  if n.startswith('tools/reader/') and n[len('tools/reader/'):] in WEB_ROOTS:
-   web_name=n[len('tools/reader/'):]
-   if web_name not in WEB_EXCLUDED and not shell_file(web_name):
-    web[web_name]=d
-  # Also include tools/reader/vendor/ for web app dependencies (maps to vendor/)
-  if n.startswith('tools/reader/vendor/'):
+  # Also include all tools/reader/ files for web app (maps to root)
+  if n.startswith('tools/reader/'):
    web_name=n[len('tools/reader/'):]
    if web_name not in WEB_EXCLUDED and not shell_file(web_name):
     web[web_name]=d
