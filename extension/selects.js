@@ -25,7 +25,7 @@ export function installSelects(){for(const select of document.querySelectorAll('
   if(event.key==='Escape'){event.preventDefault();close();return;}
   if(event.key==='Tab'){close();return;}
   if(['ArrowDown','ArrowUp','Home','End','Enter',' '].includes(event.key)){event.preventDefault();if(opened!==record){open(record);if(event.key==='Home')highlight(record,0);else if(event.key==='End')highlight(record,options(record).length-1);return;}if(event.key==='Enter'||event.key===' '){selectOption();return;}highlight(record,event.key==='Home'?0:event.key==='End'?options(record).length-1:active+(event.key==='ArrowDown'?1:-1));return;}
-  if(event.key.length===1 && !event.ctrlKey && !event.metaKey){event.preventDefault();if(opened!==record)open(record);const now=Date.now();typed=now-typedAt>700?event.key:typed+event.key;typedAt=now;const index=options(record).findIndex(option=>option.textContent.toLocaleLowerCase().startsWith(typed.toLocaleLowerCase()));if(index>=0)highlight(record,index);}
+  if(event.key.length===1 && !event.ctrlKey && !event.metaKey && !event.altKey){event.preventDefault();if(opened!==record)open(record);const now=Date.now();typed=now-typedAt>700?event.key:typed+event.key;typedAt=now;const index=options(record).findIndex(option=>option.textContent.toLocaleLowerCase().startsWith(typed.toLocaleLowerCase()));if(index>=0)highlight(record,index);}
   function selectOption(){commitSelect(record,active);}
  });select.addEventListener('change',syncSelects);
 }syncSelects();}

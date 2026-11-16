@@ -1,0 +1,109 @@
+{
+  "piper_source_commit": "cfff8e52ebaea37c7e953ae2d06b174acb827ac4",
+  "espeak_compiled_source_commit": "0f65aa301e0d6bae5e172cc74197d32a6182200f",
+  "files": {
+    "ort/ort.wasm.min.mjs": {
+      "bytes": 48259,
+      "sha256": "6ef726f355b791129f7ddf3f62e7877a16b9b777abe87004b8ab306e6b9cf265"
+    },
+    "ort/ort-wasm-simd-threaded.mjs": {
+      "bytes": 20856,
+      "sha256": "30dd851d9c00622940500f71ddd2ff8820c5cb65270816080175b958705385a8"
+    },
+    "ort/ort-wasm-simd-threaded.wasm": {
+      "bytes": 11210254,
+      "sha256": "71aef04959c5c1b6de461b6538e2058e306610034a85aad2742d0c7fd4533fe4"
+    },
+    "piper/piper_phonemize.wasm": {
+      "bytes": 635212,
+      "sha256": "b777cd107a91d2bcc6a1ea46f2c26a662a7407394fe84589198aeaa83dd7a9d6"
+    },
+    "piper/piper_phonemize.data": {
+      "bytes": 11349639,
+      "sha256": "71f470a2a393c8a4688250162288ef800e862dc318493e82b6196d6e583bfe21"
+    },
+    "piper/piper_phonemize.mjs": {
+      "bytes": 114707,
+      "sha256": "c526d54e323eb216c7e271e1c268aa1cc89a63d6398dc62e1d2350f33d4871de"
+    },
+    "ort-webgpu/ort.jspi.min.mjs": {
+      "bytes": 70904,
+      "sha256": "722bdee68871a7787afbd667ea2d65a1261f635455b601bc8a1a4e65f22ea46d",
+      "source": "onnxruntime-web@1.31.1 npm package, dist/ (unmodified, MIT)"
+    },
+    "ort-webgpu/ort-wasm-simd-threaded.jspi.mjs": {
+      "bytes": 51321,
+      "sha256": "eeb051cdbdb9f6edd8992cb4f81ad3c94ad01e4d8f767ffb415143e8afc41fc5",
+      "source": "onnxruntime-web@1.31.1 npm package, dist/ (unmodified, MIT)"
+    },
+    "ort-webgpu/ort-wasm-simd-threaded.jspi.wasm": {
+      "bytes": 17920659,
+      "sha256": "b89a3efceeb6df2ba29a66fef59f48fd7b7c22a62af54c3cfe05e63863a07fd5",
+      "source": "onnxruntime-web@1.31.1 npm package, dist/ (unmodified, MIT)"
+    }
+  },
+  "espeak_data_subset": {
+    "tool": "tools/trim-espeak-data.py",
+    "dictionaries": [
+      "bn",
+      "cs",
+      "de",
+      "el",
+      "en",
+      "es",
+      "fr",
+      "gu",
+      "hi",
+      "hy",
+      "it",
+      "ka",
+      "kn",
+      "ko",
+      "ml",
+      "nl",
+      "pa",
+      "pl",
+      "pt",
+      "ru",
+      "si",
+      "sv",
+      "ta",
+      "te",
+      "uk"
+    ],
+    "voice_languages": [
+      "cs",
+      "de",
+      "en",
+      "es",
+      "fr",
+      "hi",
+      "it",
+      "nl",
+      "pl",
+      "pt",
+      "ru",
+      "sv",
+      "uk"
+    ],
+    "script_languages": [
+      "bn",
+      "el",
+      "gu",
+      "hi",
+      "hy",
+      "ka",
+      "kn",
+      "ko",
+      "ml",
+      "pa",
+      "si",
+      "ta",
+      "te"
+    ],
+    "dropped_dictionaries": 88,
+    "upstream_data_sha256": "29f1025eb23a5b5c192cd14a6efbce4509402ff265405072ee6f7d1a09b78f8c",
+    "upstream_data_bytes": 18077249,
+    "upstream_mjs_sha256": "6c24ca87b39add23746db5cb7b421c9e36565e308dd8c4aef55a8fc3323af35c"
+  }
+}

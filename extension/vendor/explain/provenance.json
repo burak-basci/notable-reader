@@ -1,0 +1,77 @@
+{
+  "runtime": {
+    "package": "@huggingface/transformers",
+    "version": "4.2.0",
+    "tarball": "https://registry.npmjs.org/@huggingface/transformers/-/transformers-4.2.0.tgz",
+    "integrity": "sha512-8BRCoBMH0XsWaEIamuR0LrJGAfftgHAfb2Vrffy0VKlSAE/MnUJ5/h/zTfEP3fDIft+nk7TqB8xXEyABGitBjQ==",
+    "license": "Apache-2.0",
+    "file": "dist/transformers.min.js (web bundle, ONNX Runtime Web JS bundled inside)"
+  },
+  "onnxruntime": {
+    "version": "1.26.0-dev.20260416-b7804b056c",
+    "commit": "b7804b056c30aa35c1748f8e4e239d0e2ff25d6d",
+    "tarball": "https://registry.npmjs.org/onnxruntime-web/-/onnxruntime-web-1.26.0-dev.20260416-b7804b056c.tgz",
+    "integrity": "sha512-MD6Ss4GSpQBo6zqoJzyT9LRbKYs7x/JVN23FT24EcEvlqF4VuzPOeH6X38orZPKHQDbprn7K+SBpu0/mj2CQiw==",
+    "license": "MIT",
+    "files": "dist/ort-wasm-simd-threaded.mjs and dist/ort-wasm-simd-threaded.wasm: the plain WASM build (CPU, threads + SIMD), unmodified; the WebGPU/asyncify build is not shipped",
+    "notices": "the npm package ships no LICENSE/ThirdPartyNotices; onnxruntime-LICENSE (MIT, unchanged text) and onnxruntime-ThirdPartyNotices.txt are kept from the ONNX Runtime 1.22 release used before"
+  },
+  "files": {
+    "transformers.min.js": {
+      "bytes": 558336,
+      "sha256": "d3fb87f67b81c1e0df8140247ac2c23de286fdf618ef335529f3ee899ebe7cf9"
+    },
+    "ort-wasm-simd-threaded.mjs": {
+      "bytes": 24180,
+      "sha256": "5f2cd914554830762579c372d0211614c1e3f40ab3f6c0cfcf0900343229071d"
+    },
+    "ort-wasm-simd-threaded.wasm": {
+      "bytes": 12942611,
+      "sha256": "f4f290847a4df02d0b93cdbf39b4b0e71acefbe80573e7e6b9342a7abd7b290a"
+    },
+    "transformers-LICENSE": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "onnxruntime-LICENSE": {
+      "bytes": 1073,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    "onnxruntime-ThirdPartyNotices.txt": {
+      "bytes": 326866,
+      "sha256": "e9e90971a8e75a9a8ac0c6412e29c1202d079998389915aa485f46c816c3b4cc"
+    },
+    "jinja-LICENSE": {
+      "bytes": 1069,
+      "sha256": "d6e7b19451c1b3d1d66353bb4b1274138953b3bfd9ae60c56e77b1f548796982"
+    },
+    "tokenizers-LICENSE": {
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    }
+  },
+  "modifications": [
+    "transformers.min.js: replaced the default JSDelivr runtime path with new URL(\"./\",import.meta.url).href, all runtime assets packaged locally; the worker sets the plain build explicitly (env.backends.onnx.wasm.wasmPaths).",
+    "transformers.min.js: default allowRemoteModels=false; the inference worker also forbids outbound fetch, disables the WASM cache (env.useWasmCache=false) and uses only the verified pinned model cache."
+  ],
+  "bundledLicenses": [
+    {
+      "package": "@huggingface/jinja",
+      "version": "0.5.11",
+      "license": "MIT",
+      "file": "jinja-LICENSE",
+      "tarball": "https://registry.npmjs.org/@huggingface/jinja/-/jinja-0.5.11.tgz",
+      "integrity": "sha512-YzEzwM5oQf4r0vs7ifWQ+yuVR1YkAHrjERQ+a8WRsStHHp4NRBg+NesjiFc+X2AFUpRvvrIeHDS1xFy9jY/IjQ==",
+      "note": "declared ^0.5.6 by Transformers.js 4.2.0; license text from the 0.5.11 tarball (unchanged MIT text)"
+    },
+    {
+      "package": "@huggingface/tokenizers",
+      "version": "0.1.3",
+      "license": "Apache-2.0",
+      "file": "tokenizers-LICENSE",
+      "tarball": "https://registry.npmjs.org/@huggingface/tokenizers/-/tokenizers-0.1.3.tgz",
+      "integrity": "sha512-8rF/RRT10u+kn7YuUbUg0OF30K8rjTc78aHpxT+qJ1uWSqxT1MHi8+9ltwYfkFYJzT/oS+qw3JVfHtNMGAdqyA==",
+      "note": "declared ^0.1.3 by Transformers.js 4.2.0"
+    }
+  ]
+}

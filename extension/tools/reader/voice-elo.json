@@ -1,0 +1,101 @@
+{
+ "schema": 1,
+ "purpose": "Oeffentliche Arena-Wertungen (Elo) fuer die Stimmenwahl. Nur Modelle, fuer die es einen echten Eintrag GIBT (gleiches Modell, nicht aehnliches). Keine geschaetzten oder erfundenen Werte. Wer keinen Eintrag hat, steht in 'noRating' und wird in der Stimmenwahl nach der eigenen Qualitaetsstufe (Balken) sortiert.",
+ "update": "Werte kommen aus den unter 'sources' genannten Seiten. Zum Aktualisieren: Quelle neu abrufen, elo/ci/rank/of/votes/retrieved in 'entries' ersetzen; tests/voice-elo.test.mjs prueft Quelle, Datum und dass jede Familie/Modell-Id im Katalog existiert. Die Oberflaeche liest nur diese Datei.",
+ "method": {
+  "meaning": "Elo aus blinden Hoerer-Abstimmungen: zwei Sprachproben desselben Textes, die Person waehlt die natuerlichere. Es misst Vorliebe fuer den Klang, nicht Genauigkeit bei Fachtext, Dateinamen, URLs oder Zahlen.",
+  "quote": "Users listen to pairs of speech samples generated from the same text and choose which sounds more natural.",
+  "quoteSource": "https://artificialanalysis.ai/text-to-speech/leaderboard (FAQ 'How are Text to Speech models ranked on this leaderboard?', abgerufen 2026-11-09)",
+  "language": "Die Arenen bewerten englische Texte (Filter 'US' und 'UK'); die Wertung gilt deshalb nur fuer Stimmen in 'languages'.",
+  "scope": "Die Wertung gehoert dem Modell (Anbieterstimmen der Arena), nicht jeder einzelnen Stimme des Modells."
+ },
+ "sources": {
+  "aa": {
+   "name": "Artificial Analysis Speech Arena",
+   "url": "https://artificialanalysis.ai/text-to-speech/leaderboard",
+   "retrieved": "2026-11-09",
+   "view": "Alle Kategorien und Akzente (Standardansicht), 104 Modelle; Werte aus den eingebetteten Tabellendaten der Seite gelesen (Elo, 95-%-Intervall, Bewertungen, Rang)."
+  },
+  "aaOpen": {
+   "name": "Artificial Analysis Speech Arena, Open-Weights-Ansicht",
+   "url": "https://artificialanalysis.ai/text-to-speech/leaderboard/open-weights",
+   "retrieved": "2026-11-09",
+   "view": "20 Open-Weights-Modelle; gleiche Elo-Werte wie in der Standardansicht (Kokoro 1064, Phonon 1114)."
+  },
+  "ttsArenaV2": {
+   "name": "TTS Arena V2 (TTS-AGI)",
+   "url": "https://tts-agi-tts-arena-v2.hf.space/api/leaderboard",
+   "page": "https://huggingface.co/spaces/TTS-AGI/TTS-Arena-V2",
+   "retrieved": "2026-11-09",
+   "view": "41 Zeilen, eigene Elo-Skala (nicht mit Artificial Analysis vergleichbar). Die alte Space TTS-AGI/TTS-Arena ist laut Karte 'Legacy' und verweist auf V2."
+  }
+ },
+ "entries": [
+  {
+   "id": "kokoro-82m-v1.0",
+   "model": "Kokoro 82M v1.0",
+   "families": ["kokoro"],
+   "languages": ["en"],
+   "arena": "Artificial Analysis Speech Arena",
+   "source": "https://artificialanalysis.ai/text-to-speech/leaderboard",
+   "retrieved": "2026-11-09",
+   "elo": 1064,
+   "ci": 11,
+   "rank": 62,
+   "rankRange": "57-69",
+   "of": 104,
+   "votes": 5573,
+   "note": "Gilt fuer das Modell Kokoro 82M v1.0 (unsere Stufen 'Kokoro' voll und kompakt sind dieselbe Gewichtsfamilie, die Arena testete das Original).",
+   "also": [
+    {
+     "arena": "TTS Arena V2",
+     "source": "https://tts-agi-tts-arena-v2.hf.space/api/leaderboard",
+     "retrieved": "2026-11-09",
+     "elo": 1469,
+     "ci": 28,
+     "rank": 24,
+     "of": 41,
+     "votes": 903,
+     "scale": "eigene Skala"
+    }
+   ]
+  },
+  {
+   "id": "phonon-31m-en",
+   "model": "Phonon 31M (English)",
+   "families": ["phonon"],
+   "languages": ["en"],
+   "arena": "Artificial Analysis Speech Arena",
+   "source": "https://artificialanalysis.ai/text-to-speech/leaderboard",
+   "retrieved": "2026-11-09",
+   "elo": 1114,
+   "ci": 14,
+   "rank": 40,
+   "rankRange": "38-47",
+   "of": 104,
+   "votes": 1864,
+   "note": "Gleiches Modell (Gradium Phonon 31M Englisch, Open Weights); unsere Fassung ist der ONNX-Export dieser Gewichte."
+  }
+ ],
+ "noRating": {
+  "checked": ["aa", "ttsArenaV2"],
+  "retrieved": "2026-11-09",
+  "families": {
+   "kitten": "Kein Eintrag in Artificial Analysis (104 Modelle) und TTS Arena V2 (41 Zeilen).",
+   "piper": "Kein Eintrag in beiden Arenen.",
+   "qwen3tts": "Kein Eintrag fuer die offenen Qwen3-TTS-Modelle 0.6B/1.7B. Artificial Analysis fuehrt 'Qwen3 TTS' (Elo 929, Rang 92) und 'Qwen3 TTS Flash' nur als gehostete Alibaba-API ohne Open Weights; sie sind nicht belegt dasselbe Modell wie unsere 4-Bit-Fassungen und werden deshalb nicht zugeordnet. Eigene Messung zu Fachtext: Rueckerkennung 41 % Wortfehler gegen 6,6 % bei Kokoro (QWEN3-SPIKE.md, 09.11.2026)."
+  }
+ },
+ "ownMeasurement": {
+  "qwen3tts": {
+   "kind": "technical-text-wer",
+   "what": "Fachtext (12 Saetze Terraform-Dokumentation), Rueckerkennung mit Whisper large-v3-turbo; gewoehnliche Saetze (5/15/30 Woerter) bei beiden 0 %.",
+   "wer": 41,
+   "werSeed2": 38,
+   "referenceModel": "Kokoro q8",
+   "referenceWer": 6.6,
+   "source": "Bericht QWEN3-SPIKE.md (v24)",
+   "date": "2026-11-09"
+  }
+ }
+}

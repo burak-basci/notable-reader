@@ -2,10 +2,14 @@
 
 ## 2.5.0 (2026-11-16)
 
-- Optional "Message to the developer" form in popup, settings and web app (six UI
-  languages): mandatory public-issue confirmation, 2000 characters, at most 3 messages
-  per rolling 10 minutes enforced by `server/feedback-service.mjs`, which creates the
-  GitHub issue server-side. Only text and app version are sent.
+- **Full i18n support** (6 locales: de, en, es, fr, it, pt) with `default_locale: "en"` and `__MSG_*` placeholders in manifest
+- **Side Panel** integration (`side_panel.default_path: "sidebar.html"`) for persistent reader UI
+- **Commands API** with keyboard shortcuts: Alt+Shift+V (open), Alt+Shift+K (play/pause), Alt+Shift+Left/Right (prev/next section)
+- **Offscreen Documents** + **Unlimited Storage** permissions for background audio processing
+- **Cross-Origin Isolation** (COEP/COOP) for secure neural model execution
+- **File:// protocol support** for local PDF/HTML reading
+- **Compatible key architecture** (official + compatible ZIPs from single source)
+- Optional "Message to the developer" form in popup, settings and web app (six UI languages): mandatory public-issue confirmation, 2000 characters, at most 3 messages per rolling 10 minutes enforced by `server/feedback-service.mjs`, which creates the GitHub issue server-side. Only text and app version are sent.
 
 ## 2.4.0
 

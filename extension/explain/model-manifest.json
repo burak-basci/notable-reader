@@ -1,0 +1,52 @@
+{
+  "id": "onnx-community/granite-4.0-350m-ONNX-web",
+  "revision": "62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae",
+  "dtype": "q4",
+  "device": "wasm",
+  "license": "Apache-2.0",
+  "baseModel": "ibm-granite/granite-4.0-350m",
+  "files": [
+    {
+      "path": "config.json",
+      "bytes": 2018,
+      "sha256": "714a51cfcfcf3860a941d3551eb5a47c4f70ddf6ccb37f410517e1b135e865c2",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/config.json"
+    },
+    {
+      "path": "generation_config.json",
+      "bytes": 147,
+      "sha256": "4a5e80bbcf4116a96b385e0af3ff94b03a7393d424a1201cb1f974e9ffc2e1da",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/generation_config.json"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 4131199,
+      "sha256": "ea076a8bccab905484daa97acc7021a915fe30c1ad48fa85bd4b82a5d1ceb797",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/tokenizer.json"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 24747,
+      "sha256": "36d15e9ab9ed50ac434fcfd2620b829615c80d745f36a98f2454620a3fc395c5",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/tokenizer_config.json"
+    },
+    {
+      "path": "special_tokens_map.json",
+      "bytes": 579,
+      "sha256": "c08676c49fd7969a3130f72be6d4bf34da66aa484a6e21dffe359893a1bd5f2e",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/special_tokens_map.json"
+    },
+    {
+      "path": "onnx/model_q4.onnx",
+      "bytes": 272846,
+      "sha256": "17e171e1d30f1c644eda76d673e662996ff6b89cdb22a11e2ecadde9c158535f",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/onnx/model_q4.onnx"
+    },
+    {
+      "path": "onnx/model_q4.onnx_data",
+      "bytes": 575639552,
+      "sha256": "c322cb280cd7168e37d5d187656973ac7ccecc1465c29f52c5547b2f6e557799",
+      "url": "https://huggingface.co/onnx-community/granite-4.0-350m-ONNX-web/resolve/62fc8f345c8aed0e1a28f856dc7e79b4cdb55cae/onnx/model_q4.onnx_data"
+    }
+  ]
+}

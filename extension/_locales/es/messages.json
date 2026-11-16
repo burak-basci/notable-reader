@@ -1,0 +1,20 @@
+{
+  "extName": {
+    "message": "beNotable! Reader"
+  },
+  "extDescription": {
+    "message": "Lee en voz alta páginas web, PDF y libros electrónicos con voces naturales en tu dispositivo. Gratis, sin cuenta, sin conexión."
+  },
+  "actionTitle": {
+    "message": "Abrir beNotable! Reader"
+  },
+  "cmdTogglePlay": {
+    "message": "Reproducir o pausar (abre antes la barra si no está abierta)"
+  },
+  "cmdPreviousSection": {
+    "message": "Frase anterior"
+  },
+  "cmdNextSection": {
+    "message": "Frase siguiente"
+  }
+}

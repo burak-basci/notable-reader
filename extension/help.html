@@ -1,2 +1,107 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title data-i18n="extHelpTitle">Hilfe zum Vorlesen</title><link rel="icon" href="icons/icon-32.png"><link rel="stylesheet" href="popup.css"><script type="module" src="popup.js"></script></head><body data-page="help"><svg class="icon-defs" aria-hidden="true" width="0" height="0"><defs><symbol id="book" viewbox="0 0 24 24"><path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1zM12 5v15"></path></symbol><symbol id="arrow" viewbox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"></path></symbol><symbol id="stop" viewbox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"></rect></symbol><symbol id="reset" viewbox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"></path></symbol><symbol id="help" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4M12 17h.01"></path></symbol><symbol id="gear" viewbox="0 0 24 24"><path d="m9 3-.5 3-2 1-3-.5-2 3 2.5 2v2l-2.5 2 2 3 3-.5 2 1 .5 3h4l.5-3 2-1 3 .5 2-3-2.5-2v-2l2.5-2-2-3-3 .5-2-1-.5-3z"></path><circle cx="11" cy="12" r="3"></circle></symbol></defs></svg><main class="page"><div class="surface"><header><div class="brand"><img src="icons/icon-32.png" width="30" height="30" alt=""><div><strong data-product>Notable Reader</strong><span class="small" data-i18n="extSubtitle">Artikel &amp; PDFs vorlesen</span></div></div><span class="version" id="version"></span></header><div class="body"><h1 data-i18n="extHelpTitle">Hilfe zum Vorlesen</h1><p data-i18n="extHelpIntro">Die Erweiterung verbindet deinen aktuellen Browser-Tab mit dem lokalen Reader. Die Wiedergabe startet erst nach deinem Klick in der Leiste.</p><div id="native-help"><h2 data-i18n="extHelpUnavailable">Wenn der Leser nicht erreichbar ist</h2><ol><li data-i18n="extHelpInstall">Der lokale Hintergrundleser muss auf deinem Rechner installiert sein. Die Erweiterung alleine erzeugt keine native Sprachausgabe.</li><li data-i18n="extHelpSession">Auf dem eingerichteten Linux-System startet der Hintergrundleser mit der grafischen Sitzung. Die Erweiterung kann einen beendeten Betriebssystemdienst nicht selbst starten.</li><li data-i18n="extHelpUpdate">Reader und Erweiterung gemeinsam aktualisieren. Danach „Verbindung prüfen“ wählen.</li></ol><div class="notice"><p data-i18n="extHelpService">Für die vorhandene Linux-Installation zeigen diese Befehle den Status oder starten den Dienst bei Bedarf. Sie werden hier nicht ausgeführt.</p><code>systemctl --user status brave-reader.service</code><br><code>systemctl --user start brave-reader.service</code></div></div><p id="browser-help" data-i18n="extHelpInstallBrowser" hidden></p><h2 data-i18n="extHelpDocument">Ein Dokument öffnen</h2><ol><li data-i18n="extHelpOpen">Den gewünschten Artikel oder das PDF öffnen und vollständig laden lassen.</li><li data-i18n="extHelpShow">Auf das Erweiterungssymbol und dann „Leiste öffnen“ klicken. Der Status bestätigt die Bereitschaft.</li><li data-i18n="extHelpPlay">Die Stelle wählen und Play drücken. Für normale Textauswahl den Klicksprung ausschalten.</li></ol><h2 data-i18n="extHelpSupported">Unterstützte Inhalte</h2><p data-i18n="extHelpContents">Artikel und Text-PDFs nutzen die gewählte lokale Stimme. Für lokale PDFs gegebenenfalls den Zugriff auf Datei-URLs in den Erweiterungseinstellungen erlauben. Interne Browserseiten, der Web Store, Scans ohne Text und geschlossene fremde Frames können nicht vorgelesen werden. Gedrehte PDFs und Doppelseitenansichten werden abgewiesen.</p><h2 data-i18n="extHelpPrivacy">Was auf deinem Rechner bleibt</h2><p data-i18n="extHelpLocal">URL und Titel des bewusst ausgewählten Tabs gehen ausschließlich an den lokalen Reader. Die Erweiterung speichert keine Dokumenttitel oder Texte und benötigt keinen Zugriff auf alle Tabs. Die Sprachausgabe wird lokal berechnet.</p><p data-i18n="extHelpPreferences">Oberflächensprache, Vorlesesprache, Stimme, Tempo, Lautstärke und weitere Einstellungen speichert der Reader lokal. Die Diagnose enthält nur technische Zustände und Versionsangaben.</p><h2 data-i18n="extHelpConnection">Verbindung und Diagnose</h2><div class="connection" id="connection" data-state="loading" role="status"><span class="dot"></span><span id="connection-label" data-i18n="extConnectionChecking">Verbindung wird geprüft …</span></div><section class="errorbox" id="errorbox" role="alert" hidden><strong id="error-title" data-i18n="extErrorTitle">Die Aktion konnte nicht abgeschlossen werden.</strong><p id="error-message"></p><button id="retry" data-i18n="extRetry">Erneut verbinden</button> <button data-help data-i18n="extHelp">Hilfe</button><div class="errorcode" id="error-code"></div></section><div class="actions"><button class="action" id="refresh"><svg aria-hidden="true"><use href="#reset"></use></svg><span data-i18n="extRefresh">Verbindung prüfen</span></button><button class="action" id="open-options"><svg aria-hidden="true"><use href="#gear"></use></svg><span data-i18n="extOpenSettings">Einstellungen öffnen</span></button></div><details class="diagnostics"><summary data-i18n="extDiagnostics">Technische Diagnose</summary><pre id="diagnostics" data-i18n="extNoDiagnosis">Noch keine Verbindung abgefragt.</pre><button id="copy-diagnostics" data-i18n="extCopyDiagnosis">Diagnose kopieren</button><textarea class="manual-copy" id="manual-copy" aria-label="Diagnose zum manuellen Kopieren" readonly hidden data-i18n-aria="extCopyManually"></textarea><p class="small" data-i18n="extDiagnosisPrivacy">Enthält keine URLs, Tabtitel, Dokumenttexte oder Aktivierungscodes.</p></details><h2 data-i18n="extHelpFree">Kostenlose Basis und Premium</h2><p data-i18n="extHelpPremium">Normales Vorlesen bleibt kostenlos. Premium ermöglicht den nativen Komfortexport ganzer Dokumente. Checkout, Aktivierung und Abonnementverwaltung findest du in den Einstellungen. Die öffentlichen Browserwerkzeuge bleiben eigenständig.</p></div><footer class="footer"><button class="textbutton" data-help data-i18n="extHelpDiagnosis">Hilfe &amp; Diagnose</button><button class="textbutton" id="website-link" disabled data-i18n="extWebsitePending">Website in Vorbereitung</button></footer></div></main><div class="toast" id="toast" role="status" aria-live="polite" hidden></div></body></html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="extHelpTitle">Hilfe zum Vorlesen</title><link rel="icon" href="icons/icon-32.png">
+<link rel="stylesheet" href="popup.css">
+<script type="module" src="popup.js"></script></head>
+<body data-page="help">
+<svg class="icon-defs" aria-hidden="true" width="0" height="0"><defs>
+<symbol id="reset" viewbox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"></path></symbol>
+<symbol id="gear" viewbox="0 0 24 24">
+<path d="m9 3-.5 3-2 1-3-.5-2 3 2.5 2v2l-2.5 2 2 3 3-.5 2 1 .5 3h4l.5-3 2-1 3 .5 2-3-2.5-2v-2l2.5-2-2-3-3 .5-2-1-.5-3z"></path><circle cx="11" cy="12" r="3"></circle></symbol>
+</defs></svg>
+<main class="page page-wide"><div class="surface">
+<header><div class="brand"><img src="icons/logo.svg" width="30" height="30" alt=""><div>
+<strong data-product>beNotable! Reader</strong>
+<span class="small" data-i18n="extSubtitle">Artikel &amp; PDFs vorlesen</span></div></div>
+<span class="version" id="version"></span></header>
+<div class="body">
+<h1 data-i18n="extHelpTitle">Hilfe zum Vorlesen</h1>
+<p data-i18n="extHelpIntro"></p>
+<nav class="help-toc" aria-label="Hilfe" data-i18n-aria="extHelpTitle"><ul>
+<li><a href="#help-read" data-i18n="extHelpDocument"></a></li><li><a href="#help-keys" data-i18n="kbHelpTitle"></a></li>
+<li><a href="#help-voices" data-i18n="extHelpVoicesTitle"></a></li><li>
+<a href="#help-files" data-i18n="extHelpFilesTitle"></a></li>
+<li><a href="#help-local" data-i18n="extHelpPrivacy"></a></li><li>
+<a href="#help-trouble" data-i18n="extHelpUnavailable"></a></li>
+</ul></nav>
+
+<div class="help-topics">
+<section class="help-topic">
+<h2 id="help-read" data-i18n="extHelpDocument">Eine Seite vorlesen</h2>
+<ol><li data-i18n="extHelpOpen"></li><li data-i18n="extHelpShow"></li><li data-i18n="extHelpPlay"></li></ol>
+<p data-i18n="extHelpSelection"></p>
+<p data-i18n="extHelpHighlight"></p>
+</section>
+
+<section class="help-topic">
+<h2 id="help-keys" data-i18n="kbHelpTitle">Tastaturkürzel</h2>
+<p data-i18n="extHelpKeysGlobal"></p>
+<dl class="help-keys" id="help-key-list"></dl>
+<p id="help-keys-bar"></p>
+</section>
+
+<section class="help-topic">
+<h2 id="help-voices" data-i18n="extHelpVoicesTitle">Stimmen laden und löschen</h2>
+<p id="help-voices-text"></p>
+<p data-i18n="extHelpVoicesRemove"></p>
+</section>
+
+<section class="help-topic">
+<h2 id="help-files" data-i18n="extHelpFilesTitle">PDFs und Dateien</h2>
+<p data-i18n="extHelpFiles"></p>
+<p data-i18n="extHelpScans"></p>
+<p data-i18n="extHelpLocalFiles"></p>
+</section>
+
+<section class="help-topic">
+<h2 id="help-local" data-i18n="extHelpPrivacy">Was „lokal“ bedeutet</h2>
+<p data-i18n="extHelpLocal"></p>
+<p data-i18n="extHelpPreferences"></p>
+<p><a href="privacy.html" data-i18n="supportFreePrivacy">Datenschutz &amp; lokale Daten</a></p>
+</section>
+
+<section class="help-topic">
+<h2 id="help-trouble" data-i18n="extHelpUnavailable">Wenn etwas nicht klappt</h2>
+<ul class="help-trouble">
+<li data-i18n="extHelpNoSound"></li><li data-i18n="extHelpVoiceLoad"></li>
+<li data-i18n="extHelpNotRecognized"></li><li data-i18n="extHelpService"></li>
+</ul>
+</section>
+
+<section class="help-topic">
+<h2 data-i18n="extHelpFree">Alles kostenlos</h2>
+<p data-i18n="extHelpFreeText"></p>
+</section>
+</div>
+
+<section class="help-status" aria-labelledby="help-status-title">
+<h2 id="help-status-title" data-i18n="extHelpConnection">Status und Diagnose</h2>
+<div class="help-status-grid"><div>
+<div class="connection" id="connection" data-state="loading" role="status"><span class="dot"></span>
+<span id="connection-label" data-i18n="extConnectionChecking">Status wird geprüft …</span></div>
+<section class="errorbox" id="errorbox" role="alert" hidden>
+<svg class="errorbox-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 17h.01"></path></svg>
+<div class="errorbox-copy"><strong id="error-title" data-i18n="extErrorTitle"></strong>
+<p id="error-message"></p><div class="errorbox-actions"><button id="retry" type="button" data-i18n="extRetry">Erneut versuchen</button></div>
+<details class="errorcode"><summary data-i18n="extErrorDetails">Technische Details</summary><code id="error-code">
+</code></details></div></section>
+<div class="actions">
+<button class="action" id="refresh"><svg aria-hidden="true"><use href="#reset"></use></svg>
+<span data-i18n="extRefresh">Status prüfen</span></button>
+<button class="action" id="open-options"><svg aria-hidden="true"><use href="#gear"></use></svg>
+<span data-i18n="extOpenSettings">Einstellungen öffnen</span></button>
+</div></div>
+<details class="diagnostics"><summary data-i18n="extForSupport">Für den Support</summary>
+<pre id="diagnostics" data-i18n="extNoDiagnosis">Noch kein Status abgefragt.</pre>
+<button id="copy-diagnostics" data-i18n="extCopyDiagnosis">Diagnose kopieren</button>
+<textarea class="manual-copy" id="manual-copy" aria-label="Diagnose zum manuellen Kopieren" readonly hidden
+ data-i18n-aria="extCopyManually"></textarea>
+<p class="small" data-i18n="extDiagnosisPrivacy">Enthält keine URLs, Tabtitel oder Dokumenttexte.</p></details>
+</div></section>
+</div>
+<footer class="footer"><button class="textbutton" id="open-welcome" data-i18n="extWelcomeLink">Erste Schritte</button>
+<button class="textbutton" id="website-link" disabled data-i18n="extWebsitePending">Website in Vorbereitung</button>
+</footer>
+</div></main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</body></html>

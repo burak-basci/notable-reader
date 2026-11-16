@@ -1,0 +1,20 @@
+{
+  "extName": {
+    "message": "beNotable! Reader"
+  },
+  "extDescription": {
+    "message": "Liest Webseiten, PDFs und E-Books mit natürlichen Stimmen vor, die auf deinem Gerät laufen. Kostenlos, ohne Konto, offline."
+  },
+  "actionTitle": {
+    "message": "beNotable! Reader öffnen"
+  },
+  "cmdTogglePlay": {
+    "message": "Abspielen oder pausieren (ohne offene Leiste: öffnen)"
+  },
+  "cmdPreviousSection": {
+    "message": "Vorheriger Satz"
+  },
+  "cmdNextSection": {
+    "message": "Nächster Satz"
+  }
+}

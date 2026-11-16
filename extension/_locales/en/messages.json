@@ -1,0 +1,26 @@
+{
+  "extName": {
+    "message": "beNotable! Reader",
+    "description": "Extension name in the browser and the store. Always \"beNotable! Reader\"."
+  },
+  "extDescription": {
+    "message": "Reads web pages, PDFs and e-books aloud with natural voices that run on your device. Free, no account, works offline.",
+    "description": "Store summary and extension description, at most 132 characters."
+  },
+  "actionTitle": {
+    "message": "Open beNotable! Reader",
+    "description": "Tooltip of the toolbar button and name of the shortcut that opens the extension."
+  },
+  "cmdTogglePlay": {
+    "message": "Play or pause (opens the bar first if none is open)",
+    "description": "Keyboard shortcut list: starts or pauses reading aloud."
+  },
+  "cmdPreviousSection": {
+    "message": "Previous sentence",
+    "description": "Keyboard shortcut list: jumps to the previous sentence."
+  },
+  "cmdNextSection": {
+    "message": "Next sentence",
+    "description": "Keyboard shortcut list: jumps to the next sentence."
+  }
+}

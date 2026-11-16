@@ -1,0 +1,26 @@
+{
+  "name": "beNotable! Reader",
+  "short_name": "beNotable!",
+  "description": "PDFs, E-Books und Texte lokal vorlesen und als Hörbuch exportieren.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7f5",
+  "theme_color": "#145c4c",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

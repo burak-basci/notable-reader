@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-i18n="extWelcomeTitle">Willkommen bei beNotable! Reader</title><link rel="icon" href="icons/icon-32.png">
+<link rel="stylesheet" href="popup.css"><script type="module" src="welcome.js"></script></head>
+<body data-page="welcome"><main class="page page-wide"><div class="surface"><header><div class="brand">
+<img src="icons/logo.svg" width="30" height="30" alt=""><div><strong data-product>beNotable! Reader</strong>
+<span class="small" data-i18n="extSubtitle">Artikel &amp; PDFs vorlesen</span></div></div>
+<span class="version" id="version"></span></header>
+<div class="body"><h1 data-i18n="extWelcomeHeading">Dein erster Text in einer Minute</h1>
+<p class="copy welcome-intro" data-i18n="extWelcomeIntro">Drei Schritte, dann liest dir der Reader vor.</p>
+<div class="welcome-layout">
+<ol class="welcome-steps">
+<li id="welcome-article"><h2 data-i18n="extWelcomeStep1Lead">Artikel öffnen</h2>
+<p class="copy" data-i18n="extWelcomeStep1Text"></p>
+<a class="welcome-link" id="welcome-file" href="tools/reader/reader.html" data-i18n="extOpenFile">Datei öffnen</a></li>
+<li id="welcome-icon"><h2 data-i18n="extWelcomeStep2Lead">Symbol anklicken und „Diese Seite vorlesen“</h2>
+<p class="copy" id="welcome-own-text"></p><p class="copy welcome-pin" id="welcome-pin" hidden>
+<strong data-i18n="extWelcomePinLead">Symbol anheften</strong> <span data-i18n="extWelcomePinText"></span></p></li>
+<li id="welcome-sample"><h2 data-i18n="extWelcomeStep3Lead">Die Stimme wird einmalig geladen</h2>
+<p class="copy" id="welcome-voice-text"></p>
+<button type="button" class="welcome-play" id="welcome-play" aria-pressed="false"
+ data-i18n="extWelcomeSamplePlay">Hörprobe abspielen</button>
+<p class="copy welcome-state" id="welcome-sample-state" role="status" hidden></p></li>
+</ol>
+<aside class="welcome-aside">
+<section class="welcome-keys" aria-labelledby="welcome-keys-title">
+<h2 id="welcome-keys-title" data-i18n="kbHelpTitle">Tastaturkürzel</h2><dl id="welcome-keys"></dl>
+<p class="copy" id="welcome-keys-more"></p></section>
+<p class="welcome-local" data-i18n="extWelcomeLocal"></p>
+<p class="welcome-more">
+<a class="welcome-link" id="welcome-library" href="library/library.html"
+ data-i18n="extWelcomeListeningList">Gemerktes öffnen</a>
+<a class="welcome-link" href="help.html" data-i18n="extHelp">Hilfe</a></p>
+</aside>
+</div>
+</div></div></main></body></html>

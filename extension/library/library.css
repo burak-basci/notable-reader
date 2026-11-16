@@ -1,0 +1,38 @@
+/* The library uses the Reader's own paper, type and controls, in a tab or standalone. */
+:root:has(body[data-page=library]){--paper:#fff;--ink:#000;--muted:#4d554f;--line:#dfe4df;--soft:#f5f6f3;--accent:#256249;--focus-ring:#256249;--on:#fff}body[data-page=library]{margin:0 auto;max-width:1000px;padding:24px;color:var(--ink);background:var(--paper);font:12px/1.5 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body[data-page=library]>*{box-sizing:border-box}body[data-page=library]>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.library-back{font-size:11px;color:var(--muted)}body[data-page=library] .brand{font-size:15px;font-weight:650;color:var(--ink);text-decoration:none}
+.reader-library{width:100%;min-width:0;font:inherit;color:var(--ink);--library-line:var(--line,#dfe4df)}
+.reader-library *{box-sizing:border-box}.reader-library [hidden]{display:none!important}
+.reader-library .library-heading{margin-bottom:12px}.reader-library .library-heading h3{font-size:13px;font-weight:600;margin:0 0 6px;line-height:1.4}.reader-library .library-privacy{font-size:10px;color:var(--muted);line-height:1.5;margin:0}
+.reader-library button,.reader-library input,.reader-library select{font:inherit;color:inherit;border:1px solid var(--line);border-radius:7px;background:var(--paper);min-height:33px;padding:7px 10px}
+.reader-library button{cursor:pointer;font-size:11px}.reader-library button:hover{border-color:var(--accent)}.reader-library button:disabled{opacity:.5;cursor:default}.reader-library button:focus-visible,.reader-library input:focus-visible,.reader-library select:focus-visible,.reader-library a:focus-visible{outline:3px solid var(--focus-ring,#256249);outline-offset:2px}
+/* One tab row (round 4): the tabs share the full width equally, one line each (short labels, library/i18n.mjs tabLabels). */
+.reader-library .library-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border-bottom:1px solid var(--line);margin-bottom:10px}.reader-library .library-tabs button{min-width:0;padding:6px 4px 8px;min-height:32px;background:transparent;border:0;border-radius:0;border-bottom:2px solid transparent;color:var(--muted);text-align:center;white-space:nowrap}.reader-library .library-tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.reader-library .library-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 12px}.reader-library #search{flex:1 1 180px;min-width:100px;width:0}.reader-library .library-primary{border-color:var(--accent);color:var(--accent);font-weight:550}.reader-library #audio-voice{flex:1;min-width:130px;max-width:100%}
+.reader-library ol{padding:0;margin:0;list-style:none}.reader-library li{padding:12px;border:1px solid var(--line);border-radius:8px;margin:0 0 10px;background:var(--paper);min-width:0}.reader-library li h2{font-size:12px;font-weight:600;line-height:1.4;margin:0 0 5px;overflow-wrap:anywhere}.reader-library li p{font-size:11px;line-height:1.5;margin:0;color:var(--muted);overflow-wrap:anywhere}.reader-library li a{font-size:10px;line-height:1.6;color:var(--accent);overflow-wrap:anywhere}.reader-library .item-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.reader-library .item-actions button{font-size:10px;min-height:29px;padding:5px 8px}.reader-library #message{font-size:10px;color:var(--muted);min-height:0;margin:0 0 8px}.reader-library #message:empty{display:none}.reader-library #message[role=alert]{color:var(--error,#a84630)}.reader-library audio{width:100%;margin:0 0 12px}
+@media(prefers-color-scheme:dark){:root:has(body[data-page=library]):not([data-reader-theme=light]){--paper:#171d19;--ink:#e7ece7;--muted:#aab6ad;--line:#3d4a41;--soft:#202a23;--accent:#83bba0;--focus-ring:#a5d3b3;--on:#10241a}}
+@media(max-width:500px){body[data-page=library]{padding:18px 14px}.reader-library .library-actions{align-items:stretch}.reader-library #search{flex-basis:100%;width:100%}.reader-library li{padding:10px}}
+
+:root[data-reader-theme=dark]:has(body[data-page=library]){--paper:#1c1f1d;--ink:#e8eee8;--muted:#adb9b0;--line:#3b4b40;--soft:#242c26;--accent:#a5d3b3;--focus-ring:#a5d3b3;--on:#10241a}
+
+.reader-library progress{display:block;width:100%;height:5px;margin:9px 0 0;accent-color:var(--accent)}.reader-library #history-search{flex:1 1 180px;min-width:100px;width:0}.reader-library #history>.library-privacy{margin:0 0 12px}
+
+.reader-library #documents-search,.reader-library #bookmarks-search{flex:1 1 160px;min-width:100px;width:0}.reader-library #documents>.library-privacy,.reader-library #bookmarks>.library-privacy{margin:0 0 12px}.reader-library .bookmark-context{margin-top:6px;color:var(--ink);font-size:12px;line-height:1.5}.reader-library .bookmark-editor{display:flex;align-items:end;flex-wrap:wrap;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.reader-library .bookmark-editor label{display:flex;flex:1 1 180px;flex-direction:column;gap:5px;color:var(--muted);font-size:11px}.reader-library .bookmark-editor input{min-width:0;width:100%}.reader-library input[type=file][hidden]{display:none!important}
+
+/* Saved (listening list + remembered spots in one list, library/saved.mjs): the same entry as in the popup. */
+.reader-library .saved-entry{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:10px;align-items:start}
+.reader-library .saved-entry>.plib-entry-actions{grid-column:2;justify-content:flex-start;margin-top:10px}
+.reader-library .saved-entry>.plib-lead{display:grid;place-items:center;width:24px;height:24px;color:var(--accent)}
+.reader-library .saved-entry svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.reader-library .saved-entry h4{margin:0 0 4px;font-size:13px;font-weight:600;line-height:1.4;overflow-wrap:anywhere}
+.reader-library .saved-meta,.reader-library .saved-start{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.reader-library .plib-quote{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--ink);font-style:italic}
+.reader-library .plib-entry-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end}
+.reader-library .plib-main{border-color:var(--accent);color:var(--accent);font-weight:600}
+.reader-library .plib-remove{display:inline-grid;place-items:center;width:33px;padding:0}
+.reader-library .saved-more{grid-column:2/-1;margin-top:8px}.reader-library .saved-more>summary{cursor:pointer;font-size:12px;color:var(--accent);min-height:24px}
+.reader-library .saved-spots{margin:8px 0 0}.reader-library .saved-spot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin:0 0 6px;padding:8px 10px}
+.reader-library .saved-entry>.plib-entry-copy{min-width:0}.reader-library .saved-entry .bookmark-editor{grid-column:2/-1}
+
+.reader-library .saved-name{margin:4px 0 0;font-size:12px;font-weight:600;color:var(--ink)}
+.reader-library .saved-meta a{font-size:inherit}

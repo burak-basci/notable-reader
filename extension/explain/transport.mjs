@@ -1,0 +1,1 @@
+export function runtimePortAdapter(raw,onDisconnect=()=>{}){let handler=null;raw.onMessage.addListener(data=>handler?.({data}));raw.onDisconnect.addListener(onDisconnect);return {postMessage:data=>raw.postMessage(data),close:()=>raw.disconnect(),start(){},set onmessage(fn){handler=fn;}};}
