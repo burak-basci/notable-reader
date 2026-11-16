@@ -137,7 +137,17 @@ def build(root,output,requested=None,allow_unbound=False):
  extension['version.json']=encoded({'productVersion':version,'sourceCommit':commit})
  extension['offline-assets.json']=offline_assets(extension);extension['manifest.json']=encoded(manifest)
  compat=dict(extension);compat['manifest.json']=encoded({**manifest,'key':COMPAT_KEY})
- web={n:d for n,d in extension.items() if (n in WEB_ROOTS or n.startswith(('vendor/','icons/'))) and n not in WEB_EXCLUDED and not shell_file(n)}
+ # New architecture: web app files are in tools/reader/
+ web={}
+ for n,d in extension.items():
+  if n in WEB_ROOTS or n.startswith(('vendor/','icons/')):
+   if n not in WEB_EXCLUDED and not shell_file(n):
+    web[n]=d
+  # Also check tools/reader/ for web root files
+  if n.startswith('tools/reader/') and n[len('tools/reader/'):] in WEB_ROOTS:
+   web_name=n[len('tools/reader/'):]
+   if web_name not in WEB_EXCLUDED and not shell_file(web_name):
+    web[web_name]=d
  web['index.html']=web['reader.html'].replace(b'<title>',b'<link rel="canonical" href="https://reader.benotable.de/app/"><title>',1)
  web['WEB-SOURCE-NOTICE.md']=(f'# Notable Reader {version} – Web-App-Quellen\n\nDiese daemonfreie Web-App benötigt weder Python noch Nativecompanion. Dokumente und Audio bleiben lokal. Webdownloads kostenlos, Erweiterungsdownloads mit Premium.\n\nQuellen: https://github.com/burak-basci/notable-reader/releases/download/v{version}/notable-reader-source-{version}.zip\n\nReproduzieren: python3 tools/release.py --output-dir <neues-verzeichnis>. Browser GPL-3.0-or-later, eigene Browsermodule zusätzlich MIT; Nativequellen separat nach native/LICENSE und native/THIRD_PARTY_NOTICES.md.\n').encode('utf-8')
  web['offline-assets.json']=offline_assets(web,True)
