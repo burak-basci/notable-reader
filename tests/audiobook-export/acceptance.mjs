@@ -1,0 +1,10 @@
+import {fileURLToPath} from 'node:url';
+import {unitChecks} from './unit.mjs';
+import {realBrowserChecks} from './real-browser.mjs';
+import {storageBrowserChecks} from './storage-browser.mjs';
+import {spawnSync} from 'node:child_process';
+const cancellation=spawnSync(process.execPath,[fileURLToPath(new URL('./model-cancel.mjs',import.meta.url))],{stdio:'inherit'});if(cancellation.status!==0)throw Error('Local model cancellation regression failed.');
+await unitChecks();
+await storageBrowserChecks();
+await realBrowserChecks();
+console.log('EXPORT ACCEPTANCE PASSED');

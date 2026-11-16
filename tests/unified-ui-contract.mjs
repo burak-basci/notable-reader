@@ -1,0 +1,47 @@
+// Contract/unit checks only: no browser, daemon, speech or network is started.
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {createHash,webcrypto} from 'node:crypto';
+Object.defineProperty(globalThis,'crypto',{value:webcrypto,configurable:true});
+const ID='hgkfghgifkifgmklfgglilnmjglojonm',listeners=new Set(),store={},session={},calls=[];
+let tab={id:7,url:'https://example.invalid/article',title:'Authored fixture',active:true},reply=null,visibleACK=true,injected=0,handoffActivates=false;
+const state={uiLanguage:'de',volume:75,speed:1.25,language:'auto',activeLanguage:'de',voice:'local',catalog:[{code:'de',voices:[{id:'local',label:'Fixture'}]}],sectionCount:4,sectionIndex:1,chapters:[{label:'Heading',sectionIndex:1}],selectionAvailable:true,appearance:{mode:'off'},controls:{appearanceFields:['mode']},exportState:{state:'idle'}};
+const live=(generation='generation-1')=>({ok:true,instanceId:'instance-'+generation,snapshot:{generation,ready:true,title:'Authored fixture',visible:true,state:structuredClone(state)}});
+const area=object=>({async get(key){return key===null?structuredClone(object):{[key]:object[key]};},async set(value){Object.assign(object,structuredClone(value));},async remove(keys){for(const key of [].concat(keys))delete object[key];},async getBytesInUse(){return 0;}});
+globalThis.chrome={runtime:{id:ID,getURL:p=>'chrome-extension://'+ID+'/'+p,getManifest:()=>({version:'2.4.0'}),onMessage:{addListener:f=>listeners.add(f),removeListener:f=>listeners.delete(f)}},storage:{local:area(store),session:area(session)},tabs:{async get(){return structuredClone(tab);},async create(value){calls.push(value);return{id:20};},async sendMessage(id,message){calls.push(message);if(message.action==='snapshot'){if(!reply)throw Error('No receiver');return structuredClone(reply);}if(message.action==='visible'){const answer=structuredClone(reply);answer.snapshot.visible=visibleACK?message.value:!message.value;return answer;}if(message.command==='openFocus'&&handoffActivates){tab.active=false;return{...structuredClone(reply),pending:true};}return structuredClone(reply);}},scripting:{async executeScript(){injected++;reply=live('generation-'+injected);}}};
+const {ArticlePlayerTransport,articleNativeStatus,isArticleUrl}=await import('../extension/article-player-transport.mjs');
+const {installArticleHandoff}=await import('../extension/article-handoff.mjs');
+let count=0;const check=(label,value)=>{assert.ok(value,label);count++;console.log('PASS '+label);};
+const factory=await fs.readFile(new URL('../extension/player-surface.mjs',import.meta.url));check('Original shared factory remains byte-identical',createHash('sha256').update(factory).digest('hex')==='974368c49f31b78d3c4ea11434c5bd7e2f3ba77e4f33392a1f19580fb88db45e');
+check('Browser article route rejects file/PDF/store pages',!isArticleUrl('file:///tmp/a.pdf')&&!isArticleUrl('https://example.invalid/book.pdf')&&!isArticleUrl('https://chromewebstore.google.com/detail/a')&&isArticleUrl(tab.url));
+const base={settings:{uiLanguage:'de'},catalog:[],engine:{ready:true},premium:{enabled:false,status:'free'},playback:{playing:false,paused:false},controls:{canToggle:false},components:{browserPlayer:true,localView:true}};
+const transport=new ArticlePlayerTransport(7);transport.global={async snapshot(){return{ok:true,status:structuredClone(base)};},async send(value){return{ok:true,delegated:value};},dispose(){}};
+let result=await transport.snapshot();check('Unstarted article has a connected unbound shell without injection',result.ok&&!result.targetContext.bound&&injected===0);
+result=await transport.send({type:'control',command:'setOverlayVisible',value:true});check('Explicit On injects and requires actual visible surface',result.ok&&result.status.sourceContext.overlayVisible&&injected===1);
+const mapped=articleNativeStatus(live().snapshot,base);check('Native shape preserves chapter/selection/appearance capabilities',mapped.chapters.length===1&&mapped.selectionAvailable&&mapped.controls.appearanceFields[0]==='mode');check('Article offers handoff instead of fake direct export rights',mapped.exportFormats.length===0&&!mapped.controls.canExport);
+result=await transport.send({type:'control',command:'toggle',sourceGeneration:'stale'});check('Stale source generation cannot issue playback',!result.ok&&result.code==='document_changed');
+visibleACK=false;result=await transport.send({type:'control',command:'setOverlayVisible',value:false});check('Visibility ACK mismatch is rejected',!result.ok);visibleACK=true;
+reply=null;result=await transport.snapshot();check('Lost host is represented as unbound rather than ready',result.ok&&!result.targetContext.bound);
+result=await transport.send({type:'control',command:'setOverlayVisible',value:true});check('Explicit On restores a lost host with new binding',result.ok&&injected===2&&result.targetContext.generation==='generation-2');
+handoffActivates=true;result=await transport.send({type:'control',command:'openFocus'});check('Intentional validated handoff may activate its own reader tab',result.ok&&!tab.active);handoffActivates=false;tab.active=true;
+tab.active=false;result=await transport.send({type:'control',command:'toggle'});check('Inactive tab cannot receive a queued document command',!result.ok&&result.code==='tab_changed');tab.active=true;
+tab.url='https://example.invalid/replacement';result=await transport.snapshot();check('Navigation invalidates transport identity',!result.ok&&result.code==='document_changed');tab.url='https://example.invalid/article';
+transport.dispose();result=await transport.snapshot();check('Disposed transport cannot send further commands',!result.ok);
+const remove=installArticleHandoff();installArticleHandoff();check('Shared handoff listener installs exactly once',listeners.size===1);
+const listener=[...listeners][0],sender={id:ID,frameId:0,documentId:'fixture-document',documentLifecycle:'active',url:tab.url,tab:structuredClone(tab)};
+const request={action:'open-local-reader',text:'Authored test fixture only.',title:'Fixture',language:'de',mode:'files',figures:[],warnings:[],source:{instanceId:'e510b528-b19f-4db0-8b95-a0261f14abe0',generation:'6588f93a-b584-473a-a5fa-c1a6136a7a38'}};
+const invoke=(message,who=sender)=>new Promise(resolve=>{const pending=listener(message,who,resolve);if(pending===false&&message.action!=='open-local-reader')resolve(null);});
+reply={ok:true,instanceId:request.source.instanceId,snapshot:{generation:request.source.generation,ready:true}};
+result=await invoke(request,{...sender,id:'unrelated-extension'});check('Handoff rejects foreign sender',!result.ok&&result.code==='handoff_sender_invalid');
+result=await invoke(request,{...sender,frameId:2});check('Handoff rejects subframe sender',!result.ok&&result.code==='handoff_sender_invalid');
+result=await invoke({...request,unexpected:'field'});check('Handoff rejects unexpected fields',!result.ok&&result.code==='handoff_invalid');
+result=await invoke({...request,source:{...request.source,generation:'9ce3bf65-68cc-4d51-97a9-f4b67fbed3db'}});check('Handoff checks live source generation',!result.ok&&result.code==='handoff_source_changed');
+session['notable-incoming-old']={created:Date.now()-300001};result=await invoke(request);check('Validated handoff opens only own root file reader',result.ok&&calls.at(-1).url.startsWith('chrome-extension://'+ID+'/reader.html#incoming='));check('Handoff expires old session material',!session['notable-incoming-old']);
+const saved=Object.entries(session).find(([key])=>key.startsWith('notable-incoming-'));check('Handoff stores bounded complete text with fresh TTL',saved?.[1].text===request.text&&Date.now()-saved[1].created<300000);
+remove();check('Handoff listener can be disposed',listeners.size===0);
+const catalog=JSON.parse(await fs.readFile(new URL('../extension/ui-locales.json',import.meta.url),'utf8')),keys=Object.keys(catalog.messages.de).sort();
+for(const {code}of catalog.languages){assert.deepEqual(Object.keys(catalog.messages[code]).sort(),keys);for(const key of ['exportMp3','exportWav','exportPdf','exportHtml','extRuntimeMode','extBrowserReaderHandoff'])assert.ok(catalog.messages[code][key]);}
+check('Six locales retain every shared key and runtime/download labels',catalog.languages.length===6);
+for(const name of ['popup.html','options.html']){const source=await fs.readFile(new URL('../extension/'+name,import.meta.url),'utf8');check(name+' preserves runtime choice and support entry',source.includes('id="runtime-mode"')&&source.includes('data-donation-link'));}
+const css=await fs.readFile(new URL('../extension/popup.css',import.meta.url),'utf8');check('Accepted 88px round power control remains present',css.includes('flex:0 0 88px')&&css.includes('border-radius:50%'));
+console.log(JSON.stringify({passed:count,browserStarted:false,nativeStarted:false,networkUsed:false}));

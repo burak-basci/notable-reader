@@ -1,0 +1,27 @@
+{
+  "catalog": "https://www.gutenberg.org/ebooks/14838",
+  "author": "Beatrix Potter (1866–1943)",
+  "book": "The Tale of Peter Rabbit",
+  "selection": "Complete narrative from first story sentence through THE END; illustration placeholders and non-narrative publisher/licence boilerplate excluded. Original files preserved.",
+  "storyWords": 950,
+  "storySha256": "8df3162445d4d58b6edbf740f20d028ef9c69a5fd39288ca99dd43156dffca40",
+  "storyCharacters": 5162,
+  "storyContentCharactersExcludingFinalNewline": 5161,
+  "files": [
+    {
+      "file": "peter-rabbit-complete-story.txt",
+      "bytes": 5162,
+      "sha256": "43fef4b232241a8f97795bdeab8c535bb98c07f494f8240755a26ae80ef07858"
+    },
+    {
+      "file": "peter-rabbit-gutenberg-original.txt",
+      "bytes": 25952,
+      "sha256": "2bf0e04297038fd97697dfac2b8a2db14f2b80c2012727f7ac0f28cf0b146544"
+    }
+  ],
+  "sourceUrls": [
+    "https://www.gutenberg.org/ebooks/14838.epub3.images",
+    "https://www.gutenberg.org/cache/epub/14838/pg14838.txt"
+  ],
+  "rights": "Public-domain text; author died in 1943 and this 1902 work is public domain in Germany/EU and the United States as of 2026. Project Gutenberg source/trademark/licence notices are preserved in the original source text."
+}

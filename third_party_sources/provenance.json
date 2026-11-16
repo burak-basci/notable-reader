@@ -1,0 +1,30 @@
+[
+  {
+    "name": "piper-phonemize",
+    "repo": "wide-video/piper-phonemize",
+    "commit": "cfff8e52ebaea37c7e953ae2d06b174acb827ac4",
+    "archive_sha256": "7029b52aabc2512d36f4d98c6ede732c48a0e7128d0cd0e62379dfcee770038e",
+    "archive_bytes": 9787575
+  },
+  {
+    "name": "espeak-ng",
+    "repo": "rhasspy/espeak-ng",
+    "commit": "0f65aa301e0d6bae5e172cc74197d32a6182200f",
+    "archive_sha256": "37ebbabb010200be8ec26c61b770e93f964f4503a329d7d74c239a1a40051e43",
+    "archive_bytes": 16321475
+  },
+  {
+    "name": "espeak-ng-data-source",
+    "repo": "rhasspy/espeak-ng",
+    "commit": "8593723f10cfd9befd50de447f14bf0a9d2a14a4",
+    "archive_sha256": "41c199da1355deec93eab6065be99d00b938dd452e78f282ab481db91657e4e4",
+    "archive_bytes": 16321829
+  },
+  {
+    "name": "piper-wasm-build",
+    "repo": "wide-video/piper-wasm",
+    "commit": "7a9170ab4b58c241e472fea8d6f67d0e5ca5ac21",
+    "archive_sha256": "8fba3b3abf51247e80d5b9b4305064a679bcab12ad2c6cd866e8c3fee6099e50",
+    "archive_bytes": 1705
+  }
+]

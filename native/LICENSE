@@ -1,0 +1,13 @@
+Notable Reader optional native companion
+Copyright (c) 2026 Burak Basci
+
+The native companion's own source code in this directory is licensed under the
+GNU Affero General Public License, version 3 or (at your option) any later
+version (AGPL-3.0-or-later). The complete license is in COPYING-AGPL-3.0.
+
+This notice applies to the native companion, not to the separately licensed
+browser distribution. Third-party Python libraries, voice/model weights and
+system programs retain their own licenses. See THIRD_PARTY_NOTICES.md.
+No Artifex commercial license, model license, or paid entitlement is granted
+by this source distribution. No Python environment, dependency binaries,
+CUDA libraries, model weights or user configuration are included.

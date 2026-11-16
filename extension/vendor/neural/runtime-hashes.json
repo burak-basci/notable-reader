@@ -1,0 +1,30 @@
+{
+  "piper_source_commit": "cfff8e52ebaea37c7e953ae2d06b174acb827ac4",
+  "espeak_compiled_source_commit": "0f65aa301e0d6bae5e172cc74197d32a6182200f",
+  "files": {
+    "ort/ort.wasm.min.mjs": {
+      "bytes": 48259,
+      "sha256": "6ef726f355b791129f7ddf3f62e7877a16b9b777abe87004b8ab306e6b9cf265"
+    },
+    "ort/ort-wasm-simd-threaded.mjs": {
+      "bytes": 20856,
+      "sha256": "30dd851d9c00622940500f71ddd2ff8820c5cb65270816080175b958705385a8"
+    },
+    "ort/ort-wasm-simd-threaded.wasm": {
+      "bytes": 11210254,
+      "sha256": "71aef04959c5c1b6de461b6538e2058e306610034a85aad2742d0c7fd4533fe4"
+    },
+    "piper/piper_phonemize.wasm": {
+      "bytes": 635212,
+      "sha256": "b777cd107a91d2bcc6a1ea46f2c26a662a7407394fe84589198aeaa83dd7a9d6"
+    },
+    "piper/piper_phonemize.data": {
+      "bytes": 18077249,
+      "sha256": "29f1025eb23a5b5c192cd14a6efbce4509402ff265405072ee6f7d1a09b78f8c"
+    },
+    "piper/piper_phonemize.mjs": {
+      "bytes": 120839,
+      "sha256": "6c24ca87b39add23746db5cb7b421c9e36565e308dd8c4aef55a8fc3323af35c"
+    }
+  }
+}

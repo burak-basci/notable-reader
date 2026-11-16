@@ -1,0 +1,41 @@
+// Real worker routing with a controlled local transport, no browser/audio.
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {webcrypto,createHash,randomUUID} from 'node:crypto';
+const root=new URL('../',import.meta.url), source=readFileSync(new URL('extension/service-worker.js',root),'utf8');
+const checks=[];
+const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
+let runtimeMode='native',permission=true,apiStatusCalls=0;
+let updated,removed,listener,gen=randomUUID(),visible=false,gate=null,showFail=null,shows=0,controls=[];
+const tabs=new Map([[7,{id:7,active:true,url:'https://example.invalid/article',title:'Synthetic public fixture'}]]);
+function snapshot(){return {version:1,productVersion:'2.4.0',buildHash:'a'.repeat(64),ready:true,sectionCount:1,documentState:{state:'ready',generation:gen},sourceContext:{bound:true,kind:'html',generation:gen,overlayVisible:visible,sourceKey:createHash('sha256').update(JSON.stringify(['html',tabs.get(7).url,tabs.get(7).title])).digest('hex')},settings:{},engine:{},playback:{},controls:{canToggle:true}};}
+class ReaderError extends Error{constructor(code){super(code);this.code=code;}}
+const api={ReaderError,cleanAppearance:()=>({}),validControl:()=>true,status:async()=>{apiStatusCalls++;return snapshot();},show:async()=>{shows++;if(gate)await gate;if(showFail)throw new ReaderError(showFail);visible=true;},control:async(command,value,expected)=>{controls.push({command,value,expected});if(expected!==gen)throw new ReaderError('document_changed');visible=value;return snapshot();}};
+const chrome={storage:{session:{get:async()=>({}),remove:async()=>{},set:async()=>{}}},runtime:{id:'reader',getURL:name=>'chrome-extension://reader/'+name,onMessage:{addListener:fn=>listener=fn}},tabs:{get:async id=>tabs.get(id),query:async()=>[...tabs.values()],onUpdated:{addListener:fn=>updated=fn},onRemoved:{addListener:fn=>removed=fn}},action:{setTitle:async()=>{},setBadgeText:async()=>{},setBadgeBackgroundColor:async()=>{}}};
+const context=vm.createContext({getRuntimeState:async()=>({mode:runtimeMode,canSelectNative:true,nativePermissionGranted:permission,nativeEnabled:permission&&runtimeMode==='native'}),setRuntimeMode:async()=>({ok:true}),installArticleHandoff:()=>{},readerAPI:api,chrome,product:{name:'Reader'},t:key=>key,errorText:key=>key,setUiLanguage:()=>{},uiLanguages:[],formatLocales:[],catalogReady:Promise.resolve(),crypto:webcrypto,TextEncoder,URL,Map,Set,setTimeout,clearTimeout});
+vm.runInContext(source.replace(/^import .*;\n/gm,''),context);
+const send=message=>new Promise(resolve=>{assert.equal(listener(message,{id:'reader',url:chrome.runtime.getURL('popup.html')},resolve),true);});
+let value=await send({type:'snapshot',tabId:7});check('Metadata can recover the already-bound source before navigation',value.targetContext.bound);
+const before=shows;value=await send({type:'control',command:'setOverlayVisible',value:true,tabId:7,sourceGeneration:gen});check('Explicit open reattaches even when metadata still says bound',value.ok&&shows===before+1&&visible);
+updated(7,{status:'loading'});value=await send({type:'snapshot',tabId:7});check('Same URL/title reload cannot recover an invalidated old document',!value.targetContext.bound);
+const old=gen;gen=randomUUID();value=await send({type:'control',command:'setOverlayVisible',value:true,tabId:7,sourceGeneration:old});check('Explicit open from a stale popup resolves the new active document',value.ok&&controls.at(-1).expected===gen);
+value=await send({type:'control',command:'setOverlayVisible',value:false,tabId:7,sourceGeneration:old});check('Stale hide cannot affect the replacement document',!value.ok&&value.code==='document_changed');
+const n=shows;value=await send({type:'control',command:'setOverlayVisible',value:false,tabId:7,sourceGeneration:gen});check('Confirmed bound close does not reattach or show first',value.ok&&!visible&&shows===n);
+let release;gate=new Promise(resolve=>release=resolve);const late=send({type:'control',command:'setOverlayVisible',value:true,tabId:7});
+while(shows===n)await new Promise(resolve=>setTimeout(resolve,0));
+updated(7,{status:'loading'});const commandCount=controls.length;release();gate=null;value=await late;check('A late Ready ACK after same-URL reload never applies visibility',!value.ok&&value.code==='tab_changed'&&controls.length===commandCount);
+value=await send({type:'snapshot',tabId:7});check('Late Ready cannot restore the invalidated source association',!value.targetContext.bound);
+showFail='timeout';value=await send({type:'control',command:'setOverlayVisible',value:true,tabId:7});check('Timed-out prepare never issues a visibility command',!value.ok&&value.code==='timeout'&&controls.length===commandCount);showFail=null;
+tabs.get(7).active=false;value=await send({type:'control',command:'setOverlayVisible',value:true,tabId:7});check('Tab switch fails closed instead of binding the wrong tab',!value.ok&&value.code==='tab_changed');tabs.get(7).active=true;
+value=await send({type:'control',command:'setOverlayVisible',value:true,tabId:7});check('Returning to the original tab can open without a stale busy job',value.ok);
+removed(7);
+value=await send({type:'snapshot',tabId:7});check('SDK preserves product identity independently from protocol',value.status.productVersion==='2.4.0'&&value.status.buildHash==='a'.repeat(64)&&value.status.version===1);
+value=await send({type:'runtimeGet'});check('Runtime capability is separate from native settings',value.ok&&value.runtime.mode==='native');
+const apiBefore=apiStatusCalls;runtimeMode='browser';permission=false;
+value=await send({type:'snapshot',tabId:7});check('Browser mode without permission never calls native status',!value.ok&&value.code==='unavailable'&&apiStatusCalls===apiBefore);
+permission=true;value=await send({type:'runtimeSet',mode:'invalid'});check('Invalid mode cannot mutate native settings',!value.ok&&value.code==='invalid');
+const frameResult=listener({type:'runtimeGet'},{id:'reader',url:'https://example.invalid/article',tab:tabs.get(7),frameId:0},()=>{});check('Web frame cannot invoke trusted worker runtime controls',frameResult===false);
+const focusURL=chrome.runtime.getURL('focus.html')+'#doc='+gen;tabs.set(8,{id:8,active:true,url:focusURL,title:'Focus'});
+value=await new Promise(resolve=>listener({type:'snapshot'},{id:'reader',url:focusURL,tab:tabs.get(8),frameId:0},resolve));check('Existing focus stays native after global browser choice',value.ok&&value.targetContext.type==='focus'&&value.targetContext.bound);
+console.log(JSON.stringify({passed:true,checks:checks.length,cases:checks,controlledTransport:true}));
