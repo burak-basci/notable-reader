@@ -6,3 +6,4 @@ releases/
 __pycache__/
 .DS_Store
 .env.cws
+extension/vendor/explain/transformers.min.js
