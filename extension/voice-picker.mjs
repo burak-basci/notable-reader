@@ -757,18 +757,25 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
     const e=effective(),t=lookup(node.dataset.key,e);if(!t)return;
     const {row,entry}=t;
     if(entry.installed||row.system){useEntry(row,entry);return;}
-    // Not installed: download and then use
+    // Not installed: download and then wait for installation via update()
     tried.add(entry.id);
     send('downloadVoice',entry.id);
     say(uiText('voice_dl_queued',{voice:shown(row)}));
-    // Poll until installed, then apply
-    const waitInstalled=setInterval(()=>{
-      if(info?.installed?.includes?.(entry.id)){
-        clearInterval(waitInstalled);
-        useEntry(row,entry);
+    const voiceId=entry.id;
+    const waitInstalled=()=>{
+      // Find the voice in the updated catalog
+      for(const group of info?.catalog||[]){
+        const v=group.voices.find(x=>x.id===voiceId);
+        if(v&&v.installed){
+          useEntry(row,v);
+          return true;
+        }
       }
-    },500);
-    setTimeout(()=>clearInterval(waitInstalled),300000); // 5 min timeout
+      return false;
+    };
+    // Poll for installation (update() is called from service worker when download completes)
+    const poll=setInterval(()=>{if(waitInstalled())clearInterval(poll);},500);
+    setTimeout(()=>clearInterval(poll),300000); // 5 min timeout
   });
  const playMarked=()=>{const e=effective(),t=lookup(markedId(e,modelsOf(e)),e);if(t)playSample(t.entry);};
  bannerBack.addEventListener('click',()=>{commitLanguage('auto');});
