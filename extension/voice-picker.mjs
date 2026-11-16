@@ -751,6 +751,25 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   if(button){const rowEl=button.closest('.vp-row');if(rowEl&&button.getAttribute('aria-disabled')!=='true')rowAction(button.dataset.act,rowEl.dataset.id,event);return;}
   const node=event.target.closest?.('.vp-opt');if(!node)return;
   const e=effective(),id=node.dataset.key;setHighlight(id);grid.focus({preventScroll:true});chooseLine(lookup(id,effective()),e);});
+  /* Double-click on a voice row: download if needed, then use it (start reading) */
+  voices.addEventListener('dblclick',event=>{
+    const node=event.target.closest?.('.vp-opt');if(!node)return;
+    const e=effective(),t=lookup(node.dataset.key,e);if(!t)return;
+    const {row,entry}=t;
+    if(entry.installed||row.system){useEntry(row,entry);return;}
+    // Not installed: download and then use
+    tried.add(entry.id);
+    send('downloadVoice',entry.id);
+    say(uiText('voice_dl_queued',{voice:shown(row)}));
+    // Poll until installed, then apply
+    const waitInstalled=setInterval(()=>{
+      if(info?.installed?.includes?.(entry.id)){
+        clearInterval(waitInstalled);
+        useEntry(row,entry);
+      }
+    },500);
+    setTimeout(()=>clearInterval(waitInstalled),300000); // 5 min timeout
+  });
  const playMarked=()=>{const e=effective(),t=lookup(markedId(e,modelsOf(e)),e);if(t)playSample(t.entry);};
  bannerBack.addEventListener('click',()=>{commitLanguage('auto');});
  btn.addEventListener('click',event=>{if(!info)return;if(open)close(false);else openPanel(event.detail===0);});
