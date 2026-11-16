@@ -131,7 +131,9 @@ def build(root,output,requested=None,allow_unbound=False):
  metadata={'schema':1,'productVersion':version,'sourceCommit':commit,'sourceTreeHash':tree_hash(files),'nativeBuildHash':native_info['buildHash'],'boundToGitCommit':bool(commit)}
  if (root/'BUILD-METADATA.json').is_file() and json.loads((root/'BUILD-METADATA.json').read_text())!=metadata:raise ValueError('Reconstructed source does not match build metadata')
  extension={n.removeprefix('extension/'):d for n,d in files.items() if n.startswith('extension/')}
- if any(n.startswith(('tools/','native/')) for n in extension):raise ValueError('Duplicated reader/native tree in extension')
+  # New architecture: extension/tools/reader/ is intentional (not repo-root tools/ or native/)
+  if any(n.startswith('native/') or (n.startswith('tools/') and not n.startswith('tools/reader/')) for n in extension):
+    raise ValueError('Duplicated reader/native tree in extension')
  for n in LICENSES:extension[n]=files[n]
  extension['version.json']=encoded({'productVersion':version,'sourceCommit':commit})
  extension['offline-assets.json']=offline_assets(extension);extension['manifest.json']=encoded(manifest)
