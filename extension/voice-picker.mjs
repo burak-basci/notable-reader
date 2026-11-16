@@ -78,6 +78,8 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
  const uiName=code=>{if(namesLocale!==getLocale()){for(const k of [...names.keys()])if(k.startsWith('ui:'))names.delete(k);namesLocale=getLocale();}const key='ui:'+code;if(!names.has(key))names.set(key,intlName(getLocale(),code));return names.get(key);};
  const el=(tag,cls,text)=>{const node=document.createElement(tag);if(cls)node.className=cls;if(text!==undefined)node.textContent=text;return node;};
  let info=null,choice=null,choiceTimer=0,open=false,reg=null,highlight='',live='',serial=0,typed='',typedTimer=0,rowSignature='',progressSignature='',filterSignature='',confirming='',failKey='',failTimer=0,sortKey='quality',sortDir='desc',elo=null,eloAsked=false,languageChosen=false,showAll=false;
+ /* a voice picked by double click: downloaded now, used as soon as the catalog reports it as installed (5 minutes, then forgotten) */
+ let pendingUse=null;
  const filter={text:'',lang:'all'};let langOpen=false,langHi='',gpuKey='';
  const tried=new Set(),sample={key:'',state:'idle',audio:null,url:''};
  /* ---- markup ---- */
@@ -106,7 +108,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   .vp-head{display:flex;align-items:center;gap:3px;flex:none;height:24px;box-sizing:border-box;margin:0 1px;padding:0 3px 0 7px;font-size:9.5px;color:var(--reader-muted)}.vp-head [role=row]{display:contents}.vp-head .vp-hcell{display:flex;align-items:center;min-width:0;height:100%}
   .vp-hb{display:inline-flex;align-items:center;justify-content:center;gap:1px;max-width:none;min-width:24px;height:24px;min-height:24px;margin:0 -2px;padding:0 2px;border:0;border-bottom:2px solid transparent;border-radius:3px 3px 0 0;background:transparent;color:inherit;font:inherit;font-weight:600;letter-spacing:.02em;white-space:nowrap;cursor:pointer}.vp-hb:hover{background:var(--reader-soft);color:var(--reader-ink)}.vp-hb[data-on]{color:var(--reader-accent);border-bottom-color:var(--reader-accent)}.vp-hb svg{width:7px;height:7px;flex:none}
   .vp-hc-st{flex:none;width:24px;justify-content:center}.vp-hc-sz{flex:none;width:var(--vp-sz-w,46px);justify-content:flex-end}.vp-hc-play{flex:none;width:24px}.vp-hc-opt{display:flex;flex:1 1 auto;min-width:0;gap:5px;padding:0 3px}.vp-hc-opt>.vp-hcell{flex:none}.vp-hc-q{width:var(--vp-q-w,34px);overflow:visible;justify-content:center}.vp-hc-lg{width:var(--vp-lg-w,28px);overflow:visible;justify-content:center}.vp-hc-nm{flex:1 1 auto!important;min-width:0}.vp-hc-vr{width:var(--vp-vr-w,70px)}.vp-hc-pv{width:var(--vp-pv-w,3.9em)}.vp-hc-yr{width:var(--vp-yr-w,2.6em);justify-content:flex-end}
-  .vp-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--reader-line);border-radius:8px;background:var(--reader-paper);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}.vp-voices{position:relative;overflow-anchor:none;max-height:calc(var(--vp-row)*10 + 12px);min-height:var(--vp-row)}.vp[data-lang-open] .vp-voices{min-height:215px}
+  .vp-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--reader-line);border-radius:8px;background:var(--reader-paper);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;user-select:none;-webkit-user-select:none}.vp-voices{position:relative;overflow-anchor:none;max-height:calc(var(--vp-row)*10 + 12px);min-height:var(--vp-row)}.vp[data-lang-open] .vp-voices{min-height:215px}
   .vp-voice{flex:none;display:flex;flex-direction:column;border-top:1px solid var(--reader-line);content-visibility:auto;contain-intrinsic-size:auto 31px}.vp-voice:first-child{border-top-color:transparent}.vp-voice:last-child{border-bottom:1px solid var(--reader-line)}
   .vp-empty{flex:none;padding:10px 9px;font-size:11px;color:var(--reader-muted)}
   .vp-gh{flex:none;display:flex;align-items:flex-end;min-height:24px;box-sizing:border-box;padding:6px 9px 3px;
@@ -124,7 +126,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
      transform:translateY(-2px) rotate(45deg)}
   .vp-more[aria-expanded=true]::after{transform:translateY(2px) rotate(-135deg)}
   .vp-opt{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:30px;padding:4px 9px;border-radius:6px;cursor:pointer}.vp-opt[data-hi]{background:transparent}.vp-opt[aria-selected=true]{color:var(--reader-accent);font-weight:600}.vp-opt small,.vp-opt .vp-st{font-size:10px;font-weight:400;color:var(--reader-muted);white-space:nowrap}.vp-opt .vp-nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .vp-row{position:relative;display:flex;align-items:center;gap:3px;flex:none;height:var(--vp-row);box-sizing:border-box;padding:0 3px 0 7px;border-radius:6px}.vp-row[data-sub]{height:var(--vp-sub)}.vp-row:hover,.vp-row:has(>.vp-opt[data-hi]){background:var(--reader-option-hover,var(--reader-soft));box-shadow:inset 0 0 0 2px var(--reader-option-ring,var(--reader-accent))}
+  .vp-row{position:relative;display:flex;align-items:center;gap:3px;flex:none;height:var(--vp-row);box-sizing:border-box;padding:0 3px 0 7px;border-radius:6px;cursor:pointer}.vp-row[data-sub]{height:var(--vp-sub)}.vp-row:hover,.vp-row:has(>.vp-opt[data-hi]){background:var(--reader-option-hover,var(--reader-soft));box-shadow:inset 0 0 0 2px var(--reader-option-ring,var(--reader-accent))}
   .vp-row[data-active]::before{content:'';position:absolute;left:1px;top:5px;bottom:5px;width:3px;border-radius:2px;background:var(--reader-accent)}
   .vp-row .vp-opt{flex:1 1 auto;min-width:0;height:100%;box-sizing:border-box;min-height:0;justify-content:flex-start;gap:5px;padding:0 3px;background:transparent}
   .vp-nmw{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;max-height:100%}.vp-row .vp-nm{flex:none;white-space:normal;overflow:hidden;overflow-wrap:anywhere;text-overflow:clip;line-height:12px;max-height:100%}.vp-meta{display:none;font-size:10px;line-height:11px;font-weight:400;color:var(--reader-muted);white-space:nowrap;overflow:hidden}
@@ -637,7 +639,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
  const render=()=>{if(!info)return;renderButton();build();};
  /* ---- open/close ---- */
  const doPlace=()=>{if(!open)return;markLong();voices.style.maxHeight='';place(menu,btn);const deficit=menu.scrollHeight-menu.clientHeight;if(deficit>0){voices.style.maxHeight=Math.max(66,voices.offsetHeight-deficit)+'px';place(menu,btn);}syncScrollbar();};
- const close=refocus=>{if(!open)return;closeLang(false);confirming='';stopSample(false);open=false;menu.removeAttribute('data-open');menu.removeAttribute('data-above');btn.setAttribute('aria-expanded','false');if(refocus)btn.focus();};
+ const close=refocus=>{if(!open)return;closeLang(false);confirming='';pendingUse=null;stopSample(false);open=false;menu.removeAttribute('data-open');menu.removeAttribute('data-above');btn.setAttribute('aria-expanded','false');if(refocus)btn.focus();};
  /* Each opening follows the document language. A user-selected filter survives state refreshes until reopen/new document. */
  const detectedFilter=()=>{const detected=baseOf(info?.detected);return detected&&allRows().some(r=>r.bases.includes(detected))?detected:'all';};
  const openPanel=focus=>{
@@ -736,10 +738,28 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   const t=lookup(id,e);if(!t)return;const {row,entry}=t;
   if(highlight!==id){highlight=id;confirming=act==='del-yes'?id:'';rowSignature='';build();}
   if(act==='play')playSample(entry);
-  else if(act==='dlx'){if(entry.installed||row.system)return;send('cancelDownload',entry.id);say(uiText('voice_dl_cancelled',{voice:shown(row)}));rowSignature='';build();}
+  else if(act==='dlx'){if(entry.installed||row.system)return;if(pendingUse&&pendingUse.id===entry.id)pendingUse=null;send('cancelDownload',entry.id);say(uiText('voice_dl_cancelled',{voice:shown(row)}));rowSignature='';build();}
   else if(act==='dl'){if(entry.installed||entry.progress>=0||entry.queued||row.system)return;tried.add(entry.id);send('downloadVoice',entry.id);say(uiText('voice_dl_queued',{voice:shown(row)}));rowSignature='';build();}
   else if(act==='del'){if(entry.installed&&!row.system)askRemove(id);}
   else if(act==='del-yes'){if(!event.isTrusted||!entry.installed)return;const r=removal(entry);confirming='';send('removeVoice',entry.id);say(uiText('voice_removed',{voice:shown(row),size:sizeText(r.bytes)})+(r.siblings?' '+alsoText(r):''));rowSignature='';build();grid.focus({preventScroll:true});}
+ };
+ /* ONE click target per row: the voice cell, but a click on the size, the version or the gaps of the row counts as a click on the voice too (a row is one thing, nothing in it selects text). */
+ const rowVoice=target=>{
+  const cell=target.closest?.('.vp-opt');if(cell)return cell;
+  const rowEl=target.closest?.('.vp-row');if(!rowEl||target.closest?.('.vp-confirm'))return null;
+  return rowEl.querySelector('.vp-opt');
+ };
+ /* A double click on a voice that is not on the device downloads it and uses it as soon as it is there: one gesture instead of arrow, wait, row.
+    The second press of the double click is caught by the click counting (detail), because the list is rebuilt after the first press and the browser
+    then no longer reports a dblclick for the new node. */
+ const startVoice=id=>{
+  const e=effective(),t=lookup(id,e);if(!t)return;const {row,entry}=t;
+  if(entry.installed||row.system){useEntry(row,entry);return;}
+  if(entry.progress>=0||entry.queued)return;                       /* already on its way: the ring shows it */
+  tried.add(entry.id);pendingUse={id:entry.id,at:now().getTime()};
+  send('downloadVoice',entry.id);
+  const text=uiText('voice_dl_queued',{voice:shown(row)});say(text);flash(text);
+  rowSignature='';build();
  };
  voices.addEventListener('click',event=>{
   const button=event.target.closest?.('button[data-act]');
@@ -749,40 +769,11 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
    say(uiText(showAll?'voice_show_fewer':'voice_show_all',{count:effective().rows.length}));return;
   }
   if(button){const rowEl=button.closest('.vp-row');if(rowEl&&button.getAttribute('aria-disabled')!=='true')rowAction(button.dataset.act,rowEl.dataset.id,event);return;}
-  const node=event.target.closest?.('.vp-opt');if(!node)return;
-  const e=effective(),id=node.dataset.key;setHighlight(id);grid.focus({preventScroll:true});chooseLine(lookup(id,effective()),e);});
-  /* Double-click on a voice row: download if needed, then use it (start reading) */
-  /* Note: we also listen on .vp-row to catch clicks on the row itself, not just the opt cell */
-  voices.addEventListener('dblclick',event=>{
-    // Prevent the single-click handler from firing during double-click
-    event.stopPropagation();
-    const node=event.target.closest?.('.vp-opt,.vp-row');if(!node)return;
-    const e=effective(),t=lookup(node.dataset.key,e);if(!t)return;
-    const {row,entry}=t;
-    if(entry.installed||row.system){useEntry(row,entry);return;}
-    // Not installed: download and then wait for installation via update()
-    tried.add(entry.id);
-    send('downloadVoice',entry.id);
-    say(uiText('voice_dl_queued',{voice:shown(row)}));
-    const voiceId=entry.id;
-    const waitInstalled=()=>{
-      // Find the voice in the updated catalog
-      for(const group of info?.catalog||[]){
-        const v=group.voices.find(x=>x.id===voiceId);
-        if(v&&v.installed){
-          useEntry(row,v);
-          return true;
-        }
-      }
-      return false;
-    };
-    // Poll for installation (update() is called from service worker when download completes)
-    const poll=setInterval(()=>{if(waitInstalled())clearInterval(poll);},500);
-    setTimeout(()=>clearInterval(poll),300000); // 5 min timeout
-  });
-  
-  /* Remove the old dblclick from voices if it was added before (defensive) */
-  /* The click handler below will handle single clicks */
+  const cell=rowVoice(event.target);if(!cell)return;
+  const e=effective(),id=cell.dataset.key;
+  if(event.detail>1){startVoice(id);return;}                        /* the second press of a double click (the first one already marked the row) */
+  setHighlight(id);grid.focus({preventScroll:true});chooseLine(lookup(id,e),e);
+ });
  const playMarked=()=>{const e=effective(),t=lookup(markedId(e,modelsOf(e)),e);if(t)playSample(t.entry);};
  bannerBack.addEventListener('click',()=>{commitLanguage('auto');});
  btn.addEventListener('click',event=>{if(!info)return;if(open)close(false);else openPanel(event.detail===0);});
@@ -837,6 +828,11 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
    const oldDetected=info?.detected,oldDocument=info?.documentId;
    info={catalog,language,documentId:typeof message.documentId==='string'?message.documentId:'',detected:typeof message.detectedLanguage==='string'&&LANG_RE.test(message.detectedLanguage)?message.detectedLanguage:null,active:typeof message.activeLanguage==='string'&&LANG_RE.test(message.activeLanguage)?message.activeLanguage:null,voice:typeof message.voice==='string'&&ID_RE.test(message.voice)?message.voice:null,voiceLabel:typeof message.voiceLabel==='string'?message.voiceLabel.slice(0,60):''};
    if(oldDocument!==info.documentId)languageChosen=false;
+   if(pendingUse){
+    const want=pendingUse.id,entry=[...allRows()].flatMap(row=>entriesOf(row).map(en=>({row,en}))).find(x=>x.en.id===want&&x.en.installed&&!x.row.system);
+    if(entry){pendingUse=null;useEntry(entry.row,entry.en);}
+    else if(now().getTime()-pendingUse.at>300000)pendingUse=null;
+   }
    if(open&&(!languageChosen||oldDocument!==info.documentId)&&(oldDetected!==info.detected||oldDocument!==info.documentId)){filter.lang=detectedFilter();rowSignature='';filterSignature='';}
    if(choice){const done=(choice.language===undefined||choice.language===info.language)&&(!choice.voice||choice.voice.id===info.voice);if(done){choice=null;clearTimeout(choiceTimer);}}
    gpuKey=['gpu_missing','jspi_missing','gpu_failed'].includes(message.statusKey)?message.statusKey:'';
