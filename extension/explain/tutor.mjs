@@ -118,12 +118,17 @@ export function createTutor(host) {
     if (!AI_LANGUAGES.includes(run.language)) { startExtractive(run, 'tutor_fallback_language'); return {ok: true, mode: 'extractive'}; }
     render();
     let s = null; try { s = await refreshStatus(); } catch { s = null; }
+    /* the engine host can be stale after an extension reload (getContexts still lists a dead document): ask once more,
+       the session's connect() ensures the host document again. Without this the tour silently fell back to reading. */
+    if (!s) { await new Promise(r => setTimeout(r, 1500)); try { s = await refreshStatus(); } catch { s = null; } }
     if (!run || run.id !== id) return {ok: true};
     if (!s) { startExtractive(run, 'tutor_fallback_unavailable'); return {ok: true, mode: 'extractive'}; }
     const usable = x => x.installed && x.available !== false, tier = s.tiers.find(x => x.id === s.preferred && usable(x)) || s.tiers.find(usable);
     if (!tier) { if (afterDownload) { startExtractive(run, 'tutor_fallback_model_failed'); return {ok: true, mode: 'extractive'}; } run.state = 'offer'; render(); return {ok: true, offer: true}; }
     run.tier = tier.id;
-    const p = await connect().catch(() => null); if (!p || !run || run.id !== id) { if (run?.id === id) startExtractive(run, 'tutor_fallback_unavailable'); return {ok: true}; }
+    let p = await connect().catch(() => null);
+    if (!p) { await new Promise(r => setTimeout(r, 1200)); p = await connect().catch(() => null); }
+    if (!p || !run || run.id !== id) { if (run?.id === id) startExtractive(run, 'tutor_fallback_unavailable'); return {ok: true}; }
     p.postMessage({t: 'plan', id, tier: tier.id, language: run.language, anchors: list.map(a => ({index: a.index, title: a.title, heading: a.heading, before: a.before, sentence: a.sentence, after: a.after}))});
     armDeadline(); warmVoice(run); render(); return {ok: true, mode: 'model'};
   }
