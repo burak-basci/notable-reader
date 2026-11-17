@@ -1104,7 +1104,11 @@ export class PageSession {
   }
   downloadView() {
     const id = this.download?.modelId || this.dlRunning, view = id ? this.voiceView(id) : null;
-    return view && {...view, percent: this.downloadPercent()};
+    if (!view) return null;
+    /* Percent and MB come from the SAME numbers (loaded/total of the transfer). Earlier the size was the model's
+       nominal MB while the percent ran against the reported total, so the line could read "21 % of 338 MB" for a 114 MB voice. */
+    const live = this.download && Number.isFinite(this.download.total) && this.download.total > 0 ? Math.round(this.download.total / 1e6) : 0;
+    return {...view, mb: live || view.mb, percent: this.downloadPercent()};
   }
   snapshot() {
     const s = this.settings, state = this.state, count = this.chunks.length, ref = this.voiceMap.get(this.voiceId), m = this.metrics();

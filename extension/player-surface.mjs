@@ -262,12 +262,14 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
   const cardSmaller=cardPart('smaller'),cardSample=cardPart('sample'),cardKeep=cardPart('keep');
   const cardClose=cardPart('close');
   const cardLine=cardPart('line'),cardCancel=cardPart('cancel'),cardMeter=cardPart('meter');
-  let cardData=null,cardShown='',cardReturn=null,sampleNow={key:'',state:'idle'};
+  let cardData=null,cardShown='',cardReturn=null,sampleNow={key:'',state:'idle'},onDownloadStart=()=>{};
   const placeCard=()=>{
     if(card.hidden)return;
     const r=bar.getBoundingClientRect(),w=Math.max(0,Math.min(r.width,innerWidth-24)),gap=6;card.style.width=w+'px';
     const h=card.getBoundingClientRect().height,above=r.top-gap-12,below=innerHeight-r.bottom-gap-12;
-    const up=bar.hasAttribute('data-expand-above')?above>=h||above>=below:below<h&&above>below;
+    /* A running download is a slim strip that always sits right above the bar, whatever the free room says:
+       the two progress displays of earlier rounds (panel and line) said different things and looked duplicated. */
+    const up=card.dataset.mode==='progress'?above>=h||above>=below:bar.hasAttribute('data-expand-above')?above>=h||above>=below:below<h&&above>below;
     card.style.left=Math.max(12,Math.min(innerWidth-w-12,r.left))+'px';
     card.style.top=(up?Math.max(6,r.top-h-gap):r.bottom+gap)+'px';
     card.toggleAttribute('data-above',up);
@@ -303,11 +305,13 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
     cardCancel.textContent=t('model_cancel');cardCancel.dataset.id=download.id;cardMeter.value=percent;
   };
   const renderCard=message=>{
+    const before_mode=card.dataset.mode||'';
     const offer=message.voiceCard,progress=message.voiceDownload;
     const download=progress&&typeof progress==='object'?progress:null;
     const data=offer&&typeof offer==='object'&&offer.primary?offer:null;
     const mode=download?'progress':data?'card':'',focusInside=card.contains(shadow.activeElement);cardData=data;
-    card.dataset.mode=mode;card.hidden=!mode;
+    card.dataset.mode=mode;card.hidden=!mode;bar.toggleAttribute('data-downloading',mode==='progress');
+    if(mode==='progress'&&before_mode!=='progress')onDownloadStart();
     if(mode==='card')paintOffer(data);else if(mode==='progress')paintDownload(download);
     const key=mode&&mode+'|'+(data?.primary?.id||'')+'|'+(download?.id||'');
     if(key!==cardShown){
@@ -343,7 +347,7 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
     'box-shadow:var(--reader-shadow);font-size:12px;line-height:1.4;pointer-events:auto;cursor:default}',
     // the card gives way to the panels that sit at the same place
     '.voice-card[hidden],',
-    '.bar:has(.voice-menu[data-open],.settings-panel[data-open],.reader-error:not([hidden])) .voice-card{display:none}',
+    '.bar:has(.voice-menu[data-open],.settings-panel[data-open],.reader-error:not([hidden])) .voice-card[data-mode=card]{display:none}',
     '.vc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}',
     '.vc-title{font-size:12px;font-weight:600;line-height:1.4;padding-top:3px}',
     '.vc-close{display:flex;align-items:center;justify-content:center;flex:none;width:26px;min-height:26px;padding:0;',
@@ -358,9 +362,13 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
     '.vc-actions [hidden],.voice-card [hidden]{display:none!important}',
     '.vc-note{margin:0;font-size:11px;color:var(--reader-muted)}',
     '.vc-progress{display:none;flex-wrap:wrap;align-items:center;gap:6px 10px}',
-    '.voice-card[data-mode=progress]{gap:0;padding:10px 12px}',
+    '.voice-card[data-mode=progress]{display:block;padding:7px 10px 8px;border-radius:10px;box-shadow:0 6px 18px #0003}',
     '.voice-card[data-mode=progress]>:not(.vc-progress){display:none}',
-    '.voice-card[data-mode=progress] .vc-progress{display:flex}',
+    '.voice-card[data-mode=progress] .vc-progress{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+    '.voice-card[data-mode=progress] .vc-line{flex:1 1 120px;font-size:11px;line-height:1.3}',
+    '.voice-card[data-mode=progress] .vc-cancel{min-height:22px;padding:1px 8px;font-size:11px}',
+    '.voice-card[data-mode=progress] .vc-meter{flex:1 0 100%;height:3px;margin:6px 0 0}',
+    '.bar[data-downloading] .status-slot{display:none!important}',
     '.vc-line{flex:1 1 0;min-width:0;font-size:12px;font-variant-numeric:tabular-nums}',
     '.vc-cancel{flex:none;min-height:26px;padding:2px 10px;font-size:11px}',
     '.vc-meter{flex:1 0 100%;display:block;box-sizing:border-box;width:100%;height:4px;margin:0;',
@@ -390,6 +398,7 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
   const downloadAnchor=()=>{const more=$('.more-toggle');if(more&&more.getBoundingClientRect().width>0)return more;if(settingsMode!=='inline')return $('.settingsToggle');const r=downloadButton.getBoundingClientRect();return r.width>0&&r.top>=0&&r.bottom<=innerHeight?downloadButton:play;};
   placeDirect=()=>{if(!downloadOpen)return;anchorPanel(downloadPanel,downloadAnchor(),{width:316,cap:400,min:80,fit:room=>{downloadContent.style.maxHeight=(room-2)+'px';}});};
   closeDirect=refocus=>{if(!downloadOpen)return;downloadOpen=false;downloadPanel.removeAttribute('data-open');downloadButton.setAttribute('aria-expanded','false');if(refocus)downloadAnchor().focus();};
+  onDownloadStart=()=>{if(downloadOpen)closeDirect(false);};
   downloadButton.addEventListener('click',()=>{if(downloadOpen){closeDirect(false);return;}closeOtherMenus(null);settings.removeAttribute('data-open');$('.settingsToggle').setAttribute('aria-expanded','false');downloadOpen=true;downloadMenu.opened();downloadPanel.setAttribute('data-open','');downloadButton.setAttribute('aria-expanded','true');placeDirect();centerIcons();});
   /* the menu changes height (result -> form with "Another file", progress): it is placed again at its anchor, so it never runs out of the window (round 4) */
   if(typeof ResizeObserver==='function'){const resized=new ResizeObserver(()=>placeDirect());resized.observe(exports);disposers.push(()=>resized.disconnect());}
