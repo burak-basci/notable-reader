@@ -372,6 +372,7 @@ export function createTutor(host) {
   }
   /* the bar's timeline during the tour: steps as segments, heard/rest of the tour; a click there jumps to its step */
   function stepMs(index, rate) { if (run.spokenMs?.has(index)) return run.spokenMs.get(index); const s = run.steps[index], a = run.anchors.find(x => x.index === index); return estimateMs(s?.say || a?.sentence || '', rate); }
+  let lastPrepared = 0;
   function progress() {
     const r = run, rate = Number(host.settings().speed) || 1, list = r.anchors.map(a => a.index), parts = list.map(i => stepMs(i, rate));
     parts.push(r.summary?.points?.length ? (r.spokenMs?.get('summary') ?? estimateMs(r.summary.points.join(' '), rate)) : r.planDone ? 0 : estimateMs(r.anchors[0]?.sentence || '', rate));
@@ -379,6 +380,11 @@ export function createTutor(host) {
     const into = r.state === 'ended' && !r.cancelled ? parts[at] : !r.stepStartedAt || r.current < 0 && !r.summaryShown ? 0 : Math.min(parts[at] || 0, r.paused ? r.pausedInto || 0 : Date.now() - r.stepStartedAt);
     const elapsed = r.state === 'ended' && !r.cancelled && r.summaryPlayed ? total : parts.slice(0, at).reduce((a, b) => a + b, 0) + into;
     let sum = 0; const starts = parts.slice(0, -1).map(ms => { const s = sum / total; sum += ms; return s; });
+    /* prepared: prefix of steps whose explanation sentence exists (the worker writes them in page order); the summary finishes it */
+    let prepared = 0; for (const i of list) { if (!r.steps[i]) break; prepared++; }
+    let preparedMs = 0; for (let k = 0; k < prepared; k++) preparedMs += parts[k] || 0;
+    if (r.summary?.points?.length) preparedMs = total;
+    lastPrepared = total ? Math.max(0, Math.min(1, preparedMs / total)) : 0;
     return {fraction: Math.max(0, Math.min(1, elapsed / total)), elapsed: elapsed / 1000, remaining: Math.max(0, total - elapsed) / 1000, segments: [...starts.slice(1), (total - parts.at(-1)) / total].filter(x => x > 0 && x < 1), starts};
   }
   function seek(fraction) {
@@ -498,7 +504,7 @@ export function createTutor(host) {
     get active() { return !!run && !run.empty && (run.state === 'running' || run.state === 'preparing'); },
     /* the bar (Play, Previous/Next, timeline, step list) belongs to the tour while it is shown: running or at its end */
     get owns() { return !!run && !run.empty && ['running', 'preparing', 'ended'].includes(run.state) && !!view.mode && view.mode !== 'offer'; },
-    seek, jump,
+    seek, jump, preparedRanges: () => lastPrepared > 0 ? [[0, lastPrepared]] : [],
     /* The sentence step 1 will speak when the tour will be the key-sentence tour (its language has no AI explanation) and its voice is a local one: the
        session prepares that audio while the bar is open (PageSession.prepareTour), so Zusammenfassen speaks without waiting for a synthesis. null otherwise. */
     firstStep() {

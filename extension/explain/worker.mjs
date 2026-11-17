@@ -50,8 +50,15 @@ async function tutor(d){
  self.postMessage({id:d.id,type:'progress',phase:'load'});await load(tier);const says=[];
  for(let i=0;i<list.length;i++){if(stopped())return;self.postMessage({id:d.id,type:'progress',phase:'step',current:i+1,total:list.length});
   const key=d.id+':'+list[i].index,skip=()=>stopped()||skipped.has(key);   // the tour read this passage as key sentence: on to the next one
-  let r=await answer(explainPrompt(list[i],language,1),tier,skip,flag);if(stopped())return;if(!r)continue;let v=validateExplanation(r.raw,list[i],{language}),attempts=1,ms=r.ms,tokens=r.tokens;
-  if(!v.ok){const second=await answer(explainPrompt(list[i],language,2),tier,skip,flag);if(stopped())return;if(!second)continue;const w=validateExplanation(second.raw,list[i],{language});attempts=2;ms+=second.ms;tokens+=second.tokens;if(w.ok){r=second;v=w;}}
+  /* three attempts with different tasks: explain (greedy), explain again (sampled, other opening), simplify (plain words).
+     A small model does the simplification better than an abstract "explain"; the session validates every answer again. */
+  let r=null,v={ok:false,reasons:['none']},attempts=0,ms=0,tokens=0;
+  for(const attempt of [1,2,3]){
+    const next=await answer(explainPrompt(list[i],language,attempt),tier,skip,flag);if(stopped())return;if(!next)break;
+    attempts=attempt;ms+=next.ms;tokens+=next.tokens;r=next;v=validateExplanation(next.raw,list[i],{language});
+    if(v.ok)break;
+  }
+  if(!r)continue;
   if(v.ok)says.push(v.say);
   self.postMessage({id:d.id,type:'step',index:list[i].index,raw:r.raw,ms,tokens,promptTokens:r.promptTokens,attempts,reasons:v.reasons});
  }
