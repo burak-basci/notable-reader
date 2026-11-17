@@ -13,7 +13,7 @@ export const LEGACY_CACHE='benotable-local-explain-qwen-22942cb-v1';
    14 GB machine out of memory). 'better' has no manifest (not offered): Qwen3
    0.6B was not clearly better than 'small' (English alike, German still mostly unusable) and needed ~3.7 GB and more
    time per step; a pinned manifest here turns the second button on again. */
-export const TIERS=Object.freeze({small:{manifest:'./model-manifest.json',cache:MODEL_CACHE},better:{manifest:null,cache:'benotable-local-explain-better-v1'},legacy:{manifest:'./model-manifest-legacy.json',cache:LEGACY_CACHE,offered:false}});
+export const TIERS=Object.freeze({small:{manifest:'./model-manifest.json',cache:MODEL_CACHE},better:{manifest:'./model-manifest-better.json',cache:'benotable-local-explain-qwen35-08b-q4-v1'},legacy:{manifest:'./model-manifest-legacy.json',cache:LEGACY_CACHE,offered:false}});
 export const offered=tier=>!!TIERS[tier]?.manifest&&TIERS[tier].offered!==false;
 const tierOf=tier=>TIERS[tier]?tier:'small';
 export function cacheName(tier='small'){return TIERS[tierOf(tier)].cache;}

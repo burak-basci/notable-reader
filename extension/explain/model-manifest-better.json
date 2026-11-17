@@ -1,0 +1,70 @@
+{
+  "id": "onnx-community/Qwen3.5-0.8B-ONNX",
+  "revision": "8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6",
+  "dtype": "q4",
+  "device": "wasm",
+  "license": "Apache-2.0",
+  "baseModel": "Qwen/Qwen3.5-0.8B",
+  "files": [
+    {
+      "path": "config.json",
+      "bytes": 2849,
+      "sha256": "36fed6a902ccd06ef19a452bd5a0750bd88fe347d06ab75ef515615bac5b296d",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/config.json"
+    },
+    {
+      "path": "generation_config.json",
+      "bytes": 248,
+      "sha256": "dc0cbe66543f310896469b7b1448af792f403293a1080baaf04d586c57b23e48",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/generation_config.json"
+    },
+    {
+      "path": "preprocessor_config.json",
+      "bytes": 336,
+      "sha256": "6a970fd06f30e6943b3e2c14d5d3b42d49b06cf99b99103d56689bef462d90f8",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/preprocessor_config.json"
+    },
+    {
+      "path": "processor_config.json",
+      "bytes": 1300,
+      "sha256": "14932921ca485d458a04dafd8069fbb0a4505622a48208d19ed247115801385b",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/processor_config.json"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 19226111,
+      "sha256": "89da80cc6689bef4d90cc1028249436975ffb0814618f1d93c65310e05801a9b",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/tokenizer.json"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 10069,
+      "sha256": "5dcac2c1306b11d1e18ec4c024a174bded2ca3178ce87b0aa590711696407f3d",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/tokenizer_config.json"
+    },
+    {
+      "path": "onnx/decoder_model_merged_q4.onnx",
+      "bytes": 876359,
+      "sha256": "cfb338c5112e11e2a123d6d03d8870cd800883ee333ec0a25289482b609a16f8",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/onnx/decoder_model_merged_q4.onnx"
+    },
+    {
+      "path": "onnx/decoder_model_merged_q4.onnx_data",
+      "bytes": 485425152,
+      "sha256": "fb38200610a2206aa4c10f4c5f41c08107e2b0b44968166943b3937a1eb11f84",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/onnx/decoder_model_merged_q4.onnx_data"
+    },
+    {
+      "path": "onnx/embed_tokens_q4.onnx",
+      "bytes": 857,
+      "sha256": "8773dcf4858f855bfce13def4356ca17e0bc516a477154496b6ffb6dd6d084dc",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/onnx/embed_tokens_q4.onnx"
+    },
+    {
+      "path": "onnx/embed_tokens_q4.onnx_data",
+      "bytes": 162897920,
+      "sha256": "9210b1d26eb14136d3522584d17da14cc5f4b82b6f5607e6d80d59424a8cbe99",
+      "url": "https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX/resolve/8fe9dbe3fb39fe902e18df9be84b6a0ac77ae0f6/onnx/embed_tokens_q4.onnx_data"
+    }
+  ]
+}
