@@ -43,6 +43,7 @@
     "extension/explain/broker.mjs",
     "extension/explain/controller.mjs",
     "extension/explain/locales.mjs",
+    "extension/explain/model-manifest-better.json",
     "extension/explain/model-manifest-legacy.json",
     "extension/explain/model-manifest.json",
     "extension/explain/model-store.mjs",
