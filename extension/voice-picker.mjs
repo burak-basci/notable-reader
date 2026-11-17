@@ -53,7 +53,7 @@ export function recommendVoices(models,language,memoryGB){
  // one speaker across the sizes: the language's first-run voice where it has one, else the leading family
  const named=all.find(m=>m.id===FIRST_RUN_VOICES[lang]);
  const anchor=named?.display||[...(natural.length?natural:pool)].sort((a,b)=>rank(a)-rank(b))[0]?.display;
- const order=(a,b)=>(b.display===anchor)-(a.display===anchor)||rank(a)-rank(b)||quality(b)-quality(a)||mb(a)-mb(b);
+ const order=(a,b)=>(b.installed)-(a.installed)||(b.display===anchor)-(a.display===anchor)||rank(a)-rank(b)||quality(b)-quality(a)||mb(a)-mb(b);
  const picks=[];
  for(const [tier,role] of [['fast','small'],['balanced','balanced'],['best','best']]){
   const own=natural.filter(m=>m.tier===tier),best=(own.length?own:pool.filter(m=>m.tier===tier)).sort(order)[0];
