@@ -18,7 +18,7 @@ export const TUTOR_LANGUAGES = Object.freeze(['de', 'en', 'fr', 'es', 'it', 'pt'
    18 usable, German 0 of 26). In every other language the tour reads the key sentences (marks, notes, three key points)
    and offers an English explanation instead: nonsense read aloud is worse than no AI explanation. A better model only
    changes this list. */
-export const AI_LANGUAGES = Object.freeze(['en']);
+export const AI_LANGUAGES = Object.freeze(['en','de']);   // German since 17.11.2026: the better tier (Qwen3.5) writes German; the small granite tier only manages English
 export const LANGUAGE_NAMES = Object.freeze({de: 'German', en: 'English', fr: 'French', es: 'Spanish', it: 'Italian', pt: 'Portuguese'});
 const STOP = {
   de: 'der die das den dem des ein eine einer eines einem einen und oder aber auch als wie wenn dass daß ist sind war waren wird werden wurde wurden hat haben hatte hatten sein seine ihr ihre ich du er sie es wir ihr man nicht kein keine noch nur schon sehr mehr so zu zum zur im in am an auf aus bei mit nach von vor für über unter durch gegen ohne um bis seit sich dies diese dieser dieses jedoch denn doch also dann da hier dort was wer wo warum weil damit sowie bereits etwa laut sollen soll kann können muss müssen will wollen',
