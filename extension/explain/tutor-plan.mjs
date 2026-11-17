@@ -230,8 +230,6 @@ const EXAMPLE2 = {
 const SIMPLIFY = {de: 'Sage in zwei ganz kurzen Sätzen auf Deutsch, was der Satz für einen Laien bedeutet. Benutze einfache Wörter und wiederhole den Satz nicht.', en: 'Say in two very short sentences in English what the sentence means to a layperson. Use plain words and do not repeat the sentence.'};
 for (const [code, p] of Object.entries(PROMPT)) p.simplify = SIMPLIFY[code] || SIMPLIFY.en;
 const SUMMARY_EXAMPLE = {de: '1. Bienen bestäuben die Blüten.\n2. Ohne Bestäubung wachsen keine Früchte.\n3. Die Ernte hängt deshalb von Bienen ab.', en: '1. Bees pollinate the flowers.\n2. Without pollination no fruit grows.\n3. So the harvest depends on bees.', fr: '1. Les abeilles pollinisent les fleurs.\n2. Sans pollinisation, pas de fruits.\n3. La récolte dépend donc des abeilles.', es: '1. Las abejas polinizan las flores.\n2. Sin polinización no crecen frutos.\n3. Por eso la cosecha depende de las abejas.', it: '1. Le api impollinano i fiori.\n2. Senza impollinazione non crescono frutti.\n3. Quindi il raccolto dipende dalle api.', pt: '1. As abelhas polinizam as flores.\n2. Sem polinização não crescem frutos.\n3. Por isso a colheita depende das abelhas.'};
-/* words an explanation may use that are not in the page: connectors and plain explanation verbs */
-const CONNECTORS = Object.freeze(['bedeutet','heißt','wichtig','weil','dadurch','deshalb','damit','sonst','einfacher','einfach','erklärt','gemeint','kurz','gesagt','folge','grund','erreicht','passiert','passieren','beschreibt','zeigt','sagt','also','daher','denn','wenn','dass','diese','dieser','dieses','diesem','diesen','etwas','jemand','damals','dadurch','dabei','daran','dafür','darum','darüber','deswegen','aufgrund','umgelegt','zahlt','zahlen','trägt','tragen']);
 const EXAMPLE_TEXTS = [...Object.values(EXAMPLE).map(e => e.answer), ...Object.values(EXAMPLE2).map(e => e.answer), ...Object.values(SUMMARY_EXAMPLE)];
 const material = (p, x) => [x.title ? p.page + ': ' + JSON.stringify(x.title) : '', x.heading ? p.section + ': ' + JSON.stringify(x.heading) : '', x.before ? p.before + ': ' + JSON.stringify(x.before) : '', p.sentence + ': ' + JSON.stringify(x.sentence), x.after ? p.after + ': ' + JSON.stringify(x.after) : '', x.term ? p.term + ': ' + JSON.stringify(x.term) : '', p.rule || ''].filter(Boolean).join('\n');
 /* the model only writes the explanation sentence; attempt 1 greedy, attempt 2 with another opening and sampling */
@@ -297,17 +295,12 @@ export function validateExplanation(raw, anchor, {language = 'en'} = {}) {
   if (URLISH.test(say)) return fail('url');
   if (/\?\s*$/u.test(say)) return fail('question');
   if (repeats(say)) return fail('repeat');
-  if (EXAMPLE_TEXTS.some(example => overlap(body, example) > .4)) return fail('example');
-  if (overlap(body, anchor.sentence) > .6 || verbatimRun(norm(body), anchor.sentence) >= 7) return fail('copy');
+  if (EXAMPLE_TEXTS.some(example => verbatimRun(norm(body), example) >= 6)) return fail('example');   // only parroted examples, not shared vocabulary
+  if (overlap(body, anchor.sentence) > .6 || verbatimRun(norm(body), anchor.sentence) >= 6) return fail('copy');
   const guess = guessLanguage(say); if (guess && guess !== l) return fail('language');
   const context = [anchor.title, anchor.heading, anchor.before, anchor.sentence, anchor.after].join(' ');
   if (!grounded(body, context)) return fail('ungrounded');
   if (newFacts(body, context, l)) return fail('new-facts');
-  /* a small model invents words that look German ("Betriebssektor", "Bestäuche"): share of content words that occur neither
-     in the material nor in the allowed connectors. Above a third the sentence is not an explanation of this page. */
-  const known = new Set([...words(context).map(w => w.lower.slice(0, 5)), ...CONNECTORS.map(w => w.slice(0, 5))]);
-  const content = words(body).filter(w => w.lower.length >= 5 && !ALL_STOP.has(w.lower));
-  if (content.length && content.filter(w => !known.has(w.lower.slice(0, 5))).length / content.length > .75) return fail('invented');   // only pure nonsense; a good explanation may introduce plain words
   return {ok: true, reasons: [], say};
 }
 /* the three points: a numbered list of the model, each point checked like an explanation */
