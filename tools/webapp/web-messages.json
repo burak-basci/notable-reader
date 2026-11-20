@@ -1,0 +1,90 @@
+{
+ "backupHint": {
+  "de": "Alle Einstellungen dieser App als Datei speichern oder aus einer Datei wiederherstellen.",
+  "en": "Save all settings of this app to a file, or restore them from a file.",
+  "fr": "Enregistrer tous les réglages de cette application dans un fichier, ou les restaurer depuis un fichier.",
+  "es": "Guarda todos los ajustes de esta aplicación en un archivo o restáuralos desde un archivo.",
+  "it": "Salva tutte le impostazioni di questa app in un file o ripristinale da un file.",
+  "pt": "Guarde todas as definições desta aplicação num ficheiro ou restaure-as a partir de um ficheiro."
+ },
+ "backupExcluded": {
+  "de": "Nicht enthalten, aus Datenschutz- und Sicherheitsgründen: gespeicherte Lesestellen und Verlauf, heruntergeladene Stimmen (Modelle) und E-Mail-Adressen.",
+  "en": "Not included, for privacy and security: saved reading places and history, downloaded voices (models) and e-mail addresses.",
+  "fr": "Non inclus, pour la confidentialité et la sécurité : positions de lecture et historique, voix téléchargées (modèles) et adresses e-mail.",
+  "es": "No incluido, por privacidad y seguridad: posiciones de lectura e historial, voces descargadas (modelos) y direcciones de correo.",
+  "it": "Non inclusi, per privacy e sicurezza: posizioni di lettura e cronologia, voci scaricate (modelli) e indirizzi e-mail.",
+  "pt": "Não incluído, por privacidade e segurança: posições de leitura e histórico, vozes transferidas (modelos) e endereços de e-mail."
+ },
+ "backupResetConfirm": {
+  "de": "Alle Einstellungen werden auf Standard gesetzt (Oberflächensprache, Lesestellen und Stimmen bleiben). Exportiere sie vorher, wenn du sie behalten willst.",
+  "en": "All settings go back to their defaults (interface language, reading places and voices stay). Export them first if you want to keep them.",
+  "fr": "Tous les réglages reviennent au standard (langue de l’interface, positions de lecture et voix restent). Exportez-les d’abord si vous voulez les garder.",
+  "es": "Todos los ajustes vuelven a su valor estándar (idioma de la interfaz, posiciones de lectura y voces se conservan). Expórtalos antes si quieres conservarlos.",
+  "it": "Tutte le impostazioni tornano allo standard (lingua dell’interfaccia, posizioni di lettura e voci restano). Esportale prima se vuoi conservarle.",
+  "pt": "Todas as definições voltam ao padrão (idioma da interface, posições de leitura e vozes mantêm-se). Exporte-as antes se as quiser guardar."
+ },
+ "backupErr_tooLarge": {
+  "de": "Die Datei ist zu groß (höchstens 64 KB). Das ist keine Einstellungsdatei dieser App.",
+  "en": "The file is too large (64 KB at most). It is not a settings file of this app.",
+  "fr": "Le fichier est trop volumineux (64 Ko au plus). Ce n’est pas un fichier de réglages de cette application.",
+  "es": "El archivo es demasiado grande (64 KB como máximo). No es un archivo de ajustes de esta aplicación.",
+  "it": "Il file è troppo grande (massimo 64 KB). Non è un file di impostazioni di questa app.",
+  "pt": "O ficheiro é demasiado grande (64 KB no máximo). Não é um ficheiro de definições desta aplicação."
+ },
+ "backupErr_schema": {
+  "de": "Die Datei stammt nicht von dieser App (falsche Kennung). Es wurde nichts geändert.",
+  "en": "The file does not come from this app (wrong identifier). Nothing was changed.",
+  "fr": "Le fichier ne provient pas de cette application (identifiant incorrect). Rien n’a été modifié.",
+  "es": "El archivo no procede de esta aplicación (identificador incorrecto). No se cambió nada.",
+  "it": "Il file non proviene da questa app (identificatore errato). Non è stato cambiato nulla.",
+  "pt": "O ficheiro não provém desta aplicação (identificador errado). Nada foi alterado."
+ },
+ "backupErr_newer": {
+  "de": "Die Datei stammt aus einer neueren Version ({version}). Lade die Seite neu und versuche es erneut. Es wurde nichts geändert.",
+  "en": "The file comes from a newer version ({version}). Reload the page and try again. Nothing was changed.",
+  "fr": "Le fichier provient d’une version plus récente ({version}). Rechargez la page et réessayez. Rien n’a été modifié.",
+  "es": "El archivo procede de una versión más reciente ({version}). Recarga la página e inténtalo de nuevo. No se cambió nada.",
+  "it": "Il file proviene da una versione più recente ({version}). Ricarica la pagina e riprova. Non è stato cambiato nulla.",
+  "pt": "O ficheiro provém de uma versão mais recente ({version}). Recarregue a página e tente novamente. Nada foi alterado."
+ },
+ "kbEditGlobal": {
+  "de": "Die Kürzel gelten auf dieser Seite, solange kein Eingabefeld den Fokus hat.",
+  "en": "The shortcuts work on this page as long as no input field has focus.",
+  "fr": "Les raccourcis fonctionnent sur cette page tant qu’aucun champ de saisie n’a le focus.",
+  "es": "Los atajos funcionan en esta página mientras ningún campo de texto tenga el foco.",
+  "it": "Le scorciatoie funzionano in questa pagina finché nessun campo di testo ha il focus.",
+  "pt": "Os atalhos funcionam nesta página enquanto nenhum campo de texto tiver o foco."
+ },
+ "kbHelpInputs": {
+  "de": "In Eingabefeldern bleiben alle Tasten der Seite unberührt. Alle Kürzel lassen sich in den Einstellungen unter Tastatur abschalten.",
+  "en": "In input fields every key stays with the page. All shortcuts can be switched off in settings under Keyboard.",
+  "fr": "Dans les champs de saisie, toutes les touches restent à la page. Tous les raccourcis se désactivent dans les réglages sous Clavier.",
+  "es": "En los campos de texto todas las teclas quedan para la página. Todos los atajos se pueden desactivar en los ajustes, en Teclado.",
+  "it": "Nei campi di testo tutti i tasti restano alla pagina. Tutte le scorciatoie si disattivano nelle impostazioni, sotto Tastiera.",
+  "pt": "Nos campos de texto todas as teclas ficam para a página. Todos os atalhos podem ser desligados nas definições, em Teclado."
+ },
+ "fileErrNeedsHttps": {
+  "de": "Lokale KI-Stimmen benötigen eine sichere Verbindung (HTTPS).",
+  "en": "Local AI voices need a secure connection (HTTPS).",
+  "fr": "Les voix IA locales nécessitent une connexion sécurisée (HTTPS).",
+  "es": "Las voces de IA locales necesitan una conexión segura (HTTPS).",
+  "it": "Le voci IA locali richiedono una connessione sicura (HTTPS).",
+  "pt": "As vozes de IA locais requerem uma ligação segura (HTTPS)."
+ },
+ "filePrivacyModels": {
+  "de": "Lokale KI-Stimmen können nach deinem ausdrücklichen Klick von Hugging Face geladen werden; Größe und Qualität stehen in der Stimmenliste der Leiste. Die Berechnung läuft danach lokal in deinem Browser, Dokumenttext wird nicht hochgeladen.",
+  "en": "Local AI voices can be downloaded from Hugging Face after your explicit click; size and quality are shown in the bar’s voice list. Computation then runs locally in your browser, document text is never uploaded.",
+  "fr": "Les voix IA locales peuvent être téléchargées depuis Hugging Face après votre clic explicite ; la taille et la qualité figurent dans la liste des voix de la barre. Le calcul se fait ensuite en local dans votre navigateur, le texte du document n’est jamais envoyé.",
+  "es": "Las voces de IA locales pueden descargarse de Hugging Face tras tu clic explícito; el tamaño y la calidad se ven en la lista de voces de la barra. Después, el cálculo se hace en local en tu navegador y el texto del documento no se sube.",
+  "it": "Le voci IA locali possono essere scaricate da Hugging Face dopo il tuo clic esplicito; dimensione e qualità sono nell’elenco delle voci della barra. Il calcolo avviene poi in locale nel tuo browser, il testo del documento non viene caricato.",
+  "pt": "As vozes de IA locais podem ser transferidas do Hugging Face após o teu clique explícito; o tamanho e a qualidade aparecem na lista de vozes da barra. O cálculo é depois feito localmente no teu navegador e o texto do documento não é enviado."
+ },
+ "filePrivacyFormats": {
+  "de": "Text-PDFs, EPUB ohne DRM, DOCX, TXT, Markdown und HTML werden unterstützt. Gescannte PDFs ohne Textebene und alte DOC-Dateien (vorher in DOCX umwandeln) werden nicht gelesen.",
+  "en": "Text PDFs, EPUB without DRM, DOCX, TXT, Markdown and HTML are supported. Scanned PDFs without a text layer and old DOC files (convert them to DOCX first) are not read.",
+  "fr": "Les PDF texte, EPUB sans DRM, DOCX, TXT, Markdown et HTML sont pris en charge. Les PDF numérisés sans couche de texte et les anciens fichiers DOC (à convertir d’abord en DOCX) ne sont pas lus.",
+  "es": "Se admiten PDF con texto, EPUB sin DRM, DOCX, TXT, Markdown y HTML. No se leen los PDF escaneados sin capa de texto ni los archivos DOC antiguos (conviértelos antes a DOCX).",
+  "it": "Sono supportati PDF con testo, EPUB senza DRM, DOCX, TXT, Markdown e HTML. I PDF scansionati senza livello di testo e i vecchi file DOC (da convertire prima in DOCX) non vengono letti.",
+  "pt": "São suportados PDF com texto, EPUB sem DRM, DOCX, TXT, Markdown e HTML. Os PDF digitalizados sem camada de texto e os ficheiros DOC antigos (converta-os antes para DOCX) não são lidos."
+ }
+}
