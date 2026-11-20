@@ -2,6 +2,15 @@
    (no text). Storage is injected ({get(key)->Promise, set(key,value)->Promise}), e.g. chrome.storage.local.
    Throttled writes, bounded count (own code, MIT). */
 export const RESUME_KEY = 'resumePoints', MAX_POINTS = 200;
+/* A place on the last word of the last section (or past it) means "read to the end": Play starts at the beginning again there,
+   a resume point there is not restored (a page read to the end was silent on the second Play, 2.5.4). The first word of a
+   one-section document is its beginning, never its end. */
+export function atDocumentEnd(chunks, at) {
+  if (!at || !Array.isArray(chunks) || !chunks.length || !Number.isInteger(at.chunk)) return false;
+  const last = chunks.length - 1, word = Number.isInteger(at.word) ? at.word : 0, count = chunks[last]?.words?.length || 0;
+  if (at.chunk > last) return true;
+  return at.chunk === last && word >= count - 1 && (last > 0 || word > 0);
+}
 export function createResumePoints({storage, now = () => Date.now(), minIntervalMs = 2000, max = MAX_POINTS}) {
   let cache = null, lastWrite = 0, pending = null;
   const load = async () => cache ??= (await storage.get(RESUME_KEY)) || {};

@@ -24,7 +24,7 @@ import {deriveBoth, cleanOverlayTheme} from './overlay-theme.mjs';
 import {defaults as configDefaults, loadConfig, coupleTheme, cleanKeyboard, EXPORT_KEYS, CONFIG_KEY} from '../config.mjs';
 import {cleanStyle} from './mark-style.mjs';
 import {createPageWatch} from './page-watch.mjs';
-import {RemotePipeline, SpeechPipeline, PIPE_PORT, createProgressInterpolator, createWordTracker, createResumePoints} from '../playback/index.js';
+import {RemotePipeline, SpeechPipeline, PIPE_PORT, createProgressInterpolator, createWordTracker, createResumePoints, atDocumentEnd} from '../playback/index.js';
 import {mountPlayerSurface} from '../player-surface.mjs';
 import {createFormatting} from '../formatting.mjs';
 import {createAppearanceController} from '../appearance.mjs';
@@ -229,6 +229,7 @@ export class PageSession {
     if(!saved){const entry=await this.readingHistory?.restore();if(entry&&!entry.completed){if(Number.isSafeInteger(entry.position?.char)){const chunk=this.chunkOfChar(entry.position.char),offsets=this.timeline().offsetsFor(chunk)||[];let word=0;for(let i=0;i<offsets.length;i++){if(offsets[i].start<=entry.position.char-this.charOfChunk(chunk))word=i;else break;}saved={chunk,word};}else saved=entry.position;}}
     if(fingerprint!==this.fingerprint||chunks!==this.chunks||position!==this.position||playIntent!==this.playIntent||['playing','loading'].includes(this.state))return null;
     if(saved&&Number.isSafeInteger(saved.char)&&saved.char>=0)saved={...saved,...this.positionAtChar(saved.char)};
+    if (saved && atDocumentEnd(this.chunks, saved)) { void this.resume.forget(fingerprint).catch(() => {}); return null; }       // read to the end last time: the next Play starts at the beginning
     if (saved && saved.chunk < this.chunks.length) { this.position = {chunk: saved.chunk, word: saved.word}; this.markAt(saved.chunk, saved.word); this.changed(); return this.position; }
     return null;
   }
@@ -637,7 +638,7 @@ export class PageSession {
     if (waited < allowed) { this.startTimer = setTimeout(() => void this.startSilent(armedAt, base), allowed - waited); return; }
     this.starting = false; this.disposePipeline(); this.state = 'idle'; this.errorClass = 'start_timeout'; this.fail('reader_error');
   }
-  async savePosition(force) {const at=this.historyPosition(),checkpoint=force?this.readingHistory?.checkpoint(at,{completed:this.state==='ended'&&!this.readScope}):null;if (this.fingerprint && this.chunks.length) await this.resume.save(this.fingerprint, at, {force}).catch(() => {});await checkpoint;}
+  async savePosition(force) {const at=this.historyPosition(),ended=this.state==='ended'||atDocumentEnd(this.chunks,at),checkpoint=force?this.readingHistory?.checkpoint(at,{completed:this.state==='ended'&&!this.readScope}):null;if (this.fingerprint && this.chunks.length) await (ended?this.resume.forget(this.fingerprint):this.resume.save(this.fingerprint, at, {force})).catch(() => {});await checkpoint;}       // the end is no place to resume at: forget it (2.5.4 saved it right after forgetting, the next Play was silent)
   /* -- commands -------------------------------------------------------------------------------------------------------------------------- */
   async play(chunk = this.position.chunk, word = undefined) {
     if (!this.chunks.length) this.rescan(true);                    // content may have arrived since the last scan
@@ -760,7 +761,8 @@ export class PageSession {
     if (this.state === 'paused' && this.seekedAway) { await this.play(this.position.chunk, this.position.word); return; }
     const saved = this.state === 'ended' || this.seekedAway ? null : await this.resume.get(this.fingerprint).catch(() => null);
     if(!saved&&!this.seekedAway&&this.state!=='ended'&&this.position.chunk===0&&this.position.word===0)await this.restore();
-    const from = this.position.chunk > 0 || this.position.word > 0 ? this.position : saved || this.position;
+    let from = this.position.chunk > 0 || this.position.word > 0 ? this.position : saved || this.position;
+    if (this.state === 'ended' || atDocumentEnd(this.chunks, from)) from = {chunk: 0, word: 0};       // Play on a page read to the end reads it again from the beginning (also after a reload)
     await this.play(from.chunk, from.word);
   }
   async pause() {

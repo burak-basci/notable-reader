@@ -20,6 +20,7 @@ import {createFormatting} from '../../formatting.mjs';
 
 import {cleanText,documentChunks} from './document-chunks.mjs';
 import {wordOffsets} from '../../playback/timeline.js';
+import {atDocumentEnd} from '../../playback/resume-points.js';
 import {ocrDocument,imageSource,chooseLanguage,languageByCode,documentKey,scanVerdict,visibleChars,clearLanguages,clearCache as clearOcrCache} from './ocr/ocr.mjs';
 import {createOcrPanel} from './ocr/ocr-panel.mjs';
 installReaderScrollbars(document,{ownPage:true});
@@ -225,7 +226,8 @@ $('#reading-text').addEventListener('keydown',event=>{if(['Enter',' '].includes(
 /* Where to start: the place saved for this text (the session's resume points), else a place of releases up to 2.4.0, else the Focus Reader's character handed over by the page. */
 async function initialPosition(resumeCharStart){
  let start={chunk:0,word:0,restored:false};
- const saved=await session.resume.get(currentFingerprint).catch(()=>null);
+ let saved=await session.resume.get(currentFingerprint).catch(()=>null);
+ if(saved&&!Number.isSafeInteger(saved.char)&&atDocumentEnd(docChunks,saved))saved=null;       // read to the end last time: open at the beginning
  if(saved&&Number.isSafeInteger(saved.char))start={char:saved.char,restored:saved.char>0};else if(saved&&saved.chunk<docChunks.length)start={chunk:saved.chunk,word:saved.word,restored:saved.chunk>0||saved.word>0};
  else{const savedChar=legacy.positionChars?.[currentFingerprint],oldIndex=Number(legacy.positions[currentFingerprint])||0;
   if(Number.isSafeInteger(savedChar)){const i=docChunks.findIndex(c=>c.end>savedChar);if(i>=0)start={char:savedChar,restored:i>0};}
