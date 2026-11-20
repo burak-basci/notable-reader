@@ -45,6 +45,8 @@ Browser and operating-system voices remain separately supplied components.
 - ONNX Runtime Web, JSPI/WebGPU build 1.31.1 (experimental stage only), MIT (`LICENSE` retained), `extension/tools/reader/vendor/neural/ort-webgpu/`.
 - Optional Qwen3-TTS 12Hz 0.6B CustomVoice, 4-bit ONNX export for WebGPU by danyalmalik (experimental stage, never preselected): Apache-2.0 according to the catalog header comment, `extension/tools/reader/neural-voices-experimental.js`. Not distributed.
 - Optional Qwen3.5-0.8B, ONNX export `onnx-community/Qwen3.5-0.8B-ONNX` (q4, explanation feature): Apache-2.0 as recorded in `extension/explain/model-manifest-better.json`. Not distributed.
+- Optional Piper voices on the Hi-Fi TTS base (`en_US-hifi_tts_92-medium` and voices retrained on the `hifi_tts_92` base): weights MIT; training data Hi-Fi Multi-Speaker English TTS Dataset (Hi-Fi TTS), NVIDIA, CC BY 4.0, https://www.openslr.org/109/. Not distributed.
+- Optional Phonon / Pocket TTS voices use the Kyutai Mimi audio codec: CC BY 4.0, Kyutai. Not distributed.
 - The complete list of every component in this package is `THIRD_PARTY_NOTICES.md` in the package root.
 - Optional Kokoro82M q8 (`model_quantized.onnx`): same Apache-2.0 model, 8-bit quantised, pinned revision and SHA-256 in `extension/tools/reader/neural-models.js`. Not distributed.
 - Optional KittenTTS nano 0.8 int8 (KittenML/kitten-tts-nano-0.8-int8): Apache-2.0 per the Hugging Face model metadata, pinned revision and SHA-256 in the register; English only. Not distributed.
