@@ -128,6 +128,7 @@ async function resetSpeed(p, mobile) {
 
 /* export through the bar's download menu: More -> Download -> format -> Download */
 async function exportFile(p, format, mobile, dir) {
+  await p.evaluate(() => { if (!globalThis.__notableBlobs) { globalThis.__notableBlobs = []; const o = URL.createObjectURL.bind(URL); URL.createObjectURL = blob => { if (blob?.size > 1000) globalThis.__notableBlobs.push(blob); return o(blob); }; } });
   // a menu that still shows the result of the last file: "Another file" returns to the choice
   const again = p.locator('.download-menu .dlm-again'); if (await again.count() && await again.first().isVisible()) await again.first().click();
   if (!(await p.locator('.download-menu .dlm-format').first().isVisible().catch(() => false))) {
@@ -138,7 +139,13 @@ async function exportFile(p, format, mobile, dir) {
   await p.locator('.download-menu .dlm-format', {hasText: new RegExp('^\\s*' + format, 'i')}).first().click();
   const t0 = Date.now(), dl = p.waitForEvent('download', {timeout: 240000});
   await p.locator('.download-menu .dlm-start').first().click();
-  const d = await dl, name = d.suggestedFilename(), path = join(dir, name); const bad = await d.failure(); if (bad) throw new Error('Download fehlgeschlagen: ' + bad); await d.saveAs(path);
+  const d = await dl, name = d.suggestedFilename(), path = join(dir, name); const bad = await d.failure(); if (bad) throw new Error('Download fehlgeschlagen: ' + bad);
+  const tmp = await d.path();
+  if (tmp && existsSync(tmp)) await d.saveAs(path);
+  else {   // some browser setups report the download but drop the artifact file: take the very bytes the page handed to the browser's download (blob behind the anchor)
+    const b64 = await p.evaluate(async () => { const b = globalThis.__notableBlobs?.at(-1); if (!b) return ''; const r = new FileReader(); return await new Promise(ok => { r.onload = () => ok(String(r.result).split(',')[1] || ''); r.readAsDataURL(b); }); });
+    must(b64, 'Download-Datei fehlt und kein Blob erfasst'); writeFileSync(path, Buffer.from(b64, 'base64'));
+  }
   return {name, path, ms: Date.now() - t0, bytes: statSync(path).size};
 }
 function audioFacts(path) {
