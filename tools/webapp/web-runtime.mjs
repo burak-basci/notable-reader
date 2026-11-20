@@ -96,6 +96,7 @@ function connect(info = {}) {
 const worker = (message, from, respond) => {
   if (message?.t === 'ensureHost') { respond({ok: true}); return false; }                                 // the host (engine) is this page: always there
   if (message?.type === 'premiumStatus' || message?.t === 'premium') { respond({ok: true, premium: {enabled: true, status: 'free', mode: 'website'}}); return false; }   // downloads are free here, nothing to buy
+  if (message?.t === 'claimAudio') { respond({ok: true}); return false; }                                 // one page, one audio owner: nothing else to stop
   if (message?.t === 'openFlags') { respond({ok: false}); return false; }                                   // a page cannot open chrome:// addresses: the bar copies the address instead
   if (message?.t === 'settingsFile') { respond({ok: false, reason: 'unsupported'}); return false; }         // no downloads API: the settings backup is a normal browser download
   return false;
