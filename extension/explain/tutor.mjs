@@ -222,8 +222,24 @@ export function createTutor(host) {
   function freeBand(box) {
     let top = Math.max(0, box.top), bottom = Math.min(win.innerHeight, box.bottom);
     const root = host.shadow?.(), covers = [root?.querySelector('.bar'), root?.querySelector('.tutor-card:not([hidden])')].map(e => e?.getBoundingClientRect()).filter(r => r && r.height > 0);
-    for (const r of covers) { if (r.top > (top + bottom) / 2) bottom = Math.min(bottom, r.top - 8); else if (r.bottom < (top + bottom) / 2) top = Math.max(top, r.bottom + 8); }
+    for (const r of [...covers, ...pageCovers(box, root)]) { if (r.top > (top + bottom) / 2) bottom = Math.min(bottom, r.top - 8); else if (r.bottom < (top + bottom) / 2) top = Math.max(top, r.bottom + 8); }
     return bottom - top > 80 ? {top, bottom} : {top: Math.max(0, box.top), bottom: Math.min(win.innerHeight, box.bottom)};
+  }
+  /* The page's own fixed or sticky bands at the top or bottom edge of the view (Wikipedia's donation banner, sticky site headers, cookie bars): a step must
+     not land under them (F20). The topmost element at three points of each edge, up to its fixed/sticky ancestor; only wide, low bands (a full-screen
+     overlay is no band). Our own surfaces are left out (the bar is handled above). */
+  function pageCovers(box, root) {
+    const doc = win.document, w = win.innerWidth, h = win.innerHeight, out = [];
+    for (const y of [Math.max(0, box.top) + 2, Math.min(h, box.bottom) - 2]) for (const x of [w * .25, w * .5, w * .75]) {
+      let e = doc.elementFromPoint(x, y);
+      if (!e || root && e === root.host || e.closest?.('[data-notable-reader-surface],[data-notable-reader-ui],[data-reader-tutor-marks],[data-reader-explain-panel]')) continue;
+      for (; e && e !== doc.body && e !== doc.documentElement; e = e.parentElement) {
+        const position = win.getComputedStyle(e).position; if (position !== 'fixed' && position !== 'sticky') continue;
+        const r = e.getBoundingClientRect(); if (r.width > w * .5 && r.height > 0 && r.height < h * .4 && !out.some(o => o.top === r.top && o.bottom === r.bottom)) out.push(r);
+        break;
+      }
+    }
+    return out;
   }
   /* an embedded frame: the outer pages scroll the frame so far that the passage is on screen (scrollIntoView reaches the
      ancestor frames, also across origins; inside this frame the passage is in view already, so nothing moves here) */
