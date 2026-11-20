@@ -1,5 +1,5 @@
 /* beNotable! Reader playback · time axis: media time -> word, char offset -> word, progress interpolation (own code, MIT). */
-export const MIN_RATE = 0.5, MAX_RATE = 5, MAX_VOLUME = 1.5;
+export const MIN_RATE = 0.5, MAX_RATE = 4, MAX_VOLUME = 1.5;
 export const clampRate = value => { const n = Number(value); return Number.isFinite(n) ? Math.min(MAX_RATE, Math.max(MIN_RATE, n)) : 1; };
 export const clampVolume = value => { const n = Number(value); return Number.isFinite(n) ? Math.min(MAX_VOLUME, Math.max(0, n)) : 1; };
 /* Voice shaping (Runde 5): pitch in semitones (+-6, steps of 0.5), bass / treble in dB (+-10), pause between sections in ms (0 = at once, up to 3 s). */

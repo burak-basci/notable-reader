@@ -116,7 +116,7 @@ function cleanStatusBase(value) {
       followMargin:Number.isInteger(settings.followMargin)&&settings.followMargin>=5&&settings.followMargin<=30?settings.followMargin:10,
       ...marksFrom({...settings,markVersion:2}),markVersion:2,normalizeSpeech:typeof settings.normalizeSpeech==='boolean'?settings.normalizeSpeech:true,
       markStyle:cleanStyle(settings.markStyle),overlayTheme:cleanOverlayTheme(settings.overlayTheme),keyboard:cleanKeyboard(settings.keyboard),bar:FIELDS.bar.check(settings.bar)?settings.bar:null,online:settings.online===true,   // the central configuration: the popup and the export read ALL of it from here
-      speed:Number.isFinite(settings.speed) && settings.speed >= .5 && settings.speed <= 5 ? settings.speed : null,
+      speed:Number.isFinite(settings.speed) && settings.speed >= .5 ? Math.min(4, settings.speed) : null,
       ...Object.fromEntries(['follow','clickSeek','autoShow','focusMotion','muted'].map(key => [key,typeof settings[key] === 'boolean' ? settings[key] : null])),
       uiLanguage:selectedUiLanguage,
       playerTheme:['system','light','dark'].includes(settings.playerTheme??value?.playerTheme)?settings.playerTheme??value.playerTheme:'system',

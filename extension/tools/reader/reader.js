@@ -375,7 +375,7 @@ const documentCommands=new Set(['addBookmark','explainPage','toggle','restart','
 const commands=new Set([...globalCommands,...documentCommands,'stop','cancelExport']);
 function invalidValue(command,value){const finite=(min,max)=>typeof value==='number'&&Number.isFinite(value)&&value>=min&&value<=max;
  if(['mute','follow','clickseek'].includes(command))return typeof value!=='boolean';
- if(command==='speed')return!finite(.5,5);if(command==='volume')return!finite(0,150)||value%5!==0;if(command==='seekProgress')return!finite(0,1);if(command==='seekRelative')return!finite(-600,600);
+ if(command==='speed')return!finite(.5,4);if(command==='volume')return!finite(0,150)||value%5!==0;if(command==='seekProgress')return!finite(0,1);if(command==='seekRelative')return!finite(-600,600);
  if(['seekSection','seekChapter'].includes(command))return!Number.isInteger(value)||value<0||value>=(command==='seekSection'?session.chunks.length:session.chapters.length);
  if(command==='addBookmark')return value!==undefined&&(typeof value!=='string'||value.length>120);
  if(command==='export')return!['mp3','wav'].includes(value);if(command==='exportDocument')return!['pdf','html'].includes(value);

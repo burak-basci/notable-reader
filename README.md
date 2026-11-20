@@ -16,7 +16,7 @@ Lesen bleibt kostenlos; ein Dokumentupload oder ein Pflichtkonto ist nicht nöti
 - Ein kanonischer Quellstand für die bisherige Papier-/Grün-Oberfläche, den großen 88px-Startknopf und die vollständige Popup-/Fokussteuerung. Optional nutzt dieselbe Erweiterung den lokalen Nativecompanion mit installierten Stimmen/GPU; ohne ihn bleibt die Browserengine verfügbar.
 - Browser-Erweiterung: Artikel und markierten Text über einen bewussten Klick
   öffnen; eine kompakte Leiste mit Satzmarkierung, Pause/Weiterlesen, Sprüngen,
-  Stimmenauswahl, Lautstärke, Tempo von 0,8× bis 4× und Lesestellen.
+  Stimmenauswahl, Lautstärke, Tempo von 0,5× bis 4× und Lesestellen.
 - Dokument-App: PDF mit Textebene und Seitenvorschau; passwortgeschützte PDF nach
   Eingabe des Passworts; EPUB ohne DRM in Buchreihenfolge; DOCX-Absätze und
   Tabellenzellen; TXT, Markdown als Klartext und HTML ohne aktive Inhalte.

@@ -44,7 +44,7 @@ export class FilePlayerTransport{
    if(key==='voice'){const lang=values.language||state.activeLanguage||state.language,entry=state.catalog?.find(g=>g.code===lang);if(typeof value!=='string'||!entry?.voices.some(v=>v.id===value))fail('invalid');result.push(['voice',{language:lang,id:value}]);continue;}
    if(CONFIG_KEYS.has(key)){if(!FIELDS[key].check(value,{uiLanguages:uiLanguages.map(l=>l.code),formatLocales}))fail('invalid');config[key]=value;continue;}
    if(!Object.hasOwn(settingsMap,key))fail('invalid');if(key==='language'&&Object.hasOwn(values,'voice'))continue;
-   if(key==='speed'&&(!Number.isFinite(value)||value<.5||value>5||Math.abs(value*20-Math.round(value*20))>1e-6))fail('invalid');
+   if(key==='speed'&&(!Number.isFinite(value)||value<.5||value>4||Math.abs(value*20-Math.round(value*20))>1e-6))fail('invalid');
    if(key==='volume'&&(!Number.isInteger(value)||value<0||value>150||value%5))fail('invalid');
    if(['muted','follow','clickSeek'].includes(key)&&typeof value!=='boolean')fail('invalid');
    if(key==='uiLanguage'&&!uiLanguages.some(l=>l.code===value)||key==='formatLocale'&&!formatLocales.includes(value)||key==='timeFormat'&&!['auto','12h','24h'].includes(value)||key==='playerTheme'&&!['system','light','dark'].includes(value))fail('invalid');

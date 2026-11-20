@@ -18,6 +18,9 @@ export const KEY_DEFAULTS = Object.freeze({playPause: 'KeyK', previousSection: '
 /* Reading line (where the text being read stays on screen) 33 % from the top, scroll-free range 10 % of the reading area. Stored values are never touched, only the default changes. */
 export const DEFAULT_ENGLISH_VOICE = 'notable:kokoro:af_bella';
 export const FOLLOW_POSITION_DEFAULT = 33, FOLLOW_MARGIN_DEFAULT = 10;
+/* Reading speed 0.5x-4x in steps of 0.05 (owner, 20.11.2026: up to 5x was too much). Older versions allowed up to 5x: such a stored or imported value becomes 4x. */
+export const SPEED_MIN = .5, SPEED_MAX = 4, SPEED_LEGACY_MAX = 5;
+export const clampSpeed = v => Number.isFinite(v) && v > SPEED_MAX && v <= SPEED_LEGACY_MAX ? SPEED_MAX : v;
 /* Reader document generation identifiers. */
 export const GENERATION_ID = /^[a-f0-9-]{16,64}$/i;
 export const UI_LANGUAGES = Object.freeze(['de', 'en', 'fr', 'es', 'it', 'pt']);
@@ -55,7 +58,7 @@ const bool = v => typeof v === 'boolean', int = (lo, hi) => v => Number.isIntege
 const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
 /* check(value, ctx): ctx = {uiLanguages, formatLocales, platform}. exported: part of the exported file. */
 export const FIELDS = Object.freeze({
-  speed: {exported: true, check: v => Number.isFinite(v) && v >= .5 && v <= 5 && Math.abs(v * 20 - Math.round(v * 20)) < 1e-6},
+  speed: {exported: true, check: v => Number.isFinite(v) && v >= .5 && v <= SPEED_MAX && Math.abs(v * 20 - Math.round(v * 20)) < 1e-6},
   volume: {exported: true, check: int(0, 150)}, muted: {exported: true, check: bool}, follow: {exported: true, check: bool}, clickSeek: {exported: true, check: bool}, autoShow: {exported: true, check: bool}, focusMotion: {exported: true, check: bool},
   overlayMode: {exported: true, check: oneOf(['light', 'expert'])},
   reading: {exported: true, check: validReading},
@@ -134,6 +137,7 @@ export function migrate(stored, legacy = {}, platform = detectPlatform()) {
   else Object.assign(s, m);
   /* version 1 stored the whole default object, so 50 % there is the old default and not a choice: it becomes the new default 33 % (the old value stays in followPositionLegacy). Any other value is the user's and stays. */
   if ((Number(s.configVersion) || 0) < 2 && s.followPosition === 50) { s.followPositionLegacy = 50; s.followPosition = FOLLOW_POSITION_DEFAULT; }
+  if (Object.hasOwn(s, 'speed')) s.speed = clampSpeed(s.speed); // 2.5.0 and older: up to 5x
   s.online = false; // Local-only product: legacy network system voices are never enabled.
   s.reading = cleanReading(s.reading);
   s.markStyle = cleanStyle(s.markStyle); s.overlayTheme = cleanOverlayTheme(s.overlayTheme);
@@ -188,7 +192,7 @@ export function parseImport(text, {current = {}, ctx = {}} = {}) {
   const platform = ctx.platform || detectPlatform(), values = {};
   for (const key of keys) {
     if (!Object.hasOwn(FIELDS, key) || !FIELDS[key].exported) return {ok: false, code: FORBIDDEN.test(key) ? 'forbidden' : 'unknownKey', detail: key.slice(0, 40)};
-    const v = doc.settings[key];
+    const v = key === 'speed' ? clampSpeed(doc.settings[key]) : doc.settings[key];
     if (key === 'keyboard') { const problem = keyboardProblem(v, platform); if (problem) return {ok: false, code: 'keyboard', detail: problem}; }
     else if (!FIELDS[key].check(v, {...ctx, platform})) return {ok: false, code: 'badValue', detail: key};
     values[key] = key === 'markStyle' ? cleanStyle(v) : key === 'overlayTheme' ? cleanOverlayTheme(v) : key === 'keyboard' ? cleanKeyboard(v, platform) : v;
