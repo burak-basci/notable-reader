@@ -67,6 +67,16 @@ export function firstRunVoice(models,language,memoryGB){
  const named=list.find(m=>m&&m.id===FIRST_RUN_VOICES[lang]&&!m.experimental);
  return named||recommendVoices(list,lang,memoryGB).find(pick=>pick.role==='best')?.model||null;
 }
+/* The voice a device starts with when nothing is chosen yet: on a device that gets the best tier the language's first-run voice,
+   otherwise the recommendation of its tier (without WASM threads - every Chrome extension page since 2.5 - that is the balanced voice,
+   e.g. German Thorsten medium, because Thorsten high cannot keep up on one thread). tier: recommendTier() of the device. The bar
+   (page-session voiceChoices) and the welcome page (sizes, sample) use this one rule, so the welcome page names what Play loads. */
+export function deviceStartVoice(models,language,{tier='balanced',memoryGB}={}){
+ const list=Array.isArray(models)?models:[],order=['small','balanced','best'],want={fast:'small',balanced:'balanced',best:'best'}[tier]||'balanced';
+ if(want==='best'){const first=firstRunVoice(list,language,memoryGB);if(first)return first;}
+ const picks=recommendVoices(list,language,memoryGB);
+ return (picks.filter(pick=>order.indexOf(pick.role)<=order.indexOf(want)).at(-1)||picks[0])?.model||null;
+}
 export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,getLocale,listen,disposers,settingsToggle=null,place=()=>{},isPlaying=()=>false,getVolume=()=>({volume:100,muted:false}),registryUrl='',eloUrl='',sampleBase='',now=()=>new Date(),createAudio=()=>new Audio(),fetchSample=url=>fetch(url).then(r=>{if(!r.ok)throw new Error('sample');return r.blob();}),onSample=()=>{}}){
  if(typeof installReaderScrollbars==='function')installReaderScrollbars(shadow);
  // root/idPrefix: a second picker (Settings) on its own .voice wrapper keeps every id unique in the shared shadow root

@@ -4,9 +4,10 @@
    voice. No preference, counter or identifier is written. */
 import {t, getUiLanguage, setUiLanguage, translateDOM, catalogReady, uiLanguages} from './i18n.js';
 import {product} from './product-config.js';
-import {MODELS, modelBytes} from './models/registry.js';
+import {MODELS, modelBytes, recommendTier} from './models/registry.js';
+import {DEFAULT_ENGLISH_VOICE} from './config.mjs';
 import {formatCombo} from './platform/keycombo.mjs';
-import {firstRunVoice} from './voice-picker.mjs';
+import {deviceStartVoice} from './voice-picker.mjs';
 
 const api = globalThis.chrome?.runtime?.id ? globalThis.chrome : globalThis.browser;
 const $ = selector => document.querySelector(selector);
@@ -19,10 +20,14 @@ await catalogReady;
   } catch {}
 }
 
-/* The voice that reads first in a language is the one the bar offers on capable devices (page-session computeOffer):
-   firstRunVoice of the voice picker (English Bella FP32, German Thorsten high). */
+/* The voice that reads first in a language is the one the first Play downloads: English is preset to Bella (config DEFAULT_ENGLISH_VOICE),
+   every other language follows the device rule of the bar (voice-picker deviceStartVoice; this page has the same isolation as the engine host,
+   so crossOriginIsolated tells whether the engine has threads). Before 2.5.1 this page named Thorsten high (114 MB) while Play loaded medium (63 MB). */
 function firstVoice(language) {
-  const model = firstRunVoice(Object.values(MODELS), language);
+  const models = Object.values(MODELS);
+  const preset = language === 'en' ? models.find(m => m.voiceURI === DEFAULT_ENGLISH_VOICE) : null;
+  const memory = navigator.deviceMemory, tier = recommendTier({memory, cores: navigator.hardwareConcurrency, threads: globalThis.crossOriginIsolated === true});
+  const model = preset || deviceStartVoice(models, language, {tier, memoryGB: memory});
   return model?.sample ? model : null;
 }
 const sampleVoice = language => firstVoice(language) || firstVoice('en');
@@ -37,7 +42,12 @@ function sizeList(language) {
 /* Same display as the keyboard settings: "Alt+Shift+Left Arrow" from the browser becomes Alt+Shift+← (⌥⇧← on a Mac). */
 const ARROWS = {Left: 'ArrowLeft', Right: 'ArrowRight', Up: 'ArrowUp', Down: 'ArrowDown'};
 const code = part => ARROWS[part] || (/^[A-Z0-9]$/.test(part) ? (/\d/.test(part) ? 'Digit' : 'Key') + part : part);
-const pretty = shortcut => formatCombo(shortcut.replace(/ Arrow$/, '').split('+').map(code).join('+')) || shortcut;
+/* The browser names the keys in its own language ("Alt+Umschalttaste+Linkspfeil", "Alt+Maj+Flèche gauche"): mapped to the key codes first,
+   otherwise those long names squeezed the descriptions next to them onto three lines. */
+const LOCAL_KEYS = {umschalttaste: 'Shift', umschalt: 'Shift', strg: 'Ctrl', maj: 'Shift', 'mayús': 'Shift', mayus: 'Shift', maiusc: 'Shift',
+  linkspfeil: 'Left', rechtspfeil: 'Right', 'nach-oben-taste': 'Up', 'nach-unten-taste': 'Down', 'flèche gauche': 'Left', 'flèche droite': 'Right',
+  'flecha izquierda': 'Left', 'flecha derecha': 'Right', 'freccia sinistra': 'Left', 'freccia destra': 'Right', 'seta para a esquerda': 'Left', 'seta para a direita': 'Right'};
+const pretty = shortcut => formatCombo(shortcut.replace(/ Arrow$/, '').split('+').map(part => LOCAL_KEYS[part.trim().toLowerCase()] || part).map(code).join('+')) || shortcut;
 /* The browser-wide commands of manifest.json, with the keys the person actually has (they can be changed). */
 const COMMANDS = [['_execute_action', 'extWelcomeKeyOpen'], ['toggle-play', 'kbPlayPause'],
   ['previous-section', 'kbPreviousSection'], ['next-section', 'kbNextSection']];

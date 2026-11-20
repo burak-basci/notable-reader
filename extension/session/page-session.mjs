@@ -29,7 +29,7 @@ import {mountPlayerSurface} from '../player-surface.mjs';
 import {createFormatting} from '../formatting.mjs';
 import {createAppearanceController} from '../appearance.mjs';
 import {MODELS, modelBytes, recommendTier} from '../models/registry.js';
-import {recommendVoices, firstRunVoice} from '../voice-picker.mjs';
+import {recommendVoices, firstRunVoice, deviceStartVoice} from '../voice-picker.mjs';
 import {voiceName, voiceNote, tierLabel, uiText} from '../playback/voice-labels.js';
 import {createReadingHistory,historyFailureText} from './reading-history.mjs';
 import {errorKey, ERROR_KEYS as ENGINE_ERROR_KEYS, ERROR_STATUS_KEYS} from '../engine/error-keys.mjs';
@@ -322,10 +322,9 @@ export class PageSession {
     const caps = this.caps || {}, memory = caps.memoryGB ?? navigator.deviceMemory;
     const cores = caps.cores ?? navigator.hardwareConcurrency, threads = caps.threads === true;
     const picks = recommendVoices(Object.values(MODELS), this.lang, memory), order = ['small', 'balanced', 'best'];
-    const tier = {fast: 'small', balanced: 'balanced', best: 'best'}[recommendTier({memory, cores, threads})];
-    // a capable device starts with the language's first-run voice (FIRST_RUN_VOICES: German Thorsten high)
-    const first = tier === 'best' ? firstRunVoice(Object.values(MODELS), this.lang, memory) : null;
-    const fitting = first ? {model: first} : picks.filter(pick => order.indexOf(pick.role) <= order.indexOf(tier)).at(-1) || picks[0];
+    // a capable device starts with the language's first-run voice (FIRST_RUN_VOICES: German Thorsten high), others with their tier's recommendation (voice-picker deviceStartVoice, the welcome page uses the same rule)
+    const start = deviceStartVoice(Object.values(MODELS), this.lang, {tier: recommendTier({memory, cores, threads}), memoryGB: memory});
+    const fitting = start ? {model: start} : null;
     const stored = Object.entries(this.settings.voices || {}).filter(([key]) => base(key) === this.lang);
     const chosen = !!wanted && stored.some(entry => entry[1] === wanted.voiceURI);
     const primary = wanted && (chosen || !fitting) ? wanted : fitting?.model || wanted;
@@ -562,6 +561,9 @@ export class PageSession {
     if(this.state==='playing')void this.readingHistory?.heard(this.historyPosition());
     this.marks = (this.marks || 0) + 1;
     if (this.marks % 8 === 0) void this.savePosition(false);
+    /* "Heard" / "Remaining" and the timeline thumb follow the word, not only the section: without this the bar repainted them only at a
+       section change (0:12 for 15 s, then 0:27). Once a second at most: a full bar update costs a few milliseconds. */
+    if (this.state === 'playing') { const now = Date.now(); if (now - (this.timeShownAt || 0) >= 1000) { this.timeShownAt = now; this.changed(); } }
   }
   /* After an extension reload/update the old content script keeps running in the open tab with a dead runtime (its world is not reused by the new injection, so the
      __notableSession guard does not see it). It must take its bar, mark layer and listeners with it instead of drawing a second copy next to the new session. */
