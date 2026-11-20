@@ -1156,6 +1156,7 @@
     "tests/popup-design.cjs",
     "tests/reader-ui/acceptance.mjs",
     "tests/responsive-browser.cjs",
+    "tests/speed-limit.test.mjs",
     "tests/test_file_facade.mjs",
     "tests/test_public_shell.mjs",
     "tests/test_shared_file_reader.mjs",
