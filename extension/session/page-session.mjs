@@ -51,8 +51,9 @@ const ERROR_KEYS = new Set(ERROR_STATUS_KEYS);
 /* Cleared as soon as the listener picks another voice: they were about the old one. */
 const VOICE_ERRORS = new Set([...Object.values(ENGINE_ERROR_KEYS), 'voice_none_chosen']);
 /* A voice this device computes slower than it speaks (stops while reading that nobody asked for): the faster voices the bar OFFERS instead (it asks, nothing
-   switches by itself), best first per language. FASTER_VOICES_NOTE */
-const FASTER_VOICES = {en: [], de: []};
+   switches by itself), best first per language. Measured 20.11.2026 on a weaker machine (browser on 4 logical cores with a quota of 2, hardwareConcurrency 4):
+   real-time factor Kokoro FP32 0.95, Kokoro compact (q8) 0.85-0.92 (no real gain), Kitten nano 0.27, Piper LJSpeech medium 0.13; Thorsten medium (German) 0.14. Kokoro voices of other languages (German Kerstin) offer Thorsten. */
+const FASTER_VOICES = {en: ['kitten-nano', 'piper-en_us-ljspeech-medium'], de: ['piper-medium']};
 const STALL_WINDOW_MS = 120000, STALLS_TO_OFFER = 3, STALL_MS_TO_OFFER = 6000;
 /* DOM left behind by the copy of an updated extension (another isolated world): bar, marks, quick actions, panels. */
 const ORPHAN_HOSTS = [
