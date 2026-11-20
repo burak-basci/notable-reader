@@ -26,10 +26,11 @@ export function roboticVoice(model){
  return piperLow||/^MLS\b/.test(String(model?.display||model?.name||''));
 }
 /* The voice a language starts with: offered on the voice card of a capable device, played by the welcome sample and
-   asked for by a first audio export. German stays Thorsten high (model id 'piper') until a listening test decides
-   against Kerstin (Kokoro); change it here and nowhere else. Languages without an entry take the best recommended
-   voice. */
-export const FIRST_RUN_VOICES=Object.freeze({de:'piper'});
+   asked for by a first audio export. German is Thorsten medium (model id 'piper-medium', 63 MB) also where the engine
+   has WASM threads: measured 20.11.2026 (isolated engine host, 16 cores), Thorsten high read at RTF 0.65 per worker
+   and stopped once per text at 1x and 2x (1.1 s / 2.7 s), medium at 0.07-0.1 never stopped and started within 0.2-1.7 s.
+   Change it here and nowhere else. Languages without an entry take the best recommended voice. */
+export const FIRST_RUN_VOICES=Object.freeze({de:'piper-medium'});
 /* "Recommended for you" in one language: at most a small, a balanced and a best voice (small first), never a robotic
    one. Per size class a natural family (Kokoro, Phonon, Kitten) wins where it speaks the language, otherwise Piper
    fills the class (high before medium); one speaker across the sizes where the register has it (Bella in three

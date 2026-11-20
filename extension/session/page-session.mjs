@@ -322,7 +322,7 @@ export class PageSession {
     const caps = this.caps || {}, memory = caps.memoryGB ?? navigator.deviceMemory;
     const cores = caps.cores ?? navigator.hardwareConcurrency, threads = caps.threads === true;
     const picks = recommendVoices(Object.values(MODELS), this.lang, memory), order = ['small', 'balanced', 'best'];
-    // a capable device starts with the language's first-run voice (FIRST_RUN_VOICES: German Thorsten high), others with their tier's recommendation (voice-picker deviceStartVoice, the welcome page uses the same rule)
+    // a capable device starts with the language's first-run voice (FIRST_RUN_VOICES: German Thorsten medium), others with their tier's recommendation (voice-picker deviceStartVoice, the welcome page uses the same rule)
     const start = deviceStartVoice(Object.values(MODELS), this.lang, {tier: recommendTier({memory, cores, threads}), memoryGB: memory});
     const fitting = start ? {model: start} : null;
     const stored = Object.entries(this.settings.voices || {}).filter(([key]) => base(key) === this.lang);
