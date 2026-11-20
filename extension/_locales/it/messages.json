@@ -1,9 +1,9 @@
 {
   "extName": {
-    "message": "beNotable! Reader"
+    "message": "beNotable! Reader: lettura ad alta voce"
   },
   "extDescription": {
-    "message": "Legge ad alta voce pagine web, PDF ed e-book con voci naturali che funzionano sul tuo dispositivo. Gratis, senza account, offline."
+    "message": "Legge ad alta voce pagine web, PDF ed e-book con voci sul tuo dispositivo. Parola evidenziata, gratis, senza account."
   },
   "actionTitle": {
     "message": "Apri beNotable! Reader"

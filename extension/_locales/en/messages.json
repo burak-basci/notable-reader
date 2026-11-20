@@ -1,10 +1,10 @@
 {
   "extName": {
-    "message": "beNotable! Reader",
+    "message": "beNotable! Reader: Text to Speech",
     "description": "Extension name in the browser and the store. Always \"beNotable! Reader\"."
   },
   "extDescription": {
-    "message": "Reads web pages, PDFs and e-books aloud with natural voices that run on your device. Free, no account, works offline.",
+    "message": "Reads web pages, PDFs and e-books aloud with voices that run on your device. Word highlighting, free, no account.",
     "description": "Store summary and extension description, at most 132 characters."
   },
   "actionTitle": {

@@ -12,7 +12,7 @@ DIRS={'extension','tests','tools','third_party_sources','docs','native'}
 EXCLUDED={'.git','.unlazy','__pycache__','node_modules','venv','models','cache','tmp','reports','releases','.DS_Store'}
 GENERATED={'SOURCE-FILES.json','BUILD-METADATA.json','native/build-info.json'}
 LICENSES=['LICENSE','LICENSE-MIT','COPYING','THIRD_PARTY_NOTICES.md']
-SHELL={'service-worker.js','reader-api.js','product-config.js','selects.js','i18n.js','file-player-transport.mjs','popup.html','popup.js','popup.css','options.html','help.html','focus.html','focus.css','focus.js','article-handoff.mjs','native-adapter.mjs','player-adapter.mjs','browser-runtime.mjs'}
+SHELL={'service-worker.js','product-config.js','selects.js','i18n.js','file-player-transport.mjs','popup.html','popup.js','popup.css','options.html','help.html','focus.html','focus.css','focus.js','article-handoff.mjs','native-adapter.mjs','player-adapter.mjs','browser-runtime.mjs'}
 WEB_ROOTS={'version.json','reader.html','reader.css','reader.js','core.js','app.webmanifest','sw.js','offline-assets.json','audio-export.js','formats.js','neural-models.js','neural-speech.js','neural-worker.js','browser-player.mjs','document-assets.mjs','pdf-appearance.mjs','player-surface.mjs','formatting.mjs','appearance.mjs','ui-locales.json','premium-browser.mjs','native-runtime.mjs','feedback.mjs','feedback.css'}|set(LICENSES)
 WEB_EXCLUDED=SHELL|{'manifest.json','background.js','content-reader.js','vendor/Readability.js','vendor/READABILITY-LICENSE.md'}
 def encoded(v):return (json.dumps(v,ensure_ascii=False,sort_keys=True,indent=2)+'\n').encode('utf-8')

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.5.2 (2026-11-20)
+
+- Store package: the extension name carries what it does ("beNotable! Reader: Text to Speech", localized in six
+  languages); the short description no longer says "natural" or "works offline" (voices are downloaded once from
+  huggingface.co): "Reads web pages, PDFs and e-books aloud with voices that run on your device. Word highlighting,
+  free, no account."
+- Removed the unused companion client reader-api.js (the package contains no loopback address any more) and dead
+  premium styles (download star, offer cards). All functions and downloads stay free; there is no licence check,
+  device identifier or payment call in the code.
+
 ## 2.5.1 (2026-11-20)
 
 - Reading speed 0.5x-4x everywhere (was up to 5x); a stored or imported 4.05-5x becomes 4x.

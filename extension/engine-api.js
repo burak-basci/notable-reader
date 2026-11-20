@@ -1,5 +1,5 @@
 import {askFrame,prepareFrame,frameBinding,frameAccess} from './frame-session.mjs';
-// Local engine API (own code, MIT): same exports as the companion client reader-api.js, but everything happens inside the extension.
+// Local engine API (own code, MIT): everything happens inside the extension (the old companion client reader-api.js with its loopback address was removed in 2.5.2).
 // The "document" is the reading session that the content script (session/page-session.mjs) keeps in the selected tab;
 // status/control/settings are forwarded to it with tabs.sendMessage. No network, no companion, no document text leaves the page.
 export {appearanceDefaults, validAppearance, cleanAppearance} from './appearance-schema.js';

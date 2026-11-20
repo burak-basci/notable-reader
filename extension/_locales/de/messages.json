@@ -1,9 +1,9 @@
 {
   "extName": {
-    "message": "beNotable! Reader"
+    "message": "beNotable! Reader: Text vorlesen"
   },
   "extDescription": {
-    "message": "Liest Webseiten, PDFs und E-Books mit natürlichen Stimmen vor, die auf deinem Gerät laufen. Kostenlos, ohne Konto, offline."
+    "message": "Liest Webseiten, PDFs und E-Books vor, mit Stimmen auf deinem Gerät. Wort für Wort markiert, kostenlos, ohne Konto."
   },
   "actionTitle": {
     "message": "beNotable! Reader öffnen"

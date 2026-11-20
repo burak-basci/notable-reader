@@ -131,7 +131,6 @@
     "extension/privacy.js",
     "extension/product-config.js",
     "extension/read-home.mjs",
-    "extension/reader-api.js",
     "extension/samples/additional-piper-cs_cz-jirka-low.opus",
     "extension/samples/additional-piper-de_de-kerstin-medium.opus",
     "extension/samples/additional-piper-de_de-mls-medium-s0.opus",
