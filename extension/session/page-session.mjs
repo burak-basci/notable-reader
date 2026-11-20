@@ -1142,9 +1142,9 @@ export class PageSession {
   }
   downloadPercent() { const d = this.download; return d ? Math.round(100 * d.loaded / Math.max(1, d.total)) : 0; }
   /* The voice card and the download line as plain data for the bar (one factory draws them everywhere). */
-  voiceView(id) {
+  voiceView(id, full = false) {
     const model = MODELS[id]; if (!model) return null;
-    const name = voiceName(this.locales, base(this.settings.uiLanguage) || 'en', model.display || model.name);
+    const name = voiceName(this.locales, base(this.settings.uiLanguage) || 'en', full ? model.name : model.display || model.name);      // full: 'Bella · English (Kitten nano)', where the short name equals the current voice's
     return {id: model.id, name, mb: mbOf(model), sample: model.sample || '', installed: this.installed.has(model.id)};
   }
   cardView() {
@@ -1152,7 +1152,7 @@ export class PageSession {
     // Don't show the voice card for 'none' reason (auto-download handles it)
     if (card.reason === 'none') return null;
     const smaller = card.smaller ? this.voiceView(card.smaller) : null;
-    return {reason: card.reason, primary: this.voiceView(card.primary), smaller, downloading: card.downloading || ''};
+    return {reason: card.reason, primary: this.voiceView(card.primary, card.reason === 'slow'), smaller, downloading: card.downloading || ''};
   }
   downloadView() {
     const id = this.download?.modelId || this.dlRunning, view = id ? this.voiceView(id) : null;
