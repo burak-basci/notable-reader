@@ -36,19 +36,22 @@ export const diagnosisWords = language => L[language] || L[uiLanguage()] || L.en
 export function engineLines(report, label = 'Voice engine', language) {
   if (!report) return [`${label}: -`];
   const w = diagnosisWords(language), lines = [], loaded = report.loaded, caps = report.caps;
-  lines.push(`${label}: ${loaded ? [backendText(loaded), w.worker(loaded.workers), `${w.load} ${round(loaded.initMs / 1000, 1)} s`].join(' · ') : w.none}`);
+  /* numbers in the interface language's own notation ("0,5 s" in German, "0.5 s" in English: R2-11); unknown language: English */
+  const code = L[language] ? language : L[uiLanguage()] ? uiLanguage() : 'en', format = new Intl.NumberFormat(code, {maximumFractionDigits: 2, useGrouping: false});
+  const n = value => Number.isFinite(value) ? format.format(value) : String(value ?? '?');
+  lines.push(`${label}: ${loaded ? [backendText(loaded), w.worker(loaded.workers), `${w.load} ${n(round(loaded.initMs / 1000, 1))} s`].join(' · ') : w.none}`);
   if (caps) lines.push(`WebGPU ${caps.webgpu ? w.yes : w.no} · JSPI ${caps.jspi ? w.yes : w.no} · ${caps.cores ?? '?'} ${w.cores} · ${caps.memoryGB ?? '?'} GB`);
   const recent = report.recent;
-  if (recent?.sections) lines.push(`${w.last(recent.sections, recent.modelId)}: RTF ${recent.rtf} (${w.audio(recent.audioSec, round(recent.ms / 1000, 1))})`);
+  if (recent?.sections) lines.push(`${w.last(recent.sections, recent.modelId)}: RTF ${n(recent.rtf)} (${w.audio(n(recent.audioSec), n(round(recent.ms / 1000, 1)))})`);
   const phases = phaseSummary(report.lastPhases);
-  if (phases) lines.push(`${w.phases}: talker ${phases.talkerMsPerFrame} ${w.frame} · predictor ${phases.predictorMsPerFrame} ${w.frame} (${phases.predictorMsPerStep} ${w.step}, ${phases.predictorSharePercent} %) · decoder ${phases.decoderSharePercent} % · ${w.budget} ${phases.frameBudgetMs} ${w.frame}`);
+  if (phases) lines.push(`${w.phases}: talker ${n(phases.talkerMsPerFrame)} ${w.frame} · predictor ${n(phases.predictorMsPerFrame)} ${w.frame} (${n(phases.predictorMsPerStep)} ${w.step}, ${phases.predictorSharePercent} %) · decoder ${phases.decoderSharePercent} % · ${w.budget} ${phases.frameBudgetMs} ${w.frame}`);
   const bench = report.bench;
   if (bench?.ok) {
-    lines.push(`${w.speed} (${bench.modelId}): ${w.load} ${round(bench.loadMs / 1000, 1)} s`);
-    lines.push(`  ${w.one}: ${w.forAudio(round(bench.single.ms / 1000, 1), round(bench.single.audioSec, 1))}, RTF ${rtf(bench.single.ms, bench.single.audioSec)}`);
-    if (bench.parallel) lines.push(`  ${w.par(bench.parallel.sections)}: ${w.forAudio(round(bench.parallel.ms / 1000, 1), round(bench.parallel.audioSec, 1))}, RTF ${rtf(bench.parallel.ms, bench.parallel.audioSec)}`);
+    lines.push(`${w.speed} (${bench.modelId}): ${w.load} ${n(round(bench.loadMs / 1000, 1))} s`);
+    lines.push(`  ${w.one}: ${w.forAudio(n(round(bench.single.ms / 1000, 1)), n(round(bench.single.audioSec, 1)))}, RTF ${n(rtf(bench.single.ms, bench.single.audioSec))}`);
+    if (bench.parallel) lines.push(`  ${w.par(bench.parallel.sections)}: ${w.forAudio(n(round(bench.parallel.ms / 1000, 1)), n(round(bench.parallel.audioSec, 1)))}, RTF ${n(rtf(bench.parallel.ms, bench.parallel.audioSec))}`);
     const measured = phaseSummary(bench.single.stats);
-    if (measured) lines.push(`  talker ${measured.talkerMsPerFrame} ${w.frame} · predictor ${measured.predictorMsPerFrame} ${w.frame} · decoder ${measured.decoderSharePercent} %`);
+    if (measured) lines.push(`  talker ${n(measured.talkerMsPerFrame)} ${w.frame} · predictor ${n(measured.predictorMsPerFrame)} ${w.frame} · decoder ${measured.decoderSharePercent} %`);
   } else if (bench) lines.push(`${w.speed}: ${bench.code || w.failed}`);
   return lines;
 }

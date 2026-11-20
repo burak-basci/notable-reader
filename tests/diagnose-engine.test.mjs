@@ -15,13 +15,15 @@ for (const language of ['de', 'en', 'es', 'fr', 'it', 'pt']) {
   const lines = engineLines(report, 'X', language), none = engineLines({loaded: null}, 'X', language)[0], failed = engineLines({bench: {code: ''}}, 'X', language).at(-1);
   byLanguage[language] = lines.join('\n');
   ok(lines.length === 6 && lines.every(line => line.trim()), `${language}: six lines`);
-  ok(/RTF 0\.4/.test(lines.join('')) && /WebGPU/.test(lines[1]) && /JSPI/.test(lines[1]), `${language}: technical names and numbers stay`);
+  ok((language === 'en' ? /RTF 0\.4/ : /RTF 0,4/).test(lines.join('')) && /WebGPU/.test(lines[1]) && /JSPI/.test(lines[1]), `${language}: technical names stay, numbers in the language's notation`);
+  ok(language === 'en' || !/\d\.\d/.test(lines.join('\n')), `${language}: no decimal point (R2-11)`);
   if (language !== 'en') ok(!/no voice loaded|Speed test|Last 4 sections|s audio in|in parallel\b|for 10 s audio|cores|load /.test(none + '\n' + lines.join('\n')), `${language}: no English wording left`);
   ok(none !== 'X: no voice loaded' || language === 'en', `${language}: "no voice loaded" translated`);
   ok(failed.length > 3 && (language === 'en' || !/failed/.test(failed)), `${language}: failure word translated`);
 }
 ok(new Set(Object.values(byLanguage)).size === 6, 'six different texts');
 ok(/Keine Stimme geladen|keine Stimme geladen/.test(engineLines({loaded: null}, 'Stimmen-Engine', 'de')[0]), 'German: no voice loaded');
+ok(/Laden 3,4 s/.test(byLanguage.de) && /RTF 0,3/.test(byLanguage.de), 'German decimal comma: '+byLanguage.de.split('\n')[0]);
 ok(/Geschwindigkeitstest/.test(byLanguage.de) && /Kerne/.test(byLanguage.de) && /Letzte 4 Abschnitte/.test(byLanguage.de), 'German words');
 // language: explicit argument, else the page's <html lang> (the popup sets it to the interface language), else English
 ok(diagnosisWords('xx') === diagnosisWords('en') && diagnosisWords(undefined) === diagnosisWords('en'), 'unknown language and no document: English');
