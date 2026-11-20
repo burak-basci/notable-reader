@@ -38,7 +38,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     if(![...e.classList].some(c=>pattern.test(c)))return false;
     return !e.querySelector('h1,main,article,[role="main"]');
   };
-  const META_CLASS=/^(?:metatextline|dateline|timestamp)$|(?:^|[-_])(?:dateline|timestamp|publish(?:ed)?-?date|article-?date|image-?credit|photo-?credit|copyright-?label)(?:$|[-_])|CopyrightLabel|ImageCredit/i;
+  const META_CLASS=/^(?:metatextline|dateline|timestamp)$|(?:^|[-_])(?:dateline|timestamp|publish(?:ed)?-?date|publish-?info|reading-?time|article-?date|image-?credit|photo-?credit|image-?source|photo-?source|caption(?:__|-)?source|copyright-?label)(?:$|[-_])|CopyrightLabel|ImageCredit|__Credit/i;
   const metaLine=e=>{
     const text=(e.textContent||'').trim();if(!text||text.length>80)return false;
     if(e.classList?.length&&[...e.classList].some(c=>META_CLASS.test(c)))return !e.querySelector('h1,h2,p,main,article');
@@ -46,6 +46,16 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
       for(let up=parent(e),i=0;up&&i<4;up=parent(up),i++)if(up.matches?.('[data-testid*="byline" i],[class*="byline" i],[class*="Byline"]'))return true;
     }
     return false;
+  };
+  /* Share and article-action rows (heise "a-article-header__service": Vorlesen, Druckansicht, "Artikel verschenken", comment count; share bars of other sites) and author lines
+     (heise "creator", tagesschau "authorline", BBC "Byline", arXiv "authors", t-online aria-label "Autoren": "Von ...", a list of names) are around the text, not text: a listener expects the article, not
+     "Artikel verschenken 10" or eight names (L7, Mozilla Readability drops bylines the same way). Only short boxes named so, without a heading or paragraph of their own. */
+  const ACTION_CLASS=/(?:^|[-_])(?:share|sharing|shariff|social-?share|social-?bar|share-?bar|service|article-?actions?)(?:$|[-_])/i,BYLINE_CLASS=/(?:^|[-_])(?:byline|authors?|authorline|author-?line|creator|writtenby|contributors?)(?:$|[-_])|Byline|ContributorWrapper/;
+  const shortBox=(e,pattern,max)=>{
+    if(/^(?:HTML|BODY|MAIN|ARTICLE|HEADER|FOOTER|P|H1|H2|H3|H4|H5|H6)$/.test(e.tagName))return false;
+    if(!(e.classList?.length&&[...e.classList].some(c=>pattern.test(c)))&&!(pattern===BYLINE_CLASS&&(/\bauthor\b/i.test(e.getAttribute?.('itemprop')||'')||/^(?:autor(?:en|in|innen)?|authors?|byline)$/i.test(e.getAttribute?.('aria-label')||''))))return false;   // t-online: <div aria-label="Autoren">
+    const length=(e.textContent||'').replace(/\s+/gu,' ').trim().length;
+    return length<=max&&!e.querySelector('h1,h2,h3,p,main,article');
   };
   const visibility=new WeakMap();
   // Geometry is not text eligibility: content-visibility:auto can skip layout
@@ -60,6 +70,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     /* A date line or picture credit next to the text, not text: tagesschau "Stand: 20.11.2026 • 12:40 Uhr" (p.metatextline, R2-09), BBC "1 hour ago" (a <time> in the byline)
        and "Reuters" (the credit label on a picture, R2-07). Only short boxes named so, or a byline's relative time; a <time> inside a sentence stays. */
     if(value&&metaLine(e))value=false;
+    if(value&&(shortBox(e,ACTION_CLASS,80)||shortBox(e,BYLINE_CLASS,300)))value=false;
     if(value){
       const s=getComputedStyle(e);
       // opacity 0 alone is how scroll-reveal scripts park text until it is scrolled to; it stays readable.
@@ -143,6 +154,13 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     const inner=ranked.filter(item=>item.root!==ranked[0].root&&item.root.tagName==='ARTICLE'&&contains(ranked[0].root,item.root));
     const outer=inner.filter(item=>!inner.some(other=>other!==item&&contains(other.root,item.root)));
     if(outer.length===1&&outer[0].size>=200&&outer[0].size>=ranked[0].size*.25)root=outer[0].root;
+    /* t-online: a live score box ("Bundesliga Live", one small article per match) sits in main before the article and kept main as the scope, so reading began with
+       "Bayern 1 1 Köln". Small articles that are NOT siblings of the largest one (other boxes, not a feed or chat) and together carry under a fifth of its text do not keep
+       the enclosing scope. Sibling articles (chat turns, feed items) still do. */
+    else if(outer.length>1){
+      const top=outer.reduce((a,b)=>b.size>a.size?b:a),others=outer.filter(item=>item!==top);
+      if(top.size>=200&&top.size>=ranked[0].size*.5&&others.every(item=>parent(item.root)!==parent(top.root))&&others.reduce((sum,item)=>sum+item.size,0)<top.size*.2)root=top.root;
+    }
   }
   if(!root)return {root:null,nodes:[],textNodes:[],blocks:[]};
   // Include explicitly enabled outer headers/footers alongside the selected article.

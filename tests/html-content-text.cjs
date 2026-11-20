@@ -7,7 +7,7 @@ const {chromium} = require(process.env.READER_PLAYWRIGHT_MODULE || 'playwright-c
 const root = process.env.READER_EXT_ROOT || path.resolve(__dirname, '../extension');
 const types = {'.mjs': 'text/javascript', '.js': 'text/javascript', '.json': 'application/json'};
 const fixture = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>x</title><style>
- .byline span{margin-right:4px} .flexrow{display:flex} .cap{float:left;margin-right:8px;font-size:40px} .hl{margin:0 3px}
+ .byline span,.names span{margin-right:4px} .flexrow{display:flex} .cap{float:left;margin-right:8px;font-size:40px} .hl{margin:0 3px}
 </style></head><body class="wmde-show-banner wmde-animate-banner">
 <div class="page-with-footer"><main>
  <div class="translation-banner notecard"><p>This content was automatically translated. <a href="#">Learn more</a></p><p class="translation-banner__switch"><button>View in English</button></p></div>
@@ -18,6 +18,7 @@ const fixture = `<!doctype html><html lang="en"><head><meta charset="utf-8"><tit
   <div class="highlight"><pre><span>&gt;&gt;&gt; x = int(input("n: "))</span>
 <span>&gt;&gt;&gt; print(x)</span></pre></div>
   <div class="byline"><time>Just now</time><span><span>Dan Woodland</span><span>and</span><span>Sarah Rainsford,</span><span>Eastern correspondent</span></span></div>
+  <div class="names"><span><span>Dan Woodland</span><span>and</span><span>Sarah Rainsford,</span><span>Eastern correspondent</span></span></div>
   <div class="flexrow"><span>Left item</span><span>Right item</span></div>
   <p><span class="cap">T</span>he drop cap stays one word, and so does <b>bold</b>face and <i>e</i>mphasis.</p>
   <p>Call <code class="hl">f(x)</code>, then <code class="hl">g</code>.</p>
@@ -32,9 +33,22 @@ const fixture = `<!doctype html><html lang="en"><head><meta charset="utf-8"><tit
   <div class="meldungsfooter"><ul class="taglist"><li><a href="#">Lufthansa</a></li></ul><div class="sendungsbezug"><p>Dieses Thema im Programm:</p><ul><li>tagesschau24 | Nachrichten</li></ul></div></div>
  </div>
 </main></div></body></html>`;
+/* L7 (2.5.6): where reading starts on news pages - a live score box before the article (t-online), share/action row, author line, picture source and
+   publish info in the article head (heise, t-online, tagesschau, BBC, arXiv); counter-example: chat turns / feed items (sibling articles) keep the whole scope. */
+const long = 'This is the real article text that a listener expects to hear first, long enough to be the text of the page and not a teaser box. '.repeat(3);
+const fixture2 = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>y</title></head><body><main>
+ <div class="container"><section><div><h2>Bundesliga Live</h2><article><a href="#">Bayern</a> <span>1 1</span> <a href="#">Köln</a></article></div><div><article><a href="#">Mehr zur Bundesliga</a> <a href="#">Tabelle</a></article></div></section></div>
+ <article class="story"><header><h2>Headline of the story</h2><div aria-label="Autoren"><span>Von t-online</span></div>
+  <div class="a-article-header__service a-article-header__service--right"><a class="a-article-action" href="#">Artikel verschenken</a> <a class="a-article-action" href="#"><span>10</span></a></div>
+  <p class="a-caption__source">(Bild: Jane Doe / Agency)</p><div class="a-publish-info">19:17 Uhr Lesezeit: 4 Min.</div><div class="creator">Von Carolin Example</div>
+  <div class="authors">Authors: Ann One, Bob Two, Cid Three, Dee Four</div><div class="Image-styles__CreditStyled-sc-1">Reuters</div></header>
+  <p>${long}</p><p>Second paragraph of the story.</p></article>
+</main><div id="chat"><main><div class="thread"><article><p>Short question of the user?</p></article><article><p>${long}</p></article></div></main></div></body></html>`;
 const server = http.createServer((q, r) => {
   const u = decodeURIComponent(q.url.split('?')[0]);
   if (u === '/fixture.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture); }
+  if (u === '/fixture2.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture2.replace(/<div id="chat">[\s\S]*<\/div><\/body>/, '</body>')); }
+  if (u === '/fixture3.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture2.replace(/<body><main>[\s\S]*?<\/main><div id="chat">/, '<body><div id="chat">')); }
   const f = path.join(root, u.replace(/^\/ext\//, ''));
   if (!u.startsWith('/ext/') || !f.startsWith(root)) { r.writeHead(404); return r.end(); }
   try { r.writeHead(200, {'Content-Type': types[path.extname(f)] || 'application/octet-stream'}); r.end(fs.readFileSync(f)); } catch { r.writeHead(404); r.end(); }
@@ -73,7 +87,8 @@ const server = http.createServer((q, r) => {
     const withCode = await run({...defaults, skipCode: false});
     ok(/>>> x = int/.test(withCode.sections.join('\n')) && withCode.bad === 0, 'skipCode off reads the code block again');
     // F18: layout-only gaps become word boundaries
-    ok(/Dan Woodland and Sarah Rainsford, Eastern correspondent/.test(all), 'byline words separated: ' + all.match(/Dan.{0,70}/)?.[0]);
+    ok(/Dan Woodland and Sarah Rainsford, Eastern correspondent/.test(all), 'names in spans without spaces stay separate words: ' + all.match(/Dan.{0,70}/)?.[0]);
+    ok((all.match(/Dan Woodland/g) || []).length === 1, 'the author line itself (class byline) is not read (L7, 2.5.6)');
     ok(/Left item Right item/.test(all), 'flex items separated');
     ok(/The drop cap stays one word/.test(all) && /boldface and emphasis/.test(all), 'drop cap and inline styling stay one word');
     ok(/Call f\(x\), then g\./.test(all), 'inline code with a margin keeps its punctuation attached: ' + all.match(/Call.{0,20}/)?.[0]);
@@ -93,6 +108,18 @@ const server = http.createServer((q, r) => {
     ok(/A quoted sentence inside a figure stays/.test(all) && /Caption under the picture/.test(all), 'quote in a figure and the caption stay');
     // reading rule "skip footers" off reads the footer-class box again
     ok(/Dieses Thema im Programm/.test((await run({...defaults, skipFooters: false})).sections.join('\n')), 'skipFooters off reads the footer box');
+    // L7: start points on news pages
+    await page.goto(base + '/fixture2.html');
+    const n = await run({...defaults}), nall = n.sections.join('\n');
+    ok(/^Headline of the story/.test(n.sections[0]), 'news page starts at the story headline, not the live score box: ' + n.sections[0].slice(0, 60));
+    ok(!/Bundesliga Live|Bayern|Mehr zur Bundesliga/.test(nall), 'live score box before the article is not read');
+    ok(!/Artikel verschenken|\b10\b/.test(nall), 'share/action row (Artikel verschenken, comment count) not read');
+    ok(!/Von t-online|Von Carolin|Authors: Ann/.test(nall), 'author lines (aria-label Autoren, creator, authors) not read');
+    ok(!/Bild: Jane|Lesezeit|Reuters/.test(nall), 'picture source, publish info and picture credit not read');
+    ok(/real article text that a listener expects/.test(n.sections[1] || '') && /Second paragraph of the story/.test(nall) && n.bad === 0, 'the story text follows the headline, offsets exact');
+    await page.goto(base + '/fixture3.html');
+    const c3 = (await run({...defaults})).sections.join('\n');
+    ok(/Short question of the user/.test(c3) && /real article text/.test(c3), 'sibling articles (chat turns) keep the whole conversation');
     await page.close();
   } finally { await context.close(); await browser.close().catch(() => {}); server.close(); }
   console.log(`HTML CONTENT TEXT OK (${checks} checks)`);
