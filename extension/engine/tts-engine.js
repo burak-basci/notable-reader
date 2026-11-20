@@ -193,7 +193,10 @@ export class TtsEngine extends EventTarget{
   if(model.needs?.webgpu)return caps.webgpu&&model.ramMB<=4000&&(caps.cores||1)>=8&&!(caps.memoryGB<8)&&!this.poolBlocked?.has(model.id)?MAX_WORKERS:1;
   /* Firefox reports no deviceMemory: unknown memory counts as tight; only 8+ cores (rarely under 8 GB) get a pair */
   const roomy=caps.memoryGB===undefined?(caps.cores||1)>=8:caps.memoryGB>=8&&(caps.cores||1)>=4;
-  if(!caps.threads)return model.ramMB<=500&&roomy?2:1;
+  /* Without cross-origin isolation (Chrome extension pages since 2.5: COOP/COEP made the host hang) every worker has ONE thread. Kokoro FP32 then
+     synthesizes at RTF 1.5-2.3 (measured 20.11.2026, 16 cores): one worker cannot keep up even at 1x and English reading stopped every few seconds.
+     A pair halves that; the large model (1.1 GB per worker) only on 8+ cores, where the memory for two is there as well. */
+  if(!caps.threads)return (model.ramMB<=500||model.ramMB<=1200&&(caps.cores||1)>=8)&&roomy?2:1;
   const need=(this.rateHint||1)*(this.rtf?.get(model.id)??this.rtfRaw?.get(model.id)??RTF_PRIOR[model.id]??0.6);
   /* 4+ cores (was 8+): measured 15.11.2026 on four cores, Kokoro q8 (threads barely help it): one worker with 4 threads RTF 0.875, a pair with 2 threads each 0.585
      together; Thorsten high scales with threads (0.38 alone) and stays single up to 2x. */

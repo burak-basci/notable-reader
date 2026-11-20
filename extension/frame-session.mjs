@@ -149,7 +149,11 @@ export async function discoverFrames(tab,{onlyTop=false}={}){
  const origins=[...new Set(rows.flatMap(r=>r.result?.frames?.map(f=>f.origin).filter(Boolean)||[]))],missing=[];
  for(const origin of origins)if(origin!==httpOrigin(tab.url)&&!await api.permissions.contains({origins:[permissionPattern(origin)]}))missing.push(permissionPattern(origin));
  const access=(missing.length||allFailed&&!navigationGranted)?{origins:missing,needsNavigation:!navigationGranted&&missing.length===0,tabId:tab.id,tabUrl:tab.url}:null;
- const choices=rows.filter(r=>r.result?.visible&&r.result.chars>0&&r.result.ready).sort((a,b)=>Number(b.result.selected)-Number(a.result.selected)||b.result.chars-a.result.chars||a.frameId-b.frameId);
+ /* A cookie / consent dialog in its own frame (Sourcepoint on spiegel.de and bbc.com, OneTrust, Usercentrics, Didomi, ...) often holds more text than the
+    page behind it while it is open: never read it as "the page". Recognized by the address of the frame only (consent platform hosts, Sourcepoint's
+    message frame parameters), never by its words. */
+ const CONSENT=/^https?:\/\/(?:[^/?#]*\.)?(?:privacy-mgmt\.com|consensu\.org|cookielaw\.org|onetrust\.com|usercentrics\.eu|cookiebot\.com|didomi\.io|trustarc\.com|quantcast\.com|consentmanager\.net|sourcepoint\.com)(?:[:/?#]|$)|[?&](?:message_id|consentUUID)=/i;
+ const choices=rows.filter(r=>r.result?.visible&&r.result.chars>0&&r.result.ready&&!(r.frameId!==0&&CONSENT.test(r.result.url||''))).sort((a,b)=>Number(b.result.selected)-Number(a.result.selected)||b.result.chars-a.result.chars||a.frameId-b.frameId);
  const best=choices[0]||top;
  return {source:{...initial,frameId:best.frameId,documentId:best.documentId,url:best.result.url,origin:best.result.origin,token:best.result.token,top:{documentId:initial.documentId,origin:initial.origin,token:initial.token}},topSource:initial,ready:choices.length>0,access};
 }

@@ -26,7 +26,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   // Explicit semantic regions only; no text-pattern deletion. Keep the function
   // self-contained because capture/frame discovery serializes this same source.
   const semantic={header:'header,[role="banner"]',footer:'footer,[role="contentinfo"]',caption:'figcaption,caption,[role="caption"]',table:'table,[role="table"]',quote:'blockquote,q',footnote:'[role~="doc-footnote"],[role~="doc-endnote"],[role~="doc-footnotes"],[role~="doc-endnotes"],.footnotes,.endnotes'};
-  const excluded=[reading.skipCode?'pre,code':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  const excluded=[reading.skipCode?'pre,code':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
   const visibility=new WeakMap();
   // Geometry is not text eligibility: content-visibility:auto can skip layout
   // for loaded offscreen turns. Never force layout or alter the page's styles.
@@ -44,7 +44,10 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
       // Decided from the computed style only (no layout), so content-visibility:auto text stays eligible.
       const srOnly=(s.position==='absolute'||s.position==='fixed')&&(/^rect\(\s*(0|1)px[ ,]+(0|1)px[ ,]+(0|1)px[ ,]+(0|1)px\s*\)$/.test(s.clip)||/^inset\((50|100)%\)$/.test(s.clipPath)||s.width==='1px'&&s.height==='1px'&&s.overflow==='hidden');
       value=s.display!=='none'&&s.visibility!=='hidden'&&s.visibility!=='collapse'&&!transparent
-        &&s.contentVisibility!=='hidden'&&!srOnly;
+        &&s.contentVisibility!=='hidden'&&!srOnly
+        // A floated table is a side box (Wikipedia infobox "Basisdaten", fact boxes): reading it first ("Logo. Map. Basic data. State: ...") buries
+        // the article start. Tables in the text flow (data tables) stay; "skip tables" in the reading rules still removes those too.
+        &&!(e.tagName==='TABLE'&&(s.float==='left'||s.float==='right'));
       if(value&&parent(e))value=visible(parent(e));
       const folded=closest(parent(e),'details:not([open])');
       if(value&&folded&&!folded.querySelector(':scope > summary')?.contains(e))value=false;
@@ -89,7 +92,14 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   // or minimum word threshold may shrink an already loaded conversation.
   const ranked=roots.filter(visible).map(root=>({root,size:text(root).length})).filter(item=>item.size>0);
   ranked.sort((a,b)=>b.size-a.size||(contains(a.root,b.root)?-1:contains(b.root,a.root)?1:0));
-  const root=ranked[0]?.root||document.body||document.documentElement;
+  let root=ranked[0]?.root||document.body||document.documentElement;
+  /* ONE article inside the chosen main that carries a real share of its text is the text itself (GitHub: the README inside the repository page with
+     its file list and sidebar; MDN, news: the article inside main). Several articles (chat turns, feeds) keep the enclosing scope. */
+  if(ranked[0]&&ranked[0].root.tagName!=='ARTICLE'){
+    const inner=ranked.filter(item=>item.root!==ranked[0].root&&item.root.tagName==='ARTICLE'&&contains(ranked[0].root,item.root));
+    const outer=inner.filter(item=>!inner.some(other=>other!==item&&contains(other.root,item.root)));
+    if(outer.length===1&&outer[0].size>=200&&outer[0].size>=ranked[0].size*.25)root=outer[0].root;
+  }
   if(!root)return {root:null,nodes:[],textNodes:[],blocks:[]};
   // Include explicitly enabled outer headers/footers alongside the selected article.
   const extras=elements.filter(e=>(reading.skipHeaders===false&&e.matches(semantic.header)||reading.skipFooters===false&&e.matches(semantic.footer))&&visible(e)&&!contains(root,e));
@@ -141,7 +151,10 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
       if(BACK.test(t))return strong(a)||!!a.closest('li,[role~="doc-endnote"],[role~="doc-footnote"]')&&!!target(a);
       if(t.length>16||!/\S/.test(t))return false;
       const par=a.parentElement;
-      if(strong(a)||par&&/^(?:SUP|SPAN)$/.test(par.tagName)&&strong(par))return true;
+      // Sphinx / Read the Docs give EVERY link the class "reference" (reference internal / external): there it only marks a citation when the
+      // text looks like one ([1], 12, a); otherwise "the for statement" lost its keyword (python.org docs read "the -statement").
+      const onlyReference=[...a.classList].filter(c=>CLASS.test(c.toLowerCase())).every(c=>c.toLowerCase()==='reference');
+      if(strong(a)&&!(onlyReference&&!MARK.test(t))||par&&/^(?:SUP|SPAN)$/.test(par.tagName)&&strong(par))return true;
       if(!MARK.test(t))return false;
       const href=a.getAttribute('href')||'';if(/^#(?:cite[_-](?:note|ref)|fn(?:ref)?|footnote|endnote|bib|ref)[-_:.]?\d/iu.test(href)&&MARK.test(t))return true;const to=target(a);if(!to)return false;
       if(a.parentElement?.tagName==='SUP'&&/^(?:fn|fnref|cite|ref|note|footnote|bib|endnote|source|q-)[-_]/i.test(to.id))return true;
