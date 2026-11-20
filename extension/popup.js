@@ -371,7 +371,7 @@ async function runEntry(command){
  pendingFrameAction=null;lastAction={command};
  if(command==='pickNextChapter'){try{const u=new URL(currentTabUrl);if(!['http:','https:'].includes(u.protocol)||!await chrome.permissions.request({origins:[u.origin+'/*']})){notify(entryText('permissionDenied'));return false;}}catch{notify(entryText('permissionDenied'));return false;}}
  const expected={tabId,url:currentTabUrl},fromLibrary=document.body.dataset.popupTab==='library';
- const ok=await mutate({type:'control',command,...(Number.isInteger(tabId)?{tabId}:{})},null);
+ const ok=await mutate({type:'control',command,...(command==='explainPage'?{value:'open'}:{}),...(Number.isInteger(tabId)?{tabId}:{})},null);   // Summarize shows / continues a tour, never ends it (F21)
  if(!ok&&localError?.code==='embedded_permission_required'&&frameAccess){pendingFrameAction={...expected,command};selectPopupTab('read');frameUI.update(frameAccess,{show:true});syncReadBlocked();return false;}
  // No readable text on this page: the Read tab's empty-page card says so and offers the sample and "Open file" instead of
  // buttons that would fail again (Read, Download, Summarize hide with it).

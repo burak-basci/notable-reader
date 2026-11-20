@@ -921,7 +921,9 @@ export class PageSession {
     if ((command === 'export' || command === 'exportDocument') && (this.options.handlers?.export || this.options.handlers?.exportDocument)) { const request = this.exportRequest(command === 'exportDocument' && typeof value === 'string' ? value : value); if (!request) return; const doc = request.range === 'all' ? null : this.exportText(request.range); if (request.range !== 'all' && !doc?.text?.trim()) return; return this.options.handlers[request.kind === 'audio' ? 'export' : 'exportDocument']?.({...request, ...(doc ? {doc} : {})}); }
     const handler = this.options.handlers?.[command]; if (handler) return handler(value);       // the view that owns the text runs its own export / focus switch
     if (command === 'addBookmark') return this.addBookmark(typeof value==='string'?value:'');
-    if (command === 'explainPage') { if (this.tutor?.active) return this.tutor.cancel(); this.setVisible(true, false); return this.ensureTutor().start(); }   // popup card, bar button, settings menu, file view: the guided explanation (explain/tutor.mjs); a toggle (round 4): a second press ends the running tour
+    /* value 'open' (the popup's Summarize): a running tour is shown and a paused one goes on; it is never switched off from there (F21: after a paused tour
+       the popup button ended it and nothing was visible). The bar button stays the toggle. */
+    if (command === 'explainPage') { if (this.tutor?.active) { if (value !== 'open') return this.tutor.cancel(); this.setVisible(true, false); if (this.tutor.view()?.paused) this.tutor.toggle(); return; } this.setVisible(true, false); return this.ensureTutor().start(); }   // popup card, bar button, settings menu, file view: the guided explanation (explain/tutor.mjs); a toggle (round 4): a second press ends the running tour
     /* Opening the bar never starts the sound (owner request, round 3): "Read page" / "Read selection" open the bar at the place it will read from,
        paused; with the bar already open the same action plays (value.play: the workflow saw the bar open before it showed it; the automatic next
        chapter keeps reading on). */

@@ -58,7 +58,7 @@ const sessionGone = error => error?.code === 'document_changed' || GONE.test(Str
 export {frameAccess};
 
 export function validControl(command, value) {
-  if (['stop', 'restart', 'resetBar', 'previousSection', 'nextSection', 'previousBlock', 'nextBlock', 'previousChapter', 'nextChapter', 'cancelExport', 'toggle', 'authorizeExport', 'explainPage', 'prepare'].includes(command)) return value === undefined;
+  if (['stop', 'restart', 'resetBar', 'previousSection', 'nextSection', 'previousBlock', 'nextBlock', 'previousChapter', 'nextChapter', 'cancelExport', 'toggle', 'authorizeExport', 'explainPage', 'prepare'].includes(command)) return value === undefined || command === 'explainPage' && value === 'open';
   if (command === 'seekRelative') return Number.isFinite(value) && Math.abs(value) <= 600;
   if (command === 'setOverlayVisible') return typeof value === 'boolean';
   if (['seekChapter', 'seekSection'].includes(command)) return Number.isSafeInteger(value) && value >= 0;
