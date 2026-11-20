@@ -28,6 +28,7 @@ export function applyStaticText(root, text) {
 const ARCHIVE = /^(Das Archiv (ist|enthält|wurde)|Mehrteilige, ZIP64|Die Archivstruktur|Die Größenangaben des Archivs|Dieses Kompressionsformat|Die Dateiheader|Die Archivgröße|Die Dokumentstruktur|Die entpackte Dateigröße|Die Prüfsumme|Das Dokumentarchiv|Das EPUB enthält zu viele)/;
 const KNOWN = [
   [ARCHIVE, 'fileErrArchive'],
+  [/^(Invalid PDF structure|Invalid PDF|PDF header not found|Bad XRef|Invalid XRef|Missing PDF|Unexpected end of (PDF|file))/i, 'fileErrBroken'],       // pdf.js parser messages (2.5.4 showed 'Invalid PDF structure.' in a German interface)
   [/(überschreitet die sichere Grenze von 128 MB|zu groß für den sicheren Archivimport|Der entpackte Inhalt überschreitet|Die EPUB-Kapitel überschreiten)/, 'fileErrTooLarge'],
   [/^Verschlüsselte EPUB-/, 'fileErrEncrypted'],
   [/^Dieses EPUB (ist geschützt|enthält verschlüsselte)/, 'fileErrDrm'],
