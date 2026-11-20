@@ -21,6 +21,11 @@ const fixture = `<!doctype html><html lang="en"><head><meta charset="utf-8"><tit
   <div class="flexrow"><span>Left item</span><span>Right item</span></div>
   <p><span class="cap">T</span>he drop cap stays one word, and so does <b>bold</b>face and <i>e</i>mphasis.</p>
   <p>Call <code class="hl">f(x)</code>, then <code class="hl">g</code>.</p>
+  <div class="article-head__title"><p class="metatextline">Stand: 20.11.2026 • 12:40 Uhr</p></div>
+  <figure><img alt="" src="data:,"><span class="Image-styles__CopyrightLabel-sc-1">Reuters</span><figcaption>Caption under the picture.</figcaption></figure>
+  <p>Bochum [<span class="IPA"><a href="#"><span lang="zxx">ˈboːxʊm</span></a></span>] is a city, the meeting is on <time datetime="2026-11-23">Monday</time> 23 hours from now.</p>
+  <figure><blockquote><p>A quoted sentence inside a figure stays.</p></blockquote><figcaption>Quote author</figcaption></figure>
+  <div data-area="preferred-sources"><a href="https://google.com/preferences/source?q=example.org" title="Example bei Google bevorzugen"><span>Example bei Google bevorzugen</span></a></div>
   <p>Second paragraph of the real article text that continues to be read.</p>
   <div class="teaser-absatz"><div class="teaser-absatz__teaserinfo" role="complementary"><h3>Airlines under pressure</h3><p>Teaser summary text. mehr</p></div></div>
   <p>Third paragraph after the teaser box, still the article.</p>
@@ -78,6 +83,14 @@ const server = http.createServer((q, r) => {
     ok(/Second paragraph of the real article/.test(all) && /Third paragraph after the teaser box/.test(all), 'article text around the boxes is read');
     // counter-example: a body/wrapper class that merely contains "banner"/"footer" must not remove the article
     ok(r.sections.length >= 8, 'page with layout classes banner/footer on body and wrapper keeps its text');
+    // R2-09 / R2-07 / R2-06: date line, byline time, picture credit and IPA pronunciation are not read; a <time> in a sentence, quotes and captions are
+    ok(!/Stand: 20\.11|12:40 Uhr/.test(all), 'tagesschau date line (metatextline) not read');
+    ok(!/Just now/.test(all), 'relative time in the byline not read');
+    ok(!/Reuters/.test(all), 'picture credit label not read');
+    ok(!/ˈboːxʊm/.test(all) && /Bochum \[\] is a city/.test(all), 'IPA pronunciation not read: ' + all.match(/Bochum.{0,40}/)?.[0]);
+    ok(/meeting is on Monday 23 hours from now/.test(all), 'a <time> inside a sentence stays');
+    ok(!/bei Google bevorzugen/.test(all), 'Google "preferred sources" button not read (SPIEGEL, R2-05)');
+    ok(/A quoted sentence inside a figure stays/.test(all) && /Caption under the picture/.test(all), 'quote in a figure and the caption stay');
     // reading rule "skip footers" off reads the footer-class box again
     ok(/Dieses Thema im Programm/.test((await run({...defaults, skipFooters: false})).sections.join('\n')), 'skipFooters off reads the footer box');
     await page.close();
