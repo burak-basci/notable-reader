@@ -182,7 +182,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
  const barQ=el('span','vp-bar-q');barQ.setAttribute('aria-hidden','true');barQ.append(bars3());
  codeEl.classList.add('vp-code');nameEl.before(codeEl,barQ);
  menu.removeAttribute('role');menu.replaceChildren();
- const panel=el('div','vp');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');
+ const panel=el('div','vp');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');      /* Tab stays inside the panel (Escape closes it and returns to the voice button): a contained dialog, so screen readers keep their cursor in it too */
  const title=el('div','vp-title'),titleText=el('span'),titleMode=el('small'),countEl=el('small','vp-count');
  const banner=el('div','vp-banner'),bannerText=el('span','vp-sr'),bannerChip=el('span','vp-chip'),bannerBack=el('button');bannerBack.type='button';bannerChip.setAttribute('aria-hidden','true');banner.hidden=true;banner.append(bannerText,bannerChip,bannerBack);
  title.append(titleText,titleMode,banner,countEl);
@@ -605,7 +605,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
  };
  /* Column heads: label, tooltip (full name + how to use), aria-sort and the arrow of the active column */
  const buildHead=()=>{
-  head.setAttribute('aria-label',uiText('voice_sort_label'));headOpt.setAttribute('aria-label',uiText('voice'));headOpt.setAttribute('aria-sort',OPT_KEYS.has(sortKey)?(sortDir==='asc'?'ascending':'descending'):'none');headRow.querySelector('.vp-hc-play').setAttribute('aria-label',uiText('voice_sample'));
+  head.setAttribute('aria-label',uiText('voice_sort_label'));headOpt.setAttribute('aria-label',uiText('voice'));headOpt.setAttribute('aria-sort',OPT_KEYS.has(sortKey)?(sortDir==='asc'?'ascending':'descending'):'none');headRow.querySelector('.vp-hc-play').setAttribute('aria-label',uiText('voice_sample'));{const c=head.querySelector('.vp-hc-play');let sr=c.querySelector('.vp-sr');if(!sr){sr=el('span','vp-sr');c.append(sr);}if(sr.textContent!==uiText('voice_sample'))sr.textContent=uiText('voice_sample');}
   for(const key of SORTS){const cell=headCells[key],b=cell.firstChild,on=key===sortKey,full=uiText('voice_sort_'+key),dirText=on?(sortDir==='asc'?' ↑':' ↓'):'';
    b.firstChild.textContent=uiText('voice_col_'+(key==='downloaded'?'loaded':key));b.title=full+dirText+'\n'+uiText('voice_sort_hint');b.setAttribute('aria-label',full);
    if(!OPT_KEYS.has(key))cell.setAttribute('aria-sort',on?(sortDir==='asc'?'ascending':'descending'):'none');b.toggleAttribute('data-on',on);b.setAttribute('aria-pressed',String(on));

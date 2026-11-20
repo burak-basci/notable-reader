@@ -41,6 +41,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;pa
 .brand{display:flex;align-items:center;gap:9px;min-width:0}
 .brand img{width:30px;height:30px;flex:none}
 .brand>div{min-width:0}
+.brand-title{margin:0;font:inherit}
 .brand strong{display:block;font-size:15px;font-weight:650;letter-spacing:-.3px;white-space:nowrap}
 .brand .small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .version{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:2px 5px;white-space:nowrap}
