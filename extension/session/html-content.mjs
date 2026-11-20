@@ -26,7 +26,17 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   // Explicit semantic regions only; no text-pattern deletion. Keep the function
   // self-contained because capture/frame discovery serializes this same source.
   const semantic={header:'header,[role="banner"]',footer:'footer,[role="contentinfo"]',caption:'figcaption,caption,[role="caption"]',table:'table,[role="table"]',quote:'blockquote,q',footnote:'[role~="doc-footnote"],[role~="doc-endnote"],[role~="doc-footnotes"],[role~="doc-endnotes"],.footnotes,.endnotes'};
-  const excluded=[reading.skipCode?'pre,code':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  const excluded=[reading.skipCode?'pre':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="complementary"],.baseline-indicator,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  /* A box whose class names it a footer (tagesschau "meldungsfooter": tags, "Dieses Thema im Programm", share buttons) is a page footer too, and a box named banner
+     ("translation-banner": MDN "This content was automatically translated ... View in English") is a notice around the text, not text. Only a box that cannot be the
+     article itself: never html/body/main/article, and never one that holds the main text or a first-level heading (layout classes such as "page-with-footer" on a wrapper,
+     or Wikipedia's "wmde-show-banner" on <body>). */
+  const FOOTER_CLASS=/(?:^|[-_])footer(?:$|[-_])|[a-z]footer$/i,BANNER_CLASS=/^banner$|-banner$/i;
+  const namedBox=(e,pattern)=>{
+    if(/^(?:HTML|BODY|MAIN|ARTICLE|HEADER|FOOTER)$/.test(e.tagName)||!e.classList?.length)return false;
+    if(![...e.classList].some(c=>pattern.test(c)))return false;
+    return !e.querySelector('h1,main,article,[role="main"]');
+  };
   const visibility=new WeakMap();
   // Geometry is not text eligibility: content-visibility:auto can skip layout
   // for loaded offscreen turns. Never force layout or alter the page's styles.
@@ -34,6 +44,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     if(!e)return false;
     if(visibility.has(e))return visibility.get(e);
     let value=!e.matches(excluded);
+    if(value&&(reading.skipFooters!==false&&namedBox(e,FOOTER_CLASS)||namedBox(e,BANNER_CLASS)))value=false;
     if(value){
       const s=getComputedStyle(e);
       // opacity 0 alone is how scroll-reveal scripts park text until it is scrolled to; it stays readable.
@@ -69,6 +80,20 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   const texts=new WeakMap();
   const blockTags=new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','CAPTION','DD','DIV','DL','DT','FIGCAPTION','FIGURE','H1','H2','H3','H4','H5','H6','LEGEND','LI','MAIN','OL','P','PRE','SECTION','SUMMARY','TABLE','TD','TH','TR','UL']);
   const mathTokens=new Set(['mi','mo','mn','mtext','ms']);
+  /* Siblings that touch in the DOM and are separated only by layout read as one word: "Woodlandand" (BBC byline: <span>Dan Woodland</span><span>and</span>, the gap is a
+     4px margin) or flex/grid items such as <span>…</span><span>…</span>. A box that is not inline (flex/grid item, table cell...) or an inline element with a real side margin
+     (>= 2px) is a word boundary on that side. Whitespace only: no non-space character moves, so word offsets are unchanged. Not for floats / out-of-flow boxes (a drop cap
+     "T" + "he text" stays one word) and not inside formulas. */
+  const BOX=/^(?:block|flex|grid|list-item|table|table-row|table-cell|table-caption|flow-root)$/;
+  const gapsOf=el=>{
+    if(blockTags.has(el.tagName)||el.localName==='math'||el.closest?.('math,.katex,.MathJax'))return null;
+    const s=getComputedStyle(el);
+    if(s.float!=='none'||!(s.position==='static'||s.position==='relative'||s.position==='sticky'))return null;
+    if(BOX.test(s.display))return {before:true,after:true};
+    if(s.display!=='inline'||el.localName!=='span'&&el.localName!=='time')return null;   // only generic wrappers: <code>x</code>, <a>, <em> keep punctuation attached
+    const before=parseFloat(s.marginLeft)>=2,after=parseFloat(s.marginRight)>=2;
+    return before||after?{before,after}:null;
+  };
   const text=e=>{
     if(texts.has(e))return texts.get(e);
     const parts=[];
@@ -79,12 +104,13 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
       if(node.nodeType===Node.TEXT_NODE){if(visible(parent(node)))parts.push(code?node.data.replace(/(?:\r\n?|\n)(?:[ \t]*(?:\r\n?|\n))+/gu,NP).replace(/\r\n?|\n/gu,NL):node.data);return;}
       if(node.nodeType!==Node.ELEMENT_NODE||!visible(node))return;
       const inCode=code||node.tagName==='PRE';
-      const boundary=node.tagName==='BR'||blockTags.has(node.tagName),mark=inCode&&node.tagName!=='PRE'?NL:' ';
+      const gaps=inCode?null:gapsOf(node),boundary=node.tagName==='BR'||blockTags.has(node.tagName),mark=inCode&&node.tagName!=='PRE'?NL:' ';
+      if(gaps?.before)parts.push(' ');
       // Formula tokens (MathML mi/mo/mn...) are separate words ("x = y 2", not "x=y2"); whitespace only, so no non-space character moves.
       if(mathTokens.has(node.localName)&&node.closest('math'))parts.push(' ');
       if(boundary)parts.push(inCode&&node.tagName==='PRE'?' ':mark);
       for(const child of children(node))visit(child,inCode);
-      if(boundary)parts.push(mark);
+      if(boundary||gaps?.after)parts.push(mark);
     };
     visit(e,!!closest(parent(e),'pre'));const value=parts.join('').replace(/\s+/gu,' ').replace(/ ?[\uE000\uE001](?: ?[\uE000\uE001])* ?/gu,run=>run.includes(NP)?'\n\n':'\n').trim();texts.set(e,value);return value;
   };
