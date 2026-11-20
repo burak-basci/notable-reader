@@ -10,22 +10,23 @@
    `parallel` (number or function) = sections synthesized at the same time (1 where the engine has WASM threads; 2 on Firefox, where the engine runs two single-thread workers).
    `hold()` true = start nothing now (background work waits: hidden tab, user interaction, low battery); the owner calls pump() when it may go on. */
 export const TIERS = ['near', 'visible', 'rest', 'behind'];
-export function createPrefetcher({synthesize, onResult, onError = () => {}, onEvent = () => {}, count, window = 3, parallel = 1, background = true, allow = () => true, urgent = () => true, reserved = () => 0, hold = () => false}) {
+export function createPrefetcher({synthesize, onResult, onError = () => {}, onEvent = () => {}, count, window: windowOption = 3, parallel = 1, background = true, allow = () => true, urgent = () => true, reserved = () => 0, hold = () => false}) {
+  const nearWindow = () => typeof windowOption === 'function' ? windowOption() : windowOption;      // a number, or asked each time (the pipeline widens it for a heavy voice)
   let generation = 0, from = 0, wanted = true, armed = false, visible = new Set();      // armed: nothing is prepared before the first request(position)
   const done = new Set(), failed = new Map(), inflight = new Map(), refused = new Map();      // inflight: index -> {gen, tier, ctl}; failed: index -> {error, tier}
   const limit = () => Math.max(1, Math.floor(typeof parallel === 'function' ? parallel() : parallel) || 1);
   const refuse = index => { const count = (refused.get(index) || 0) + 1; refused.set(index, count); return count; };
   const active = () => [...inflight.values()].filter(j => j.gen === generation).length + Math.max(0, Number(reserved()) || 0);
   /* 'behind' sections (before the position) are never prefetched; the section just read stays where the pipeline keeps it. */
-  const tierOf = i => i < from ? 'behind' : i <= from + window ? 'near' : visible.has(i) ? 'visible' : 'rest';
+  const tierOf = i => i < from ? 'behind' : i <= from + nearWindow() ? 'near' : visible.has(i) ? 'visible' : 'rest';
   /* The next section to synthesize: lowest tier first, inside a tier nearest to the position first. A failed section is skipped except when it becomes `near` after failing as background work. */
   function pickNext() {
     const free = i => !done.has(i) && !inflight.has(i) && !(failed.has(i) && (failed.get(i).tier === 'near' || tierOf(i) !== 'near'));
-    for (let i = from; i <= Math.min(count - 1, from + window); i++) if (free(i)) return {index: i, tier: 'near'};
+    for (let i = from, end = Math.min(count - 1, from + nearWindow()); i <= end; i++) if (free(i)) return {index: i, tier: 'near'};
     if (!background) return null;
-    const seen = [...visible].filter(i => i > from + window && i < count).sort((a, b) => a - b);
+    const w = nearWindow(), seen = [...visible].filter(i => i > from + w && i < count).sort((a, b) => a - b);
     for (const i of seen) if (free(i) && allow('visible', i)) return {index: i, tier: 'visible'};
-    for (let i = from + window + 1; i < count; i++) if (free(i) && !visible.has(i)) { if (!allow('rest', i)) return null; return {index: i, tier: 'rest'}; }
+    for (let i = from + w + 1; i < count; i++) if (free(i) && !visible.has(i)) { if (!allow('rest', i)) return null; return {index: i, tier: 'rest'}; }
     for (let i = from - 1; i >= 0; i--) if (free(i) && !visible.has(i)) { if (!allow('behind', i)) return null; return {index: i, tier: 'behind'}; }
     return null;
   }
@@ -83,7 +84,7 @@ export function createPrefetcher({synthesize, onResult, onError = () => {}, onEv
     restart(keep = []) { generation++; abortAll(); failed.clear(); const held = new Set(keep); for (const i of [...done]) if (!held.has(i)) done.delete(i); },
     pause() { wanted = false; }, resume() { wanted = true; pump(); },
     pump,
-    status() { return {from, window, visible: [...visible].sort((a, b) => a - b), done: [...done].sort((a, b) => a - b), inflight: [...inflight].map(([index, j]) => ({index, tier: j.tier})), failed: [...failed.keys()]}; },
+    status() { return {from, window: nearWindow(), visible: [...visible].sort((a, b) => a - b), done: [...done].sort((a, b) => a - b), inflight: [...inflight].map(([index, j]) => ({index, tier: j.tier})), failed: [...failed.keys()]}; },
     get generation() { return generation; },
     get readyCount() { return done.size; },
   };

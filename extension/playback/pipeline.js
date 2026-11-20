@@ -95,7 +95,7 @@ export class LocalPipeline extends Pipeline {
     if (!keepStash) for (const index of [...this.stash.keys()]) this.releaseView(index);       // the audio stays in the cache (another voice, a later pipeline, the way back)
     for (const index of [...this.timings.keys()]) if (!this.stash.has(index)) this.timings.delete(index);
     this.prefetch = createPrefetcher({
-      count: this.chunks.length, window: this.window, background: this.background, parallel: () => this.engine?.poolFor?.(this.voice?.id, {rate: this.rate, background: this.background}) ?? 1,      // background: as many jobs as the engine's background rule runs at once (a pair on 8+ cores), the engine still decides per job
+      count: this.chunks.length, window: () => this.nearWindow(), background: this.background, parallel: () => this.engine?.poolFor?.(this.voice?.id, {rate: this.rate, background: this.background}) ?? 1,      // background: as many jobs as the engine's background rule runs at once (a pair on 8+ cores), the engine still decides per job
       synthesize: (index, job) => this.synthesizeChunk(index, job),
       onResult: (index, result, tier) => this.onSynthesized(index, result, tier),
       onError: (index, error, tier) => { if (error?.name !== 'AbortError' && tier === 'near' && !this.idle()) this.fail('synthesis-failed', error); },      // background work (and the window prepared before Play) that fails is retried when it is needed; only near work for the audio stops playback
@@ -191,9 +191,13 @@ export class LocalPipeline extends Pipeline {
      buffer (startBuffer: 2 s, 6 s for a voice one worker can not keep up with), or everything up to the end. Measured 15.11.2026 with only the start
      buffer as the rule: Play at 1.5x right after the bar opened found the only worker busy with a piece of the prepared tour sentence and stopped for
      0.5-4.3 s under load. */
+  /* A heavy voice: one worker needs half of real time or more already at 1x (Kokoro FP32 0.55-0.9 measured; Piper 0.1-0.45). Above 1x it gets the longer start
+     buffer (startBuffer) and a near look-ahead of 5 sections instead of `window`; every other voice keeps the 2.5.3 behaviour. */
+  heavy() { return (this.engine?.speed?.(this.voice?.id)?.rtf || 0) >= 0.5; }
+  nearWindow() { return this.heavy() && (this.rate || 1) > 1 ? Math.max(this.window, 5) : this.window; }
   startSafe() {
     const slow = (this.engine?.speed?.(this.voice?.id)?.rtf || 0) * (this.rate || 1) > 0.85, target = slow ? START_BUFFER_SEC : SHORT_START_SEC; let sec = 0;
-    for (let i = this.chunk; i < this.chunks.length; i++) { const d = this.stash.get(i)?.durationSec || this.cache.peek(this.keyOf(i))?.durationSec || 0; if (!d) return false; sec += d; if (sec >= target && i >= this.chunk + this.window) return true; }
+    for (let i = this.chunk; i < this.chunks.length; i++) { const d = this.stash.get(i)?.durationSec || this.cache.peek(this.keyOf(i))?.durationSec || 0; if (!d) return false; sec += d; if (sec >= target && i >= this.chunk + this.nearWindow()) return true; }
     return true;
   }
   /* A prepared sentence into the cache; one that was handed out early (partial, with its `tail` chain) when all of its pieces have arrived. */
@@ -442,7 +446,7 @@ export class LocalPipeline extends Pipeline {
     this.ensurePlayback().enqueue({chunkId: index, pcm: int16ToFloat(entry.pcm16), sampleRate: entry.sampleRate, timings: entry.timings});
     this.sendTimings(index, entry); return true;
   }
-  promoteWindow(from) { for (let i = from; i <= Math.min(this.chunks.length - 1, from + this.window); i++) if (this.stash.has(i)) this.promote(i); }
+  promoteWindow(from) { for (let i = from; i <= Math.min(this.chunks.length - 1, from + this.nearWindow()); i++) if (this.stash.has(i)) this.promote(i); }
   sectionsInPlayback(before = Infinity) { const out = new Set(); for (const id of this.playback?.entries.keys() || []) if (id < before) out.add(Math.floor(id)); return out; }
   onChunkStart(chunk) {
     this.chunk = chunk; this.audible = true;
@@ -543,7 +547,12 @@ export class LocalPipeline extends Pipeline {
     const rtf = this.engine?.speed?.(this.voice?.id)?.rtf, workers = Math.max(1, this.engine?.poolFor?.(this.voice?.id, {rate: this.rate}) || 1), slow = rtf * (this.rate || 1) / workers > 0.85;
     /* every voice: a start whose ready audio is shorter than SHORT_START_SEC (a one-line heading) waits up to SHORT_WAIT_MS for more (measured: 1.5 s of
        heading, then a 1 s stop before the paragraph) */
-    const target = slow ? START_BUFFER_SEC : SHORT_START_SEC, wait = slow ? START_WAIT_MS : SHORT_WAIT_MS;
+    /* a heavy voice (heavy(): Kokoro FP32, not Piper) waits for SHORT_START_SEC of listening per 1x of tempo
+       (2x: 4 s, 3x: 6 s). Measured 20.11.2026 (Chromium 156, 8 cores/16 threads, Kokoro FP32 pair, three English texts of ~550 words, cold engine, machine partly
+       busy): 2x 5 stops (7.7 s) -> 0, first sound 4.3 -> 5.2 s on average; 3x 31 stops (48 s) -> 0, first sound 2.7 -> about 7 s. A third worker (12 threads on
+       8 cores) did not remove the stops and was worse while the machine was busy otherwise; it is not used. */
+    const heavy = this.heavy(), fast = heavy ? Math.max(1, this.rate || 1) : 1;      // heavy: one worker needs half of real time already at 1x (Kokoro FP32 0.55-0.9; Piper 0.1-0.45: unchanged, its German start at 2x stayed 0.5 s)
+    const target = slow ? START_BUFFER_SEC : SHORT_START_SEC * fast, wait = slow ? START_WAIT_MS : SHORT_WAIT_MS * fast;
     const enough = () => token !== this.playToken || this.stateName === 'error' || this.pausedByUser || this.readyAheadSec(this.chunks.length) >= target || this.allReadyFrom(chunk);
     if (enough()) return;
     this.setState('loading');
