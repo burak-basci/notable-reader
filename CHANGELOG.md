@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.5.5 (2026-11-20)
+
+- A page read to the end reads again from the beginning on Play, also after a reload (2.5.4 saved the last word as the
+  resume point: the second Play stayed silent and the bar said "Fertig gelesen"). Same in the file view and web app.
+- Header status words that do not fit show a short form ("Fertig", "↓ 63 MB", "↓ 45 %", "… 12 s"); the full text is the
+  tooltip and the accessible name.
+- Cookie walls: the article behind them was already read, but its marks were painted over the wall (heise, faz,
+  chefkoch, t-online). Marks under a wall are no longer painted, the bar says "Ein Cookie-Hinweis der Seite verdeckt den
+  Text. Vorgelesen wird der Text dahinter."; in-page banners of Sourcepoint, OneTrust, Usercentrics, Cookiebot, Didomi,
+  consentmanager, Borlabs, Complianz, Quantcast, TrustArc and CookieYes are not page text.
+- File view and web app: a damaged file after a good one shows its message; pdf.js parser errors appear in the
+  interface language; an empty text file no longer mentions scans.
+
 ## 2.5.4 (2026-11-20)
 
 - Accessibility of the Reader's own surfaces (bar, voice list, settings, popup, welcome, help, side panel, file view, web

@@ -24,7 +24,7 @@ const running = new Map();
 const pages = new Map(['popup.html', 'help.html','tools/reader/reader.html','sidebar.html','library/library.html'].map(name => [chrome.runtime.getURL(name), name]));
 // Unlike manifest.version this identifies the JS that is actually executing. An unpacked
 // update can leave Chromium's persisted worker on older compiled code until a real reload.
-const RUNTIME_BUILD = 'reader-2.5.4-20261120.1';
+const RUNTIME_BUILD = 'reader-2.5.5-20261120.1';
 installFrameEvents();
 globalThis.notableRuntimeBuild = RUNTIME_BUILD;
 let actionLanguage;
