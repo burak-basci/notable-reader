@@ -203,7 +203,10 @@ export class TtsEngine extends EventTarget{
   /* The large model (Kokoro FP32, 1.1 GB per worker) gets its pair too on 8+ cores and 8+ GB (measured 20.11.2026 with the isolated engine host, 16 cores: one
      worker with 4 threads RTF 0.52 = gaps at 2x, a pair 2 x 4 threads 0.36 together). Below that it stays one worker (memory). */
   const fits=model.ramMB<=500||model.ramMB<=1200&&(caps.cores||1)>=8;
-  return need>0.85&&fits&&caps.memoryGB>=8&&(caps.cores||1)>=4?2:1;
+  /* 8+ cores: the pair already from need > 0.45 (one worker would be at more than half its speed): measured 20.11.2026, Kokoro FP32 at 1x on ONE 4-thread worker
+     (RTF 0.52) stopped twice in the first 10 s (heading -> paragraph, first piece -> rest); 2 x 4 threads still leave half of 16 cores free. */
+  const pairAt=(caps.cores||1)>=8?0.45:0.85;
+  return need>pairAt&&fits&&caps.memoryGB>=8&&(caps.cores||1)>=4?2:1;
  }
  /* WASM threads of one worker: all of them for a single worker, a quarter of the cores each for a pair (2 x 4 threads on 16 cores, 2 x 2 on 8). */
  /* The first worker carries the first section (time to the first sound) and always gets all threads;

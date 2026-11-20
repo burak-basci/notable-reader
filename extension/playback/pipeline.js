@@ -25,7 +25,7 @@ export const STASH_BUDGET_BYTES = 192 * 1024 * 1024;
 /* After a click, key or scroll on the page the background work (nothing audible waits for it) starts no new section for this long. */
 export const INTERACTION_YIELD_MS = 1500;
 /* Start buffer of a voice that one worker can not keep up with (see startBuffer): seconds of listening ready before the first sound, and the longest extra wait. */
-export const START_BUFFER_SEC = 6, START_WAIT_MS = 8000, SHORT_START_SEC = 2, SHORT_WAIT_MS = 1500;
+export const START_BUFFER_SEC = 6, START_WAIT_MS = 8000, SHORT_START_SEC = 2, SHORT_WAIT_MS = 2500;
 /* Synthesis time one short piece should take at most (see pieceWords). */
 export const PIECE_SEC = 1.5;
 /* Id of piece k (1, 2, ...) of a section that arrives in pieces: section + 0.5, + 0.75, + 0.875 ... (ordered, always below the next section). */
@@ -538,7 +538,9 @@ export class LocalPipeline extends Pipeline {
      usually has this ready already. */
   async startBuffer(chunk, token) {
     if (this.chunks.length === 1) return;      // a single spoken sentence (guided explanation): its first piece plays at once, waiting for all of it would be the longer pause
-    const rtf = this.engine?.speed?.(this.voice?.id)?.rtf, slow = rtf * (this.rate || 1) > 0.85;
+    /* slow = the workers of this voice together can not keep up: a pair counts twice (measured 20.11.2026, Kokoro FP32 pair at 2x, 4 threads each: per-worker RTF
+       0.79, together 0.4; judged per worker the start waited for 6 s of audio and the first sound came after 9.5 s, then no gap at all) */
+    const rtf = this.engine?.speed?.(this.voice?.id)?.rtf, workers = Math.max(1, this.engine?.poolFor?.(this.voice?.id, {rate: this.rate}) || 1), slow = rtf * (this.rate || 1) / workers > 0.85;
     /* every voice: a start whose ready audio is shorter than SHORT_START_SEC (a one-line heading) waits up to SHORT_WAIT_MS for more (measured: 1.5 s of
        heading, then a 1 s stop before the paragraph) */
     const target = slow ? START_BUFFER_SEC : SHORT_START_SEC, wait = slow ? START_WAIT_MS : SHORT_WAIT_MS;
