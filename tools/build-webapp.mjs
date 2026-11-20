@@ -145,7 +145,7 @@ function build(out) {
   applyPatches(files);
   files.set('ui-locales.json', catalogue(files));
   files.set('index.html', Buffer.from(indexHtml()));
-  for (const name of ['web-runtime.mjs', 'web-boot.mjs']) files.set(name, Buffer.from(readFileSync(join(WEB, name), 'utf8').replace('__WEB_VERSION__', version)));
+  for (const name of ['web-runtime.mjs', 'web-boot.mjs', 'web-last.mjs']) files.set(name, Buffer.from(readFileSync(join(WEB, name), 'utf8').replace('__WEB_VERSION__', version)));
   files.set('web.css', readFileSync(join(WEB, 'web.css')));
   files.set('app.webmanifest', Buffer.from(manifest()));
   files.set('WEB-SOURCE-NOTICE.md', Buffer.from(notice()));

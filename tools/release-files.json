@@ -1176,6 +1176,7 @@
     "tests/unified-ui-contract.mjs",
     "tests/voice-arrival.cjs",
     "tests/webapp-browser.mjs",
+    "tests/webapp-resume.mjs",
     "tests/webapp-serve.mjs",
     "third_party_sources/GPL-3.0.txt",
     "third_party_sources/PIPER-WASM-UPSTREAM-BUILD.md",
@@ -3768,6 +3769,7 @@
     "tools/upload-cws.py",
     "tools/webapp/sw.template.js",
     "tools/webapp/web-boot.mjs",
+    "tools/webapp/web-last.mjs",
     "tools/webapp/web-messages.json",
     "tools/webapp/web-runtime.mjs",
     "tools/webapp/web.css"
