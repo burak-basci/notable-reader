@@ -44,7 +44,9 @@ export class ModelStore{
   /* Hash and cache writes in a worker (host page stays responsive); a worker that can not start falls back to the in-thread download once. */
   const fetchFile=viaWorker?async(...args)=>{try{return await viaWorker(...args);}catch(error){if(error?.code!=='worker-failed')throw error;this.worker=false;return downloadVerified(...args);}}:downloadVerified;
   const changed=await installModel({cache,model,signal,onProgress,estimate:()=>this.estimate(),fetchFile});
-  if(changed)await this.persist();
+  /* not awaited: Firefox answers persist() only after the person answers its permission prompt (headless Firefox 157: never), and the voice must be usable at once
+     (the install ended with the files stored, the download said 100 %, but Play stayed on "voice not downloaded") */
+  if(changed)void this.persist();
   return changed;
  }
  /* Deletes one model's files; files another installed model still needs (Kokoro style/tokenizer) stay. */
