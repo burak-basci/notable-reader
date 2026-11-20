@@ -16,7 +16,10 @@
 - Reading: no teaser boxes or programme boxes (tagesschau), no translation banner (MDN), word gaps from layout are
   kept ("Woodland and"), code blocks are skipped by default for new installs (inline code stays), letter-spaced PDF
   text is read as words ("Grundgesetz"), diagnosis lines in the interface language.
-- Popup "Summarize" shows or continues a running tour instead of ending it; long voice names fit the voice button.
+- Reading starts at the headline also where it sits in the article's own header (heise, The Guardian), and picture
+  captions before the first paragraph are not read first (English Wikipedia, The Guardian).
+- Popup "Summarize" shows or continues a running tour instead of ending it; long voice names fit the voice button;
+  the help page names the real first download (German 63 MB, it said 114 MB).
 - Web app (reader.benotable.de/app) builds again from this source (tools/build-webapp.mjs) and runs without the
   extension. PRIVACY.md describes the free product.
 

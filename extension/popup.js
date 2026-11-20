@@ -18,6 +18,7 @@ import {TIERS as EXPLAIN_TIERS,manifest as explainManifest} from './explain/mode
 import {AI_LANGUAGES} from './explain/tutor-plan.mjs';
 import {t, errorText, setUiLanguage, getUiLanguage, translateDOM, uiLanguages, formatLocales, catalogReady} from './i18n.js';
 import {MODELS,modelBytes} from './models/registry.js';
+import {firstRunVoice} from './voice-picker.mjs';
 import {defaultCombo,formatCombo} from './platform/keycombo.mjs';
 
 await catalogReady;
@@ -524,8 +525,9 @@ const HELP_COMMANDS=[['_execute_action','extWelcomeKeyOpen'],['toggle-play','kbP
 const ARROW_CODES={Left:'ArrowLeft',Right:'ArrowRight',Up:'ArrowUp',Down:'ArrowDown'};
 const keyText=shortcut=>formatCombo(shortcut.replace(/ Arrow$/,'').split('+')
  .map(part=>ARROW_CODES[part]||(/^[A-Z]$/.test(part)?'Key'+part:part)).join('+'))||shortcut;
-const firstVoice=language=>Object.values(MODELS)
- .find(m=>!m.experimental&&m.tier==='best'&&m.languages?.includes(language));
+// the voice the first Play loads, same rule as the welcome page and the bar (voice-picker firstRunVoice: German Thorsten medium 63 MB, English Bella 326 MB);
+// the help text said "German 114 MB" (the first 'best' model) while Play loaded 63 MB
+const firstVoice=language=>firstRunVoice(Object.values(MODELS),language);
 async function renderHelp(){
  if(page!=='help'||!$('#help-key-list'))return;
  let commands=[];try{commands=await chrome.commands?.getAll?.()||[];}catch{}
