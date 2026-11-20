@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extName__",
   "short_name": "beNotable!",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "default_locale": "en",
   "description": "__MSG_extDescription__",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt956HvSqV4/RXBmiZH2e/4aToYbY6uZoP640QObEfV2APBciAey8J6BsDz4yIaq5gsVs4iPWhT0kabdZTImJy+hbZA64R6yfqcPkRlsgvPVW2kf21dD4hk936cJUirnRlvnlOKKslbjyXOKcyk7GQCcMFSCLxvUZn/ySDqbnO/aHv+t7wE6tDWLeE3h+S3xhH+KGEOIRU304tZWCmYS67hqAMyNp+cdhso2DN+Oqn/qJSD1C7mmQwqti1QLAD8rvneYPARrnfrXQ4OLDJrLDmHClvK17ztiECYdVgPYtQ4pNuRKEOek2XwcBaxCBmRN52W8A+GBHr4b9GbtWP1TcLwIDAQAB",
