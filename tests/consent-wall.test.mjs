@@ -48,8 +48,11 @@ ok(!consentWallAt({elementFromPoint: () => { throw new Error('x'); }}, 1, 1), 'e
 
 /* text finding skips the in-page banners of the common platforms (both lists: with and without header skipping) */
 const html = fs.readFileSync(path.join(root, 'session/html-content.mjs'), 'utf8');
-for (const sel of ['[id^="sp_message_container"]', '#onetrust-consent-sdk', '#usercentrics-root', '#CybotCookiebotDialog', '#didomi-host', '#cmpbox', '#BorlabsCookieBox', '.cmplz-cookiebanner', '[class*="cookie-banner" i]'])
+for (const sel of ['[id^="sp_message_container"]', '#onetrust-consent-sdk', '#usercentrics-root', '#CybotCookiebotDialog', '#didomi-host', '#cmpbox', '#BorlabsCookieBox', '.cmplz-cookiebanner'])
   ok(html.split(sel + ',').length === 3, `${sel} is skipped in both exclusion lists`);
+// the substring patterns are no longer selectors of the exclusion lists (they matched state classes on body/main and silenced the page, review 2.5.5 R1);
+// they run through consentBox() (never html/body/main/article, never a box with the page's text) - behaviour test: tests/html-content-text.cjs fixture4
+ok(html.split('[class*="cookie-banner" i],').length === 2 && /const consentBox=e=>!\/\^\(\?:HTML\|BODY\|MAIN\|ARTICLE\)\$\//.test(html), 'substring consent patterns only through consentBox()');
 const session = fs.readFileSync(path.join(root, 'session/page-session.mjs'), 'utf8');
 ok(session.includes("this.workflowNotice(this.text('consent_covers'))") && session.includes("this.workflowNotice(this.text('consent_only'))"), 'the bar says when a wall covers the text / is all there is');
 const locales = JSON.parse(fs.readFileSync(path.join(root, 'ui-locales.json'), 'utf8')).messages;

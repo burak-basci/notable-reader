@@ -44,9 +44,15 @@ const fixture2 = `<!doctype html><html lang="en"><head><meta charset="utf-8"><ti
   <div class="authors">Authors: Ann One, Bob Two, Cid Three, Dee Four</div><div class="Image-styles__CreditStyled-sc-1">Reuters</div></header>
   <p>${long}</p><p>Second paragraph of the story.</p></article>
 </main><div id="chat"><main><div class="thread"><article><p>Short question of the user?</p></article><article><p>${long}</p></article></div></main></div></body></html>`;
+/* Review 2.5.5 (R1): cookie state classes on html/body/main/wrappers (WordPress and CMP plugins set them) must never silence the page; a real in-page banner stays skipped. */
+const fixture4 = `<!doctype html><html lang="en" class="has-cookie-banner"><head><meta charset="utf-8"><title>z</title></head><body class="cookie-consent-given cookiebanner-closed">
+ <div id="page" class="site cookie-banner-open"><main class="consent-banner-shown"><h1>Page under consent state classes</h1><p>${long}</p><p>Last paragraph of the page.</p></main></div>
+ <div class="cookie-banner"><p>We use cookies to improve your experience. Accept all or manage settings.</p></div>
+ <div id="cookie-consent-dialog"><p>Your privacy choices for this website and its partners.</p></div></body></html>`;
 const server = http.createServer((q, r) => {
   const u = decodeURIComponent(q.url.split('?')[0]);
   if (u === '/fixture.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture); }
+  if (u === '/fixture4.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture4); }
   if (u === '/fixture2.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture2.replace(/<div id="chat">[\s\S]*<\/div><\/body>/, '</body>')); }
   if (u === '/fixture3.html') { r.writeHead(200, {'Content-Type': 'text/html'}); return r.end(fixture2.replace(/<body><main>[\s\S]*?<\/main><div id="chat">/, '<body><div id="chat">')); }
   const f = path.join(root, u.replace(/^\/ext\//, ''));
@@ -120,6 +126,11 @@ const server = http.createServer((q, r) => {
     await page.goto(base + '/fixture3.html');
     const c3 = (await run({...defaults})).sections.join('\n');
     ok(/Short question of the user/.test(c3) && /real article text/.test(c3), 'sibling articles (chat turns) keep the whole conversation');
+    // R1: consent state classes on html/body/wrapper/main never silence the page, real banners stay skipped
+    await page.goto(base + '/fixture4.html');
+    const c4 = await run({...defaults}), c4all = c4.sections.join('\n');
+    ok(/^Page under consent state classes/.test(c4.sections[0] || '') && /Last paragraph of the page/.test(c4all), 'body.cookie-consent-given / main.consent-banner-shown: the page is read: ' + JSON.stringify(c4.sections[0]?.slice(0, 40)));
+    ok(!/We use cookies|Your privacy choices/.test(c4all), 'an in-page cookie banner and a cookie-consent dialog box are still skipped');
     await page.close();
   } finally { await context.close(); await browser.close().catch(() => {}); server.close(); }
   console.log(`HTML CONTENT TEXT OK (${checks} checks)`);
