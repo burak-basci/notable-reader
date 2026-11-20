@@ -1,5 +1,7 @@
 # Install or upgrade Notable Reader 2.4.0
 
+> **Historical (2.4.0).** This page describes the 2.4 extension with the native companion and its entitlement checks. Since 2.5 every function is free and there is no entitlement; install the current version as described in the [README](../README.md).
+
 Download the chosen ZIP and SHA256SUMS from the same canonical GitHub release.
 Run `sha256sum -c SHA256SUMS --ignore-missing` in that download directory.
 This verifies the downloaded bytes against the published digest; obtain the

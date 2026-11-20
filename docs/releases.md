@@ -1,5 +1,7 @@
 # Canonical immutable releases
 
+> Parts of this page still describe the 2.4 release process (premium-browser, entitlement). The current build steps are in the [README](../README.md#aus-dem-quelltext-bauen).
+
 Version comes from extension/manifest.json and must equal package.json. Protocol
 version remains 1 independently. The native product build metadata is generated
 as native/build-info.json, not inserted as a hardcoded version in old code.
