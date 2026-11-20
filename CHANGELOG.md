@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.5.4 (2026-11-20)
+
+- Accessibility of the Reader's own surfaces (bar, voice list, settings, popup, welcome, help, side panel, file view, web
+  app), checked with axe-core 4.10 (WCAG 2.2 A/AA rules) in light and dark mode, the Chromium accessibility tree, a
+  scripted keyboard walk, 200 % zoom, 320 px width and increased text spacing: Play keeps one name and states
+  `aria-pressed`; the timeline says "1:23 of 3:40"; waits of 2 s or more are announced once; the voice panel that keeps
+  Tab inside is a modal dialog; reduced motion switches off the bar's transitions; Alt+Shift+B moves the focus from
+  anywhere on the page into the bar (listed in help, settings and on the welcome page); the popup has a main landmark
+  and a heading. Not yet tested with real screen readers.
+- English at 2x and 3x: a heavy voice (Kokoro FP32) waits for 2 s of listening per 1x of tempo before the first sound
+  and looks 5 sections ahead. Three English texts, cold engine: 2x 5 stops (7.7 s) -> 0, 3x 31 stops (48 s) -> 0; the
+  first sound comes about 1 s (2x) / 4 s (3x) later. 1x and Piper voices (German) are unchanged. A third worker and
+  sentence-sized pieces were measured and not taken.
+- A device that computes the voice slower than it speaks (3 stops within 2 minutes or 6 s of silence) gets an offer in
+  the voice card: English Kitten nano (then Piper LJSpeech), German Thorsten medium. It asks; "read with current voice"
+  is remembered per voice. On a quarter of an 8-core desktop Bella FP32 stopped 12 times in 550 words at 1x, Thorsten
+  never.
+- Firefox: a finished voice download no longer waits for Firefox's persistent-storage prompt (the voice stayed "not
+  downloaded" and Play never read). Web app in Firefox 157: 35 of 35 browser checks pass.
+- Reading: no IPA pronunciation (Wikipedia), no date line ("Stand: …", tagesschau), no relative byline time and no
+  picture credit (BBC), no Google "preferred sources" button (SPIEGEL); "(31. Dezember 2023)" no longer ends a section;
+  a key-sentence tour step lands below fixed page banners.
+- Diagnosis numbers in the interface language's notation ("0,5 s" in German).
+- Build and docs: `npm test` runs the unit tests, `tools/fetch-transformers.mjs` recreates the gitignored
+  Transformers.js bundle from npm (checked against provenance.json); README in German and English, complete
+  third-party notices; the 2.4 install/release pages are marked historical.
+
 ## 2.5.3 (2026-11-20)
 
 - English reads without stopping: only the engine host (the offscreen document that runs the voices) is cross-origin
