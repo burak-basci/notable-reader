@@ -15,4 +15,9 @@ ok(nc.length === 19, `19 voices on a non-commercial base in the register (${nc.l
 for (const voice of nc) ok(reader.includes(voice), `reader list names ${voice}`);
 const thorstenHigh = reader.split('\n').find(line => line.includes('Piper Thorsten high')) || '';
 ok(/lessac/i.test(thorstenHigh) && /research/i.test(thorstenHigh), 'Thorsten high names its lessac base and the research-only data licence');
+// the one-line switch (R6): default offers and labels the 19 voices; false drops them from the register (browser check with false: runde5/bin/nc-off.mjs, 20.11.2026)
+const register = await import(new URL('../extension/tools/reader/neural-models.js', import.meta.url).href);
+ok(register.OFFER_NONCOMMERCIAL_BASE === true, 'switch OFFER_NONCOMMERCIAL_BASE exists and offers the voices by default');
+ok(Object.values(register.MODELS).filter(m => m.basisNonCommercial).length === 19, 'with the switch on, the 19 voices are in the register and flagged');
+ok(!Object.values(register.MODELS).some(m => m.basisNonCommercial && /thorsten-medium/.test(m.voiceURI)), 'the German default Thorsten medium is not among them');
 console.log(`LICENSE NOTICES OK (${checks} checks)`);

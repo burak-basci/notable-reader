@@ -69,6 +69,10 @@ for(const model of Object.values(MODELS)){
  const base=model.kind==='piper'&&!model.retrained&&NC_BASE_OF[piperKey(model)];
  if(base){model.basisNonCommercial=true;model.basisSource={base,...NC_BASES[base],card:model.source};}
 }
+/* ONE switch for the 19 voices above (code review 2.5.5, R6, standard set 20.11.2026: offered and labelled). false = they are not offered at all: the register
+   drops them before anything (voice list, engine, recommendations, export) sees them. A voice already chosen falls back like any voice that is gone. */
+export const OFFER_NONCOMMERCIAL_BASE=true;
+if(!OFFER_NONCOMMERCIAL_BASE)for(const [key,model] of Object.entries(MODELS))if(model.basisNonCommercial)delete MODELS[key];
 /* Cached files no record uses any more (former revision of retrained voices): input for a later cleanup of the
    cache. */
 export const SUPERSEDED_URLS=Object.freeze([...legacyThorstenMedium,...SUPERSEDED_PIPER_URLS,
