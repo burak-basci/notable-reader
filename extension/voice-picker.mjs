@@ -733,6 +733,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   else{const text=uiText('voice_get',{voice:shown(t.row),mb:t.entry.mb});say(text);flash(text);}
  };
  grid.addEventListener('keydown',event=>{
+  if(!event.isTrusted)return;   // same for synthetic keys (Enter starts/downloads the marked voice)
   if(event.target!==grid)return;                // keys on a row button belong to that button (Enter/Space activate it)
   const e=effective(),list=modelsOf(e),id=markedId(e,list),nodes=voiceNodes(),index=Math.max(0,nodes.findIndex(n=>n.dataset.key===id));
   const target=move(event,nodes.length,index);
@@ -774,6 +775,7 @@ export function createVoicePicker({shadow,root=null,idPrefix='vp',send,uiText,ge
   rowSignature='';build();
  };
  voices.addEventListener('click',event=>{
+  if(!event.isTrusted)return;   // the list lives in the page's DOM: a page script's synthetic click must not start downloads (hundreds of MB) or change the voice (code review 2.5.5, R4); own code never clicks in here
   const button=event.target.closest?.('button[data-act]');
   if(button?.dataset.act==='more'){
    showAll=!showAll;saveShowAll();highlight='';rowSignature='';build();doPlace();

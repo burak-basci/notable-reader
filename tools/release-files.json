@@ -1184,6 +1184,7 @@
     "tests/webapp-file-switch.mjs",
     "tests/webapp-resume.mjs",
     "tests/webapp-serve.mjs",
+    "tests/webapp-voice-trusted.mjs",
     "third_party_sources/GPL-3.0.txt",
     "third_party_sources/PIPER-WASM-UPSTREAM-BUILD.md",
     "third_party_sources/README.md",
