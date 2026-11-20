@@ -17,6 +17,7 @@ import {cleanReading,READING_FILTER_KEYS,readingBlockSkipped} from '../playback/
 import {collectHtmlBlocks, documentLanguage} from './html-content.mjs';
 import {buildChunks, createRangeMapper} from './text-map.mjs';
 import {createReadingMarks} from './reading-marks.mjs';
+import {consentWallAt} from './page-highlight.mjs';
 import {installMarkSettings} from './mark-settings.mjs';
 import {installSettingsExtras} from './settings-extras.mjs';
 import {installSettingsLayout} from './settings-layout.mjs';
@@ -642,7 +643,8 @@ export class PageSession {
   /* -- commands -------------------------------------------------------------------------------------------------------------------------- */
   async play(chunk = this.position.chunk, word = undefined) {
     if (!this.chunks.length) this.rescan(true);                    // content may have arrived since the last scan
-    if (!this.chunks.length) { this.errorParams = null; return this.fail('no_readable_text'); }
+    if (!this.chunks.length) { this.errorParams = null; if (this.consentWall()) this.workflowNotice(this.text('consent_only')); return this.fail('no_readable_text'); }
+    if (!this.options.ownPage && this.consentNoticeFor !== this.urlKey && this.consentWall()) { this.consentNoticeFor = this.urlKey; this.workflowNotice(this.text('consent_covers')); }       // the article behind a cookie wall is read; say so once, the wall is the page's own
     // the card's download starts reading by itself when it is done
     if (this.voiceCard?.downloading || this.download && this.download.modelId === this.voice?.id) return;
     this.voiceCard = null;
@@ -796,6 +798,8 @@ export class PageSession {
   barOpen() { return this.visible === true && this.chunks.length > 0 && !this.areaPending; }
   /* opened, not playing: the place it will read from is marked, Play starts exactly there (not at an older remembered place) */
   openReady() { if (!this.chunks.length) return; this.seekedAway = true; this.markAt(this.position.chunk, this.position.word); this.changed(); }
+  /* A cookie / consent wall of the page covers the middle of the view (round 4, 20.11.2026: heise, faz, chefkoch, t-online). */
+  consentWall() { try { return !!consentWallAt(document, innerWidth / 2, innerHeight / 2); } catch { return false; } }
   workflowNotice(text) {
     const shadow=this.surface?.shadow;if(!shadow)return;
     let note=shadow.querySelector('.workflow-note');if(!note){note=document.createElement('p');note.className='workflow-note';note.setAttribute('role','status');note.style.cssText='padding:8px 12px;margin:0;background:var(--reader-paper);color:var(--reader-ink);font:13px system-ui;border-radius:8px;max-width:480px';shadow.append(note);}
@@ -1118,6 +1122,7 @@ export class PageSession {
     this.visible = value; if (value) this.areaPending = false;
     if (!value) { this.voiceCard = null; if (pause) void this.pause(); this.tutor?.clear('bar-closed'); }   // the tour needs the bar's controls: closing the bar ends it and removes its marks
     this.surface?.setVisibility(value); this.options.onVisibility?.(value); this.changed(); if (value) this.prewarm();
+    if (value && !this.options.ownPage && !this.chunks.length && this.consentWall()) this.workflowNotice(this.text('consent_only'));       // only a cookie wall, no text behind it yet: say so instead of a bare 'Bereit'
   }
   bridgeVisibility() { addEventListener('pagehide', this.onPageHide = () => { void this.savePosition(true); }); }
   metrics() {

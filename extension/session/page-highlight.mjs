@@ -16,6 +16,23 @@ const pick = (v, d) => MARK_MODES.includes(v) ? v : d, flag = (v, d) => typeof v
    faint yellow wash + 2 px underline, dark text on both filled levels (>= 4.5:1 on light AND dark pages). A custom color / strength picks its text color itself (black or white, whichever reads better on the page).
    Geometry contract: the word fill and the section block share ONE horizontal inset, so the corner marks end exactly on the edge of the first/last word's fill.
    .block = padded box around the section (tint), .corner = L-marks drawn ON its outer edge, .frame = 1 px line OUTSIDE the padded word fill, .pad = the fill's inset strips (the ::highlight fill itself has no padding). */
+/* Cookie / consent walls (Sourcepoint also behind first-party hosts such as consent.faz.net or cmp.heise.de, OneTrust, Usercentrics, Cookiebot,
+   Didomi, consentmanager, Borlabs, Complianz, Quantcast, TrustArc, CookieYes): recognized by the ids, classes and frame addresses of the platforms,
+   never by their words. -> the wall element at a viewport point, null when the point shows the page (or the text of `owner`) itself.
+   Round 4 (20.11.2026): the reader read the article behind the wall, but its marks were painted over the wall and looked like it read the dialog. */
+const CONSENT_MARK = /sp_message|privacy-mgmt|message_id=|consent|cookie|(?:^|[\s_.-])cmp(?:[\s_.-]|box|wrapper|$)|cmp\.|gdpr|onetrust|usercentrics|cybot|didomi|borlabs|cmplz|qc-cmp|truste|cky-/i;
+export function consentWallAt(doc, x, y, owner = null) {
+  let el = null; try { el = doc.elementFromPoint(x, y); } catch { return null; }
+  if (!el || el.closest?.('[data-notable-reader-ui],[data-notable-reader-surface],#brave-reader-inline,#brave-reader-inline-html')) return null;
+  if (owner && (el === owner || owner.contains(el) || el.contains(owner))) return null;
+  let mark = null, layer = false;       // a consent mark AND a layer above the page (frame, dialog, fixed/sticky box): class names of ordinary page text never count
+  for (let e = el, i = 0; e && e.nodeType === 1 && e !== doc.body && e !== doc.documentElement && i < 14; e = e.parentElement, i++) {
+    if (!mark && CONSENT_MARK.test((e.id || '') + ' ' + (typeof e.className === 'string' ? e.className : '') + ' ' + (e.tagName === 'IFRAME' ? e.getAttribute('src') || '' : ''))) mark = e;
+    if (!layer) { if (e.tagName === 'IFRAME' || e.tagName === 'DIALOG' || e.getAttribute('aria-modal') === 'true' || /^(alert)?dialog$/.test(e.getAttribute('role') || '')) layer = true; else { const p = doc.defaultView?.getComputedStyle(e).position; layer = p === 'fixed' || p === 'sticky'; } }
+    if (mark && layer) return mark;
+  }
+  return null;
+}
 export const padX = h => Math.max(2, Math.min(3, Math.round(h * .15))), BLOCK_PAD_Y = 1;
 
 export function createPageHighlight({doc = document, chunks, blocks, textNodes, onSeek, onUserScroll, marks = MARK_DEFAULTS}) {
@@ -89,11 +106,14 @@ export function createPageHighlight({doc = document, chunks, blocks, textNodes, 
   function layout() {
     frame = 0; if (disposed) return;
     const nodes = [], h = win.innerHeight, w = win.innerWidth, inView = b => b.bottom > 0 && b.top < h && b.right > 0 && b.left < w;
+    /* a mark under a cookie wall is not painted over the wall (it would look as if the wall were read) */
+    const ownerOf = r => { const n = r?.startContainer; return n ? (n.nodeType === 1 ? n : n.parentElement) : null; }, sectionOwner = ownerOf(parts[0]), wordOwner = ownerOf(wordRng);
+    const walled = (b, owner) => !!consentWallAt(doc, Math.min(w - 1, Math.max(0, (b.left + b.right) / 2)), Math.min(h - 1, Math.max(0, (b.top + b.bottom) / 2)), owner);
     if (parts.length && (mode.tint || mode.corners)) {
       const lines = lineFragments(), last = lines.length - 1;
       lines.forEach((f, i) => {
         const px = padX(f.b - f.t) + 1, x0 = f.l - px, x1 = f.r + px, y0 = f.t - BLOCK_PAD_Y, y1 = f.b + BLOCK_PAD_Y;
-        if (!(y1 > 0 && y0 < h && x1 > 0 && x0 < w)) return;
+        if (!(y1 > 0 && y0 < h && x1 > 0 && x0 < w) || walled({left: f.l, right: f.r, top: f.t, bottom: f.b}, sectionOwner)) return;
         if (mode.tint) nodes.push(box('block', {left: x0, top: y0, width: x1 - x0, height: y1 - y0}));
         if (!mode.corners || (i !== 0 && i !== last)) return;
         const put = (kind, x, y) => { if (y + 12 > 0 && y < h && x + 12 > 0 && x < w) { const n = doc.createElement('div'); n.className = 'box corner ' + kind + (rtl ? ' rtl' : ''); n.style.cssText = 'left:' + x + 'px;top:' + y + 'px'; nodes.push(n); } };
@@ -101,7 +121,7 @@ export function createPageHighlight({doc = document, chunks, blocks, textNodes, 
         if (i === last) put('end', rtl ? x0 : x1 - 12, y1 - 12);   // ... and of the LAST fragment: ends at the last word of the section
       });
     }
-    if (mode.word !== 'off') for (const b of rectsOf(wordRng)) if (inView(b)) {
+    if (mode.word !== 'off') for (const b of rectsOf(wordRng)) if (inView(b) && !walled(b, wordOwner)) {
       const px = padX(b.height);
       const bw = mode.word === 'strong' ? 2 : 1;
       if (mode.word !== 'subtle' && !supported) { nodes.push(box('fill' + (mode.word === 'strong' ? ' strong' : ''), b, px + bw, bw)); continue; }
