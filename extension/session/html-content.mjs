@@ -69,6 +69,20 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   const texts=new WeakMap();
   const blockTags=new Set(['ADDRESS','ARTICLE','ASIDE','BLOCKQUOTE','CAPTION','DD','DIV','DL','DT','FIGCAPTION','FIGURE','H1','H2','H3','H4','H5','H6','LEGEND','LI','MAIN','OL','P','PRE','SECTION','SUMMARY','TABLE','TD','TH','TR','UL']);
   const mathTokens=new Set(['mi','mo','mn','mtext','ms']);
+  /* Siblings that touch in the DOM and are separated only by layout read as one word: "Woodlandand" (BBC byline: <span>Dan Woodland</span><span>and</span>, the gap is a
+     4px margin) or flex/grid items such as <span>…</span><span>…</span>. A box that is not inline (flex/grid item, table cell...) or an inline element with a real side margin
+     (>= 2px) is a word boundary on that side. Whitespace only: no non-space character moves, so word offsets are unchanged. Not for floats / out-of-flow boxes (a drop cap
+     "T" + "he text" stays one word) and not inside formulas. */
+  const BOX=/^(?:block|flex|grid|list-item|table|table-row|table-cell|table-caption|flow-root)$/;
+  const gapsOf=el=>{
+    if(blockTags.has(el.tagName)||el.localName==='math'||el.closest?.('math,.katex,.MathJax'))return null;
+    const s=getComputedStyle(el);
+    if(s.float!=='none'||!(s.position==='static'||s.position==='relative'||s.position==='sticky'))return null;
+    if(BOX.test(s.display))return {before:true,after:true};
+    if(s.display!=='inline'||el.localName!=='span'&&el.localName!=='time')return null;   // only generic wrappers: <code>x</code>, <a>, <em> keep punctuation attached
+    const before=parseFloat(s.marginLeft)>=2,after=parseFloat(s.marginRight)>=2;
+    return before||after?{before,after}:null;
+  };
   const text=e=>{
     if(texts.has(e))return texts.get(e);
     const parts=[];
@@ -79,12 +93,13 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
       if(node.nodeType===Node.TEXT_NODE){if(visible(parent(node)))parts.push(code?node.data.replace(/(?:\r\n?|\n)(?:[ \t]*(?:\r\n?|\n))+/gu,NP).replace(/\r\n?|\n/gu,NL):node.data);return;}
       if(node.nodeType!==Node.ELEMENT_NODE||!visible(node))return;
       const inCode=code||node.tagName==='PRE';
-      const boundary=node.tagName==='BR'||blockTags.has(node.tagName),mark=inCode&&node.tagName!=='PRE'?NL:' ';
+      const gaps=inCode?null:gapsOf(node),boundary=node.tagName==='BR'||blockTags.has(node.tagName),mark=inCode&&node.tagName!=='PRE'?NL:' ';
+      if(gaps?.before)parts.push(' ');
       // Formula tokens (MathML mi/mo/mn...) are separate words ("x = y 2", not "x=y2"); whitespace only, so no non-space character moves.
       if(mathTokens.has(node.localName)&&node.closest('math'))parts.push(' ');
       if(boundary)parts.push(inCode&&node.tagName==='PRE'?' ':mark);
       for(const child of children(node))visit(child,inCode);
-      if(boundary)parts.push(mark);
+      if(boundary||gaps?.after)parts.push(mark);
     };
     visit(e,!!closest(parent(e),'pre'));const value=parts.join('').replace(/\s+/gu,' ').replace(/ ?[\uE000\uE001](?: ?[\uE000\uE001])* ?/gu,run=>run.includes(NP)?'\n\n':'\n').trim();texts.set(e,value);return value;
   };
