@@ -27,6 +27,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   // self-contained because capture/frame discovery serializes this same source.
   const semantic={header:'header,[role="banner"]',footer:'footer,[role="contentinfo"]',caption:'figcaption,caption,[role="caption"]',table:'table,[role="table"]',quote:'blockquote,q',footnote:'[role~="doc-footnote"],[role~="doc-endnote"],[role~="doc-footnotes"],[role~="doc-endnotes"],.footnotes,.endnotes'};
   const excluded=[reading.skipCode?'pre':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="complementary"],.baseline-indicator,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  const excludedNoHeader=[reading.skipCode?'pre':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'','',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="complementary"],.baseline-indicator,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
   /* A box whose class names it a footer (tagesschau "meldungsfooter": tags, "Dieses Thema im Programm", share buttons) is a page footer too, and a box named banner
      ("translation-banner": MDN "This content was automatically translated ... View in English") is a notice around the text, not text. Only a box that cannot be the
      article itself: never html/body/main/article, and never one that holds the main text or a first-level heading (layout classes such as "page-with-footer" on a wrapper,
@@ -44,6 +45,8 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     if(!e)return false;
     if(visibility.has(e))return visibility.get(e);
     let value=!e.matches(excluded);
+    /* An article's own <header> (headline, standfirst, byline: heise, The Guardian) is part of the text; only page headers and banners are left out. */
+    if(!value&&reading.skipHeaders!==false&&e.localName==='header'&&!e.matches(excludedNoHeader)&&closest(parent(e),'article'))value=true;
     if(value&&(reading.skipFooters!==false&&namedBox(e,FOOTER_CLASS)||namedBox(e,BANNER_CLASS)))value=false;
     if(value){
       const s=getComputedStyle(e);
@@ -144,10 +147,15 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   }
   // A wrapper with its own text owns its descendants too. This preserves mixed
   // markup without duplicating parent/child text or dropping short paragraphs.
-  const nodes=[...candidates].filter(e=>{
+  let nodes=[...candidates].filter(e=>{
     for(let up=parent(e);up&&within(up);up=parent(up))if(candidates.has(up))return false;
     return !!text(e);
   }).sort((a,b)=>(order.get(a)||0)-(order.get(b)||0));
+  /* Picture captions BEFORE the first real text block (8+ words) are not read first: the lead image of an article (The Guardian) or of a Wikipedia page
+     ("Schematic of photosynthesis in plants ...") opened the reading. Captions further down stay where they are. */
+  {const captionOf=e=>!!closest(e,'figcaption,caption,[role="caption"],figure,.thumbcaption');
+   const firstText=nodes.findIndex(e=>!captionOf(e)&&text(e).split(/\s+/u).length>=8);
+   if(firstText>0)nodes=nodes.filter((e,i)=>i>=firstText||!captionOf(e));}
   const textNodes=nodes.map(textNodesFor);
   // Citation / footnote marks (A1, [12], sup.reference, doc-noteref, back arrows) stay in
   // the text and in the word offsets; only their [start,end) ranges in text(e) are
