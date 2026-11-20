@@ -1180,6 +1180,7 @@
     "tests/unified-runtime.mjs",
     "tests/unified-ui-contract.mjs",
     "tests/voice-arrival.cjs",
+    "tests/war-closure.test.mjs",
     "tests/webapp-browser.mjs",
     "tests/webapp-file-switch.mjs",
     "tests/webapp-resume.mjs",
