@@ -3,6 +3,7 @@
    Web app build (same bar and voice list as the extension) -> own browser context over CDP. Opens the voice list with a real (trusted) click, then
    (1) a page script clicks a voice's download button (.click() and dispatchEvent): no download may start (no request to huggingface.co, no cancel button);
    (2) a real click on the same button starts it (request seen), then it is cancelled with a real click. Nothing audible.
+   (3) R6: the details of voices on a non-commercial base checkpoint say so (Thorsten high/Kerstin low), the default Thorsten medium does not.
    node tests/webapp-voice-trusted.mjs [--out <dir>] [--skip-build]     CDP_URL (default http://127.0.0.1:9444). Exit 1 on any FAIL. */
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
@@ -45,6 +46,18 @@ try {
   const real = {requests: hf.length, cancel: await page.locator(rowSel + ' [data-act=dlx]').count()};
   check(real.requests > 0 || real.cancel > 0, `ein echter Klick startet den Download weiter (${JSON.stringify(real)})`);
   if (real.cancel) await page.locator(rowSel + ' [data-act=dlx]').first().click().catch(() => {});
+  // R6: voices on a non-commercial base checkpoint say so in their details (title of the voice cell), others do not
+  const more = page.locator('[data-notable-reader-surface] .vp-more');
+  if (await more.count() && /alle|all/i.test(await more.first().textContent())) await more.first().click();
+  await page.waitForTimeout(500);
+  const tips = await page.evaluate(() => Object.fromEntries([...document.querySelector('[data-notable-reader-surface]').shadowRoot.querySelectorAll('.vp-opt')].map(o => [o.dataset.key, o.title])));
+  const pick = re => Object.entries(tips).find(([k]) => re.test(k))?.[1] || '';
+  const high = tips['piper:de_de-thorsten'] || pick(/thorsten-high/), medium = pick(/thorsten-medium$/), kerstin = pick(/kerstin-low$/), low = pick(/thorsten-low$/);
+  console.log('high-tip', JSON.stringify(high.split('\n').slice(0, 4)));
+  check(/Trainingsdaten nur für nicht-kommerzielle Nutzung \(Blizzard 2013 Lessac\)/.test(high), 'Thorsten high nennt die nicht-kommerzielle Basis in den Details: ' + JSON.stringify(high.split('\n').slice(1, 3)));
+  check(!kerstin || /nicht-kommerzielle Nutzung \(RyanSpeech CC BY-NC-SA 4\.0\)/.test(kerstin), 'Kerstin low (falls gelistet) nennt RyanSpeech');
+  check(!low || /nicht-kommerzielle Nutzung \(RyanSpeech/.test(low), 'Thorsten low (falls gelistet) nennt RyanSpeech');
+  check(medium && !/nicht-kommerziell/.test(medium), 'Thorsten medium (Standardstimme) trägt keinen solchen Hinweis');
 } finally {
   await context.close(); await browser.close().catch(() => {}); server.close();
 }
