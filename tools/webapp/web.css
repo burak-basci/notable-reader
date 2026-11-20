@@ -1,0 +1,9 @@
+/* beNotable! Reader web app · page adapter (own code, MIT). reader.css is the extension's file view stylesheet; this file only removes what the web app has no use for. */
+.show-player{position:fixed;inset-inline-end:14px;inset-block-end:14px;z-index:5;min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink);font:600 13px/1.2 system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer}
+.show-player[hidden]{display:none}
+.show-player:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+html[data-edition=web] [data-premium-ui],html[data-edition=web] .app-header{display:none!important}
+/* no website header on top: the page starts with the two cards; the brand is a small line above the first heading */
+.shell{padding-top:28px}
+.import-pane .brand{margin:0 0 6px;font:700 12px/1.3 system-ui,sans-serif;letter-spacing:.04em;color:var(--accent)}
+@media(max-width:800px){.shell{padding-top:16px}}
