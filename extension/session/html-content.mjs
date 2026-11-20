@@ -26,7 +26,16 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   // Explicit semantic regions only; no text-pattern deletion. Keep the function
   // self-contained because capture/frame discovery serializes this same source.
   const semantic={header:'header,[role="banner"]',footer:'footer,[role="contentinfo"]',caption:'figcaption,caption,[role="caption"]',table:'table,[role="table"]',quote:'blockquote,q',footnote:'[role~="doc-footnote"],[role~="doc-endnote"],[role~="doc-footnotes"],[role~="doc-endnotes"],.footnotes,.endnotes'};
-  const excluded=[reading.skipCode?'pre':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  const excluded=[reading.skipCode?'pre':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,.baseline-indicator,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.infobox,.magnify,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  /* A box named banner ("translation-banner": MDN "This content was automatically translated ... View in English") is a notice around the text, not text. Only a box that cannot be the
+     article itself: never html/body/main/article, and never one that holds the main text or a first-level heading (a layout class on a wrapper such as
+     Wikipedia's "wmde-show-banner" on <body>). */
+  const BANNER_CLASS=/^banner$|-banner$/i;
+  const namedBox=(e,pattern)=>{
+    if(/^(?:HTML|BODY|MAIN|ARTICLE|HEADER|FOOTER)$/.test(e.tagName)||!e.classList?.length)return false;
+    if(![...e.classList].some(c=>pattern.test(c)))return false;
+    return !e.querySelector('h1,main,article,[role="main"]');
+  };
   const visibility=new WeakMap();
   // Geometry is not text eligibility: content-visibility:auto can skip layout
   // for loaded offscreen turns. Never force layout or alter the page's styles.
@@ -34,6 +43,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     if(!e)return false;
     if(visibility.has(e))return visibility.get(e);
     let value=!e.matches(excluded);
+    if(value&&namedBox(e,BANNER_CLASS))value=false;
     if(value){
       const s=getComputedStyle(e);
       // opacity 0 alone is how scroll-reveal scripts park text until it is scrolled to; it stays readable.
