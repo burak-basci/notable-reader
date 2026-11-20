@@ -1165,6 +1165,7 @@
     "tests/reading-skipcode-default.test.mjs",
     "tests/replay-finished-page.test.mjs",
     "tests/responsive-browser.cjs",
+    "tests/resume-points-tabs.test.mjs",
     "tests/run-unit.mjs",
     "tests/speed-limit.test.mjs",
     "tests/test_file_facade.mjs",
