@@ -12,7 +12,7 @@ export function cleanSemanticRanges(ranges,textLength) {
 }
 export const READING_FILTER_KEYS = Object.freeze(['skipCode','skipMath','skipLinks','skipHeaders','skipFooters','skipCaptions','skipTables','skipQuotes','skipFootnotes','skipCitations']);
 export const READING_BOOLEAN_KEYS = Object.freeze(['quickActions',...READING_FILTER_KEYS]);
-export const READING_DEFAULTS = Object.freeze({dictionary: [], quickActions: false, skipCode: false, skipMath: false, skipLinks: false, skipHeaders: true, skipFooters: true, skipCaptions: false, skipTables: false, skipQuotes: false, skipFootnotes: false, skipCitations: true, commaPause: 0, sentencePause: 0, paragraphPause: 0});
+export const READING_DEFAULTS = Object.freeze({dictionary: [], quickActions: false, skipCode: true, skipMath: false, skipLinks: false, skipHeaders: true, skipFooters: true, skipCaptions: false, skipTables: false, skipQuotes: false, skipFootnotes: false, skipCitations: true, commaPause: 0, sentencePause: 0, paragraphPause: 0});
 /* The sleep timer was removed in 2.5.0. Settings saved or exported earlier may still carry sleepMinutes: accepted silently, never kept. */
 const RETIRED_READING_KEYS = Object.freeze(['sleepMinutes']);
 const obj = v => !!v && typeof v === 'object' && !Array.isArray(v);
