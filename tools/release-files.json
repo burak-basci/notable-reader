@@ -1153,6 +1153,7 @@
     "tests/fixtures/zip-bomb.epub",
     "tests/html-content-text.cjs",
     "tests/language-browser.cjs",
+    "tests/license-notices.test.mjs",
     "tests/mobile-import-browser.cjs",
     "tests/model-storage-browser.cjs",
     "tests/model-storage-error.mjs",
