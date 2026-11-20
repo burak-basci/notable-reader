@@ -215,15 +215,7 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
   // The existing status slot reserves the indicator's space. Error details
   // live outside layout flow, so even long messages cannot move the controls.
   let restartPending=null;
-  let testErrorTriggered=false;
   $('.restart').addEventListener('click',()=>{clearTimeout(restartPending?.timer);restartPending={signature:[latest.statusKey,latest.playing===true,latest.paused===true].join('|'),timer:setTimeout(()=>{restartPending=null;update(latest);},4000)};update(latest);
-    // Trigger test error on restart to verify error button works
-    if(!testErrorTriggered){
-      testErrorTriggered=true;
-      // Simulate an error status directly
-      const testErrorMsg={...latest,statusKind:'error',statusKey:'voice_download_failed',status:{code:'voice_download_failed',message:'Test error: Simulated voice download failure. This is a test to verify the error button works.'},statusParams:{code:'voice_download_failed',message:'Test error: Simulated voice download failure. This is a test to verify the error button works.'}};
-      update(testErrorMsg);
-    }
   });
   const status=$('.status'),statusSlot=document.createElement('span');statusSlot.className='status-slot';status.before(statusSlot);statusSlot.append(status);
   const errorTrigger=document.createElement('button');errorTrigger.type='button';errorTrigger.className='error-trigger';errorTrigger.hidden=true;errorTrigger.setAttribute('aria-haspopup','dialog');errorTrigger.setAttribute('aria-expanded','false');errorTrigger.setAttribute('aria-controls','reader-error-details');errorTrigger.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 10 18H2zM12 9v5m0 3v.01"/></svg><span class="error-trigger-text"></span>';statusSlot.append(errorTrigger);
@@ -587,6 +579,7 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
      const fixed=chapterUi.button.querySelector('.reader-fixed-label'),fixedKey=chapters.length||!count?'chapters':'sections';if(fixed&&fixed.dataset.i18n!==fixedKey){fixed.dataset.i18n=fixedKey;fixed.textContent=t(fixedKey);}}
     chapterSelect.disabled=!count;chapterSelect.value=chapters.length?'c:'+message.chapterIndex:'s:'+index;if(!chapterSelect.value)chapterSelect.value='none';chapterUi.setLabel(chapters.length?'chooseChapter':'chooseSection');chapterUi.render();if(!chapters.length&&count)chapterUi.button.title=t('noChapters')+' · '+t('section',{current:index+1,count});sharedSettings.syncChapters?.();
   };
+  let loadingSince=0,loadingTick=0;
   const update=(message,optimistic=false)=>{
     latest=message;if(!optimistic)prepare(message);else prepareRegional(message,true);staticLabels();sharedSettings.update(message);if(modeChoice&&(message.overlayMode===modeChoice.value||Number(message.preferenceVersion)>modeChoice.version||message.statusKind==='error'&&message.statusKey==='save_failed'))modeChoice=null;paintMode(modeChoice?.value||message.overlayMode||'expert');
     title(play,message.paused?'resume':message.loading===true?'loadingPause':message.playing?'pause':'play');
@@ -597,10 +590,17 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
     const signature=[message.statusKey,message.playing===true,message.paused===true].join('|');if(restartPending&&signature!==restartPending.signature){clearTimeout(restartPending.timer);restartPending=null;}
     const key=message.statusKey,translated=typeof key==='string'&&dictionary[locale][key]?t(key,message.statusParams||{}):null;
     const stateWord=message.statusKind==='error'?null:restartPending?'statusRestarts':key==='preparing'||message.loading===true||message.documentState?.state==='loading'?'statusLoads':message.paused===true?'statusPaused':message.playing===true?'statusReads':null;
-    const statusText=stateWord?t(stateWord):translated||String(message.status||t('ready'));
+    /* Waiting is shown honestly (round 2, 20.11.2026): a voice download says its percent ("Lädt 45 %") instead of a bare "Lädt …"; any other wait counts its
+       seconds from the 2nd on ("Lädt … 4 s"), so a slow start never looks frozen; the tooltip names what happens (download with MB, voice starting, sentence
+       being computed). Nothing else of the header changes. */
+    const loadingWord=stateWord==='statusLoads';if(!loadingWord){loadingSince=0;clearTimeout(loadingTick);}else if(!loadingSince)loadingSince=Date.now();
+    const percent=Number(message.statusParams?.percent),downloading=loadingWord&&key==='voice_downloading'&&Number.isFinite(percent);
+    const statusText=downloading?t('model_downloading',{percent:Math.round(percent)}):stateWord?t(stateWord):translated||String(message.status||t('ready'));
     const hasError=message.statusKind==='error',errorMessage=hasError?translated||t('error')+': '+String(message.status||''):'';
+    const reason=loadingWord?(translated&&translated!==statusText?translated:t(message.playing===true||message.elapsedSeconds>0?'computing':'preparing')):'';
     /* The full error text stands once in the tree (details dialog) and is announced once; the trigger says it short. */
-    status.textContent=hasError?'':statusText;status.title=hasError?'':statusText;
+    status.textContent=hasError?'':statusText;status.title=hasError?'':reason||statusText;
+    if(loadingWord&&!downloading&&!hasError){const tick=()=>{if(!loadingSince||latest!==message)return;const s=Math.floor((Date.now()-loadingSince)/1000);if(s>=2)status.textContent=t('statusLoadsFor',{s});loadingTick=setTimeout(tick,1000-(Date.now()-loadingSince)%1000);};clearTimeout(loadingTick);tick();}
     if(!hasError){const focusInside=shadow.activeElement===errorTrigger||error.contains(shadow.activeElement);closeError(false);if(focusInside)play.focus({preventScroll:true});}
     statusSlot.toggleAttribute('data-error',hasError);errorTrigger.hidden=!hasError;
     errorButtonExpert.hidden=!hasError;errorButtonLight.hidden=!hasError;

@@ -1191,7 +1191,8 @@
       "popupStartReading": "Vorlesen starten",
       "popupStartReadingHint": "Die Leiste ist offen. Das Vorlesen beginnt an der markierten Stelle.",
       "sidebarOpenBar": "Leiste im Dokument öffnen",
-      "export_no_voice": "Für eine Audiodatei fehlt eine geladene Stimme dieser Sprache. Lade sie in der Stimmenauswahl."
+      "export_no_voice": "Für eine Audiodatei fehlt eine geladene Stimme dieser Sprache. Lade sie in der Stimmenauswahl.",
+      "statusLoadsFor": "Lädt … {s} s"
     },
     "en": {
       "reader": "Read aloud",
@@ -2357,7 +2358,8 @@
       "popupStartReading": "Start reading",
       "popupStartReadingHint": "The bar is open. Reading starts at the marked place.",
       "sidebarOpenBar": "Open the bar in the document",
-      "export_no_voice": "An audio file needs a downloaded voice for this language. Get one in the voice picker."
+      "export_no_voice": "An audio file needs a downloaded voice for this language. Get one in the voice picker.",
+      "statusLoadsFor": "Loading… {s} s"
     },
     "fr": {
       "reader": "Lecture audio",
@@ -3523,7 +3525,8 @@
       "popupStartReading": "Lancer la lecture",
       "popupStartReadingHint": "La barre est ouverte. La lecture commence à l'endroit marqué.",
       "sidebarOpenBar": "Ouvrir la barre dans le document",
-      "export_no_voice": "Un fichier audio nécessite une voix téléchargée pour cette langue. Obtenez-en une dans le choix des voix."
+      "export_no_voice": "Un fichier audio nécessite une voix téléchargée pour cette langue. Obtenez-en une dans le choix des voix.",
+      "statusLoadsFor": "Chargement… {s} s"
     },
     "es": {
       "reader": "Leer en voz alta",
@@ -4689,7 +4692,8 @@
       "popupStartReading": "Empezar a leer",
       "popupStartReadingHint": "La barra está abierta. La lectura empieza en el punto marcado.",
       "sidebarOpenBar": "Abrir la barra en el documento",
-      "export_no_voice": "Un archivo de audio necesita una voz descargada para este idioma. Consíguela en el selector de voces."
+      "export_no_voice": "Un archivo de audio necesita una voz descargada para este idioma. Consíguela en el selector de voces.",
+      "statusLoadsFor": "Cargando… {s} s"
     },
     "it": {
       "reader": "Lettura ad alta voce",
@@ -5855,7 +5859,8 @@
       "popupStartReading": "Avvia la lettura",
       "popupStartReadingHint": "La barra è aperta. La lettura parte dal punto segnato.",
       "sidebarOpenBar": "Apri la barra nel documento",
-      "export_no_voice": "Un file audio richiede una voce scaricata per questa lingua. Scaricala nella scelta delle voci."
+      "export_no_voice": "Un file audio richiede una voce scaricata per questa lingua. Scaricala nella scelta delle voci.",
+      "statusLoadsFor": "Caricamento… {s} s"
     },
     "pt": {
       "reader": "Leitura em voz alta",
@@ -7021,7 +7026,8 @@
       "popupStartReading": "Começar a ler",
       "popupStartReadingHint": "A barra está aberta. A leitura começa no ponto marcado.",
       "sidebarOpenBar": "Abrir a barra no documento",
-      "export_no_voice": "Um ficheiro de áudio precisa de uma voz transferida para este idioma. Obtém-na na escolha de vozes."
+      "export_no_voice": "Um ficheiro de áudio precisa de uma voz transferida para este idioma. Obtém-na na escolha de vozes.",
+      "statusLoadsFor": "A carregar… {s} s"
     }
   },
   "formatLocales": [
