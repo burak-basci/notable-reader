@@ -116,7 +116,8 @@ async function downloadOnce(cache,file,{signal,onProgress=()=>{},messages={},sta
   try{await cache.put(file.url,new Response(body,{headers:stored}));}
   catch(error){
    if(failure)throw failure;
-   if(error?.name==='QuotaExceededError')throw coded(text.quota,'quota');
+   /* Chromium private windows refuse files over ~300 MB in the Cache API with 'UnknownError: Unexpected internal error' (measured): it is the storage limit */
+   if(error?.name==='QuotaExceededError'||error?.name==='UnknownError')throw coded(text.quota,'quota');
    throw error;
   }
   return true;
