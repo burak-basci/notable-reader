@@ -138,7 +138,7 @@ async function exportFile(p, format, mobile, dir) {
   await p.locator('.download-menu .dlm-format', {hasText: new RegExp('^\\s*' + format, 'i')}).first().click();
   const t0 = Date.now(), dl = p.waitForEvent('download', {timeout: 240000});
   await p.locator('.download-menu .dlm-start').first().click();
-  const d = await dl, name = d.suggestedFilename(), path = join(dir, name); await d.saveAs(path);
+  const d = await dl, name = d.suggestedFilename(), path = join(dir, name); const bad = await d.failure(); if (bad) throw new Error('Download fehlgeschlagen: ' + bad); await d.saveAs(path);
   return {name, path, ms: Date.now() - t0, bytes: statSync(path).size};
 }
 function audioFacts(path) {
@@ -182,7 +182,7 @@ async function scenario(browser, def) {
         await p.evaluate(() => navigator.serviceWorker.ready); await p.waitForTimeout(1500); await p.reload({waitUntil: 'load'});
         const iso = await p.evaluate(() => crossOriginIsolated); must(iso === true, 'nicht isoliert nach Neuladen'); return {isolated: iso};
       });
-      await step('Offline-Huelle im Cache', async () => { const n = await p.evaluate(async () => (await (await caches.open((await caches.keys()).find(k => /^notable-reader-/.test(k)))).keys()).length); must(n > 300, 'nur ' + n + ' Eintraege'); return {cached: n}; });
+      await step('Offline-Huelle im Cache', async () => { let n = 0; for (let i = 0; i < 40 && n <= 300; i++) { n = await p.evaluate(async () => { const k = (await caches.keys()).find(k => /^notable-reader-\d/.test(k)); return k ? (await (await caches.open(k)).keys()).length : 0; }); if (n <= 300) await p.waitForTimeout(1000); } must(n > 300, 'nur ' + n + ' Eintraege'); return {cached: n}; });
     } else {
       await step('Kein Fehler in der Seitenkonsole beim Start', async () => { must(!errors.length && !failed.length, JSON.stringify({errors, failed}).slice(0, 300)); });
       await step('Text einfuegen, Text oeffnen (DE)', async () => { await openText(p, DE, mobile); await shot(p, 'text-de'); });
