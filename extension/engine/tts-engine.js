@@ -200,7 +200,10 @@ export class TtsEngine extends EventTarget{
   const need=(this.rateHint||1)*(this.rtf?.get(model.id)??this.rtfRaw?.get(model.id)??RTF_PRIOR[model.id]??0.6);
   /* 4+ cores (was 8+): measured 15.11.2026 on four cores, Kokoro q8 (threads barely help it): one worker with 4 threads RTF 0.875, a pair with 2 threads each 0.585
      together; Thorsten high scales with threads (0.38 alone) and stays single up to 2x. */
-  return need>0.85&&model.ramMB<=500&&caps.memoryGB>=8&&(caps.cores||1)>=4?2:1;
+  /* The large model (Kokoro FP32, 1.1 GB per worker) gets its pair too on 8+ cores and 8+ GB (measured 20.11.2026 with the isolated engine host, 16 cores: one
+     worker with 4 threads RTF 0.52 = gaps at 2x, a pair 2 x 4 threads 0.36 together). Below that it stays one worker (memory). */
+  const fits=model.ramMB<=500||model.ramMB<=1200&&(caps.cores||1)>=8;
+  return need>0.85&&fits&&caps.memoryGB>=8&&(caps.cores||1)>=4?2:1;
  }
  /* WASM threads of one worker: all of them for a single worker, a quarter of the cores each for a pair (2 x 4 threads on 16 cores, 2 x 2 on 8). */
  /* The first worker carries the first section (time to the first sound) and always gets all threads;
@@ -239,9 +242,9 @@ export class TtsEngine extends EventTarget{
     of its model busy, all of them with work nobody listens to yet (background pieces, the open bar's start) and none of them free soon. Such a piece can not
     be interrupted and takes seconds with a slow voice (measured 15.11.2026, Kokoro q8 on four cores: 5 words = 2.8-4.4 s next to the second worker; the first
     step of a guided explanation waited for it: 3.4 s or 5.8 s depending on the moment of the click). The worker is re-created for the start (a model load:
-    q8 0.5 s) with all threads; the background jobs go back into the queue with the pieces they have. Threaded engines (Chromium) only. */
+    q8 0.5 s) with all threads; the background jobs go back into the queue with the pieces they have. */
  preempt(job){
-  if(this.pool!=='auto'||!this.caps?.threads||!job.first||(TIER_RANK[job.tier]??0)!==0||job.join||job.hold)return null;
+  if(this.pool!=='auto'||!job.first||(TIER_RANK[job.tier]??0)!==0||job.join||job.hold)return null;
   const mine=this.slots.filter(slot=>!slot.dead&&(slot.modelId===job.modelId||slot.starting===job.modelId));
   if(!mine.length||mine.some(slot=>!slot.busy||slot.warming||!slot.modelId))return null;      // a free, warming or loading worker of this model comes sooner
   if(mine.some(slot=>this.remainingMs(slot)<=(slot.initMs||800)+300))return null;      // one is free about as soon as a new one could load the model
@@ -249,8 +252,11 @@ export class TtsEngine extends EventTarget{
   const free=mine.filter(slot=>{const other=slot.job;return other&&(other.join||other.hold)&&!other.urgent?.()&&!(!other.join&&other.delivered);});
   if(free.length!==mine.length)return null;      // a worker runs needed audio (or a chain that can not be resumed): never taken
   /* all of them: the first piece runs on ONE worker with all threads, nothing next to it (measured: with the second worker still running its background piece the
-     first 5 words took 2.7 s instead of 2.0 s); the pair forms again when the next pieces need it */
-  for(const victim of free){victim.preempted=true;this.slots=this.slots.filter(slot=>slot!==victim);this.dropSlot(victim);}
+     first 5 words took 2.7 s instead of 2.0 s); the pair forms again when the next pieces need it.
+     Without WASM threads (engine host not isolated, Firefox) each worker has its own core, so only the worker that would be free last is taken: measured 20.11.2026,
+     Kokoro FP32 on one thread, Play 2 s after the bar opened waited 14.7 s behind two look-ahead sentences of the open bar (a sentence takes 1.4-2x its length). */
+  const victims=this.caps?.threads?free:[free.reduce((a,b)=>this.remainingMs(b)>this.remainingMs(a)?b:a)];
+  for(const victim of victims){victim.preempted=true;this.slots=this.slots.filter(slot=>slot!==victim);this.dropSlot(victim);}
   this.preemptions=(this.preemptions||0)+1;
   return this.newSlot(job.modelId,false);
  }

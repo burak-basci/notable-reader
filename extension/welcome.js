@@ -21,12 +21,20 @@ await catalogReady;
 }
 
 /* The voice that reads first in a language is the one the first Play downloads: English is preset to Bella (config DEFAULT_ENGLISH_VOICE),
-   every other language follows the device rule of the bar (voice-picker deviceStartVoice; this page has the same isolation as the engine host,
-   so crossOriginIsolated tells whether the engine has threads). Before 2.5.1 this page named Thorsten high (114 MB) while Play loaded medium (63 MB). */
+   every other language follows the device rule of the bar (voice-picker deviceStartVoice). Whether the engine has threads is the engine host's answer:
+   since 2.5.3 only the host document is cross-origin isolated (platform/engine-isolation.mjs), this page is not. Asking creates the empty host document,
+   never a model load. Before 2.5.1 this page named Thorsten high (114 MB) while Play loaded medium (63 MB). */
+const engineCaps = await (async () => {
+  try {
+    const ask = (async () => { await api.runtime.sendMessage({t: 'ensureHost'}); return (await api.runtime.sendMessage({target: 'host', t: 'models'}))?.caps || null; })();
+    return await Promise.race([ask, new Promise(resolve => setTimeout(() => resolve(null), 3000))]);
+  } catch { return null; }
+})();
 function firstVoice(language) {
   const models = Object.values(MODELS);
   const preset = language === 'en' ? models.find(m => m.voiceURI === DEFAULT_ENGLISH_VOICE) : null;
-  const memory = navigator.deviceMemory, tier = recommendTier({memory, cores: navigator.hardwareConcurrency, threads: globalThis.crossOriginIsolated === true});
+  const memory = engineCaps?.memoryGB ?? navigator.deviceMemory, threads = engineCaps ? engineCaps.threads === true : globalThis.crossOriginIsolated === true;
+  const tier = recommendTier({memory, cores: engineCaps?.cores ?? navigator.hardwareConcurrency, threads});
   const model = preset || deviceStartVoice(models, language, {tier, memoryGB: memory});
   return model?.sample ? model : null;
 }

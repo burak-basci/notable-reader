@@ -14,6 +14,9 @@ import {handleInstalled, registerUninstallPage} from './lifecycle.mjs';
 import {t, errorText, setUiLanguage, uiLanguages, formatLocales, catalogReady} from './i18n.js';
 import {MODELS,modelByVoice} from './models/registry.js';
 import {ERROR_STATUS_KEYS} from './engine/error-keys.mjs';
+import {installEngineIsolation} from './platform/engine-isolation.mjs';
+// Before anything else: the engine host document (offscreen) is served cross-origin isolated, so its voice workers get WASM threads (platform/engine-isolation.mjs).
+installEngineIsolation(globalThis);
 
 // Cached results contain technical codes only, never document URLs or titles.
 const operations = new Map();
