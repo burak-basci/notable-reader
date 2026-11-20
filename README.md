@@ -1,40 +1,40 @@
-# Notable Reader
+# Notable Reader (beNotable! Reader)
 
-Artikel, Textauswahl und lokale Dokumente vorlesen. Kostenlose Basis, keine
-Registrierung, keine Werbung, keine Textkontingente. Die Web-App bietet kostenlose lokale Downloads. In der Erweiterung sind Downloads
-Premium: 2,99 € monatlich oder eine einzelne Unterstützung ab 100 € für Lifetime.
-Lesen bleibt kostenlos; ein Dokumentupload oder ein Pflichtkonto ist nicht nötig.
+Webseiten, PDFs und eigene Dokumente vorlesen lassen, mit Stimmen, die auf dem
+eigenen Gerät laufen. Alle Funktionen und Downloads sind kostenlos: kein Konto,
+keine Werbung, kein Textkontingent. Eine Unterstützung ist freiwillig und
+schaltet nichts frei.
 
 - **Web-App:** https://reader.benotable.de/app/
 - **Website und Downloads:** https://reader.benotable.de/
 - **Quellen:** https://github.com/burak-basci/notable-reader
-- **Premium kaufen / Zahlungen verwalten:** https://reader-premium.benotable.de/account
 - **Unterstützen:** https://buy.stripe.com/cNi7sM72dbaU3w6eY7aVa00
 
-## Was Version 2.4.0 kann
+## Was Version 2.5 kann
 
-- Ein kanonischer Quellstand für die bisherige Papier-/Grün-Oberfläche, den großen 88px-Startknopf und die vollständige Popup-/Fokussteuerung. Optional nutzt dieselbe Erweiterung den lokalen Nativecompanion mit installierten Stimmen/GPU; ohne ihn bleibt die Browserengine verfügbar.
-- Browser-Erweiterung: Artikel und markierten Text über einen bewussten Klick
-  öffnen; eine kompakte Leiste mit Satzmarkierung, Pause/Weiterlesen, Sprüngen,
-  Stimmenauswahl, Lautstärke, Tempo von 0,5× bis 4× und Lesestellen.
-- Dokument-App: PDF mit Textebene und Seitenvorschau; passwortgeschützte PDF nach
-  Eingabe des Passworts; EPUB ohne DRM in Buchreihenfolge; DOCX-Absätze und
-  Tabellenzellen; TXT, Markdown als Klartext und HTML ohne aktive Inhalte.
-- Wortmarkierung in der Dokument-App, wenn die gewählte Systemstimme Wortgrenzen
-  meldet; sonst bleibt die aktuelle Textpassage markiert.
-- Verarbeitung der Dateien auf dem Gerät. Keine Dokumente an Notable Reader,
-  kein Pflichtkonto für das Lesen, keine Werbung oder Analysetracker.
-- Optionale lokale KI-Stimmen funktionieren auch ohne Systemstimmen: Deutsch
-  mit Piper Thorsten high und Englisch mit Kokoro82M FP32/Bella. Der ausdrücklich
-  angeklickte Modelldownload umfasst 113,9 MB beziehungsweise 326,1 MB, plus
-  einmalig ca. 30 MB lokale Sprachmodule in der Web-App. Herkunft, Lizenzen und
-  Löschknopf sind direkt an der Downloadauswahl sichtbar.
-- System-/Browserstimmen. Standardmäßig werden nur Stimmen angeboten, die der
-  Browser als lokal meldet. Online-Stimmen erfordern bewusstes Einschalten.
+- Browser-Erweiterung (Chrome, Brave, Edge): Symbol anklicken, „Vorleseleiste
+  öffnen“, Play. Die Leiste am Text markiert das gesprochene Wort, scrollt mit,
+  springt per Klick auf ein Wort an diese Stelle und bietet Pause/Weiterlesen,
+  Abschnitte und Kapitel, Tempo von 0,5× bis 4×, Lautstärke bis 150 %, Klang
+  (Tonhöhe, Bass, Höhen), Sprechpausen, Lesezeichen und „Weiterlesen, wo du
+  aufgehört hast“.
+- Lokale KI-Stimmen: Der erste Play lädt die passende Stimme einmalig
+  (Deutsch Thorsten, Englisch Bella); danach liest der Reader offline. Weitere
+  Stimmen und Sprachen stehen in der Stimmenliste.
+- Dateiansicht: PDF mit Textebene und Originalseiten, PDFs aus dem Browser,
+  passwortgeschützte PDF nach Eingabe des Passworts, EPUB ohne DRM in
+  Buchreihenfolge, DOCX, TXT, Markdown, HTML sowie Bilder und Scans mit lokaler
+  Texterkennung.
+- Herunterladen: Seite, Auswahl oder ganzes Dokument als MP3, WAV, PDF oder
+  HTML.
+- Zusammenfassen: geführte Tour durch die Kernsätze einer Seite, optional mit
+  einem lokalen KI-Modell (einmaliger Download).
+- Oberfläche in sechs Sprachen (Deutsch, Englisch, Französisch, Spanisch,
+  Italienisch, Portugiesisch).
+- Verarbeitung auf dem Gerät: keine Dokumente an Notable Reader, kein
+  Analysetracking. Modelldownloads starten nur nach einem Klick.
 - Lokaler Hörbuch-Export: vollständige geöffnete Bücher und Texte als MP3 oder
   WAV speichern. Die Audioerzeugung und Kodierung laufen auf dem eigenen Gerät.
-  Der kompakte Player lässt Import, Stimmen und erweiterte Optionen getrennt
-  öffnen; GitHub und Hörbuchaktion sind direkt erreichbar.
 
 ## Bücher und Text als Hörbuch speichern
 
@@ -51,9 +51,9 @@ unabhängig von der Lesestelle. Er läuft mit Standardtempo 1×; Tempo und
 Lautstärke des Vorleseplayers verändern die gespeicherte Datei nicht.
 MP3 verwendet 64 kbit/s mono, WAV unkomprimiertes 16-Bit-PCM mono. Für WAV gilt
 die technische 4-GiB-Dateigrenze; MP3 ist für lange Bücher platzsparender.
-Auf der Website sind diese Exporte kostenlos. In der Erweiterung wird eine gültige,
-auf dem Gerät geprüfte Premium-Lizenz benötigt. Es gibt kein Wortkontingent. Die vorhandenen
-Sicherheitsgrenzen des Dateiimports gelten weiterhin.
+Die Exporte sind in Web-App und Erweiterung kostenlos. Es gibt kein
+Wortkontingent. Die vorhandenen Sicherheitsgrenzen des Dateiimports gelten
+weiterhin.
 
 Auf unterstützten Browsern lässt sich direkt in eine ausgewählte Datei
 schreiben. Sonst speichert der Browser Audio abschnittsweise im lokalen
@@ -122,9 +122,6 @@ Er benötigt separat installierte Linux-Voraussetzungen, lokale Modelle und den
 lokalen Browseranschluss. Er startet keine automatische Wiedergabe. Native
 Installation, Grenzen und Lizenzen: [native/README.md](native/README.md).
 
-Für Premium greift die Erweiterung auf reader-premium.benotable.de zu.
-Lizenzprüfung und zufällige Gerätekennung enthalten keine Dokumenttexte oder
-Audiodaten. Aktivierungscodes und Lizenznachweise niemals veröffentlichen.
 Die Web-App kann auf unterstützten Geräten als PWA installiert werden; sie
 bleibt vom optionalen Nativecompanion unabhängig.
 
@@ -221,6 +218,8 @@ HTML- und EPUB-Dateien übernehmen lokal enthaltene PNG-/JPEG-/WebP-Abbildungen 
 
 Der gleiche Downloadknopf bietet HTML und eine gerasterte PDF-Fassung mit gewählter Darstellung. Diese bereinigte PDF ist keine originalgetreue Ausgabe mit durchsuchbarer Textebene. Ein Abbruch oder Fehler stellt kein unvollständiges Ergebnis bereit. Browser-Dateiwerkzeuge zeigen18 tatsächlich unterstützte Darstellungsfelder; die zusätzliche native Originalseitensteuerung unterstützt20. Nicht unterstützte Optionen werden nicht als wirkungslose Checkboxen angeboten.
 
-## Sichtbare Spendenwege in 2.3.3
+## Unterstützen
 
-Homepage, Web-App, Erweiterungs-Popup und Einstellungen bieten einen direkten Stripe-Spendenlink mit frei wählbarem Betrag. Eine einzelne Spende ab 100 € einschließlich genau 100 € gibt Premium auf Lebenszeit; kleinere Spenden werden nicht addiert. Lesen bleibt kostenlos, Webdownloads bleiben kostenlos. Die monatliche Premiumoption für Erweiterungsdownloads kostet weiterhin 2,99 €. Die gemeinsam gestaltete Playerleiste bleibt erhalten. Der Chrome-Web-Store-Vertrieb hat einen gesonderten Reviewstand; dieser Quellrelease nimmt keine Storeeinreichung vor.
+Homepage, Web-App, Erweiterungs-Popup und Einstellungen bieten einen direkten
+Stripe-Link für eine freiwillige Unterstützung mit frei wählbarem Betrag. Eine
+Zahlung schaltet keine Funktionen frei; alle Funktionen bleiben kostenlos.

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.5.1 (2026-11-20)
+
+- Reading speed 0.5x-4x everywhere (was up to 5x); a stored or imported 4.05-5x becomes 4x.
+- First run: the first Play after the voice download starts reading (it hung for 60 s and reported "Reading failed");
+  before the first Play the bar names the voice Play downloads; the welcome page names the real button
+  ("Open the reader bar") and the real download size, and plays the matching sample.
+- Reading starts at the text: no screen-reader-only labels or video player captions (tagesschau.de), no floated
+  info boxes (Wikipedia), the README on GitHub repository pages, Sphinx/Read the Docs links are read, and a cookie
+  dialog in its own frame (Sourcepoint, OneTrust, Usercentrics, ...) is never read as the page (spiegel.de).
+- "Heard" / "Remaining" follow the spoken word instead of jumping once per section.
+- English Kokoro voice: two workers on 8+ cores while the engine has no WASM threads (fewer pauses at 1x).
+- File view: the status line shows the opened document instead of "PDF is opening ... page 15 of 15".
+
 ## 2.5.0 (2026-11-16)
 
 - **Full i18n support** (6 locales: de, en, es, fr, it, pt) with `default_locale: "en"` and `__MSG_*` placeholders in manifest
