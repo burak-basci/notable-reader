@@ -26,7 +26,7 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
   // Explicit semantic regions only; no text-pattern deletion. Keep the function
   // self-contained because capture/frame discovery serializes this same source.
   const semantic={header:'header,[role="banner"]',footer:'footer,[role="contentinfo"]',caption:'figcaption,caption,[role="caption"]',table:'table,[role="table"]',quote:'blockquote,q',footnote:'[role~="doc-footnote"],[role~="doc-endnote"],[role~="doc-footnotes"],[role~="doc-endnotes"],.footnotes,.endnotes'};
-  const excluded=[reading.skipCode?'pre,code':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
+  const excluded=[reading.skipCode?'pre,code':'',reading.skipMath?'math,.katex,.MathJax,[role="math"]':'',reading.skipLinks?'a[href]':'',reading.skipHeaders!==false?semantic.header:'',reading.skipFooters!==false?semantic.footer:'',reading.skipCaptions?semantic.caption:'',reading.skipTables?semantic.table:'',reading.skipQuotes?semantic.quote:'',reading.skipFootnotes?semantic.footnote:'','nav,aside,[role="navigation"],[role="menu"],[role="menubar"],[aria-hidden="true"],[hidden],[inert],dialog,video,audio,[class~="mediaplayer"],[class~="player"],[class~="ardplayer"],.video-js,.jwplayer,.plyr,button,[role="button"],input,select,textarea,form,[role="textbox"],[contenteditable]:not([contenteditable="false"]),script,style,noscript,template,svg,canvas,annotation,annotation-xml,.mw-editsection,.mw-redirectedfrom,#contentSub,#contentSub2,#siteSub,.hatnote,.shortdescription,.navbox,.vertical-navbox,.ambox,.mw-jump-link,[data-notable-reader-ui],[data-notable-reader-surface],[data-notable-appearance],[data-notable-quick-actions],[data-reader-explain-panel],#brave-reader-inline,#brave-reader-inline-html'].filter(Boolean).join(',');
   const visibility=new WeakMap();
   // Geometry is not text eligibility: content-visibility:auto can skip layout
   // for loaded offscreen turns. Never force layout or alter the page's styles.
@@ -39,8 +39,12 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
       // opacity 0 alone is how scroll-reveal scripts park text until it is scrolled to; it stays readable.
       // Only an invisible element that also ignores the pointer (closed menus, tooltips) counts as hidden.
       const transparent=s.opacity==='0'&&s.pointerEvents==='none';
+      // Screen-reader-only text (the "visually-hidden" / "sr-only" pattern: absolutely positioned, clipped to 1px) is a label for assistive
+      // technology ("Player: video", "opens in a new window"), not page text a listener sees: reading it aloud starts an article with noise.
+      // Decided from the computed style only (no layout), so content-visibility:auto text stays eligible.
+      const srOnly=(s.position==='absolute'||s.position==='fixed')&&(/^rect\(\s*(0|1)px[ ,]+(0|1)px[ ,]+(0|1)px[ ,]+(0|1)px\s*\)$/.test(s.clip)||/^inset\((50|100)%\)$/.test(s.clipPath)||s.width==='1px'&&s.height==='1px'&&s.overflow==='hidden');
       value=s.display!=='none'&&s.visibility!=='hidden'&&s.visibility!=='collapse'&&!transparent
-        &&s.contentVisibility!=='hidden';
+        &&s.contentVisibility!=='hidden'&&!srOnly;
       if(value&&parent(e))value=visible(parent(e));
       const folded=closest(parent(e),'details:not([open])');
       if(value&&folded&&!folded.querySelector(':scope > summary')?.contains(e))value=false;

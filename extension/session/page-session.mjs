@@ -422,14 +422,19 @@ export class PageSession {
     let pick = entries.find(([id]) => stored.includes(id));
     /* Stage "Experimentell" is never chosen automatically: only an explicit choice (stored) selects such a voice. */
     const auto = entries.filter(([, r]) => !r.model?.experimental);
-    if (!pick) pick = auto.find(([, r]) => r.kind === 'neural' && this.installed.has(r.id)) || auto.find(([, r]) => r.kind === 'system') || auto.find(([, r]) => r.kind === 'neural' && r.model.tier === 'fast') || auto[0] || entries[0];
+    /* nothing on the device yet: the voice Play downloads (voiceChoices' recommendation for this device), so the bar names it and its size before the click */
+    const recommended = () => { try { const id = this.voiceChoices()?.primary; return id ? auto.find(([, r]) => r.kind === 'neural' && r.id === id) : null; } catch { return null; } };
+    if (!pick) pick = auto.find(([, r]) => r.kind === 'neural' && this.installed.has(r.id)) || auto.find(([, r]) => r.kind === 'system') || recommended() || auto.find(([, r]) => r.kind === 'neural' && r.model.tier === 'fast') || auto[0] || entries[0];
     this.voiceId = pick?.[0] || ''; this.voice = pick?.[1] || null;
     if (this.computeOffer()?.id !== this.offer?.id) this.buildCatalog();
   }
   /* -- pipeline -------------------------------------------------------------------------------------------------------------------------- */
   async ensurePipeline() {
     const kind = this.voice?.kind === 'neural' ? 'neural' : 'system';
-    if (this.pipeline && this.pipelineKind === kind) return this.pipeline;
+    /* The pipeline carries the voice it was loaded with. pickVoice() can switch this.voice without disposing it (the first Play downloads the
+       recommended voice through a pipeline built for the voice shown before; afterwards the new voice is picked): reusing that pipeline made the
+       host answer "model-missing" and the bar hung in "Loading" until the 60 s start timeout. A running download keeps its pipeline. */
+    if (this.pipeline && this.pipelineKind === kind && (this.download || this.dlRunning || this.pipelineVoiceKey === JSON.stringify(this.pipelineVoice()))) return this.pipeline;
     /* One build at a time: prewarm and Play can ask at the same moment (two pipelines would load the chunk list twice and one port would leak). */
     if (this.pipelineBuild) { await this.pipelineBuild.catch(() => {}); return this.ensurePipeline(); }
     const build = this.buildPipeline(kind); this.pipelineBuild = build;
@@ -442,7 +447,7 @@ export class PageSession {
       const port = api.runtime.connect({name: PIPE_PORT});
       this.pipeline = new RemotePipeline({port});
     } else this.pipeline = new SpeechPipeline();
-    this.pipelineKind = kind;
+    this.pipelineKind = kind; this.pipelineVoiceKey = JSON.stringify(this.pipelineVoice());
     const pipeline=this.pipeline;
     for (const type of ['state', 'timings', 'progress', 'download', 'word']) this.pipeline.addEventListener(type, e => {if(this.pipeline===pipeline)this.onPipeline(type,e.detail);});
     this.pipeline.addEventListener('computing', () => { if(this.pipeline!==pipeline)return;this.computing = true; this.changed(); });      // slower-than-real-time voice (stage "Experimentell"): status "Berechnung laeuft, Wiedergabe startet gleich" while the state is loading
@@ -474,6 +479,10 @@ export class PageSession {
       if (['playing', 'paused', 'ended', 'preempted'].includes(d.state) || d.state === 'error' && d.code !== 'model-missing') { this.starting = false; clearTimeout(this.startTimer); }
       this.state = d.state; if(d.state==='playing')void this.readingHistory?.heard(this.historyPosition()); this.lastError = d.state === 'error' ? (GPU_STATUS[d.code] || d.code === 'host-failed' && (this.failureKey(d.reason) || (this.offlineMissingModel() ? 'offline_download' : '')) || errorKey(d.code) || d.code || 'error') : '';
       if (d.state === 'error' && d.code === 'model-missing') this.lastError = '';
+      if (d.state === 'error' && d.code === 'model-missing' && this.starting && !this.download && !this.dlRunning && !this.modelMissingRetry) {
+        this.modelMissingRetry = true; const at = this.position; this.disposePipeline({preserveIntent: true}); this.state = 'paused'; this.changed(); void this.play(at.chunk, at.word); return;
+      }
+      if (d.state === 'playing') this.modelMissingRetry = false;
       if (d.state === 'ended') { void this.checkpointReadingHistory(true); this.options.onEnded?.(); if(this.chapterRecipe&&!this.readScope)void this.continueChapter(); this.highlight.clear(); void this.resume.forget(this.fingerprint); }
       if (['paused', 'idle', 'ended', 'error', 'preempted'].includes(d.state)) void this.savePosition(true);
       if (this.rescanPending && !['playing', 'loading'].includes(this.state) && !this.busy) this.rescan();
