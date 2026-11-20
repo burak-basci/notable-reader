@@ -50,7 +50,7 @@ export function mountPlayerSurface({mount,variant='overlay',settingsMode='popove
       ['volumeUp','ArrowUp','Sound','kbVolumeUp'],['volumeDown','ArrowDown','Sound','kbVolumeDown'],['mute','KeyM','Sound','kbMute'],['speedDown','Comma','Sound','kbSpeedDown'],['speedUp','Period','Sound','kbSpeedUp'],
       ['voiceMenu','KeyN','Voice','kbVoiceMenu'],['voicePrev','Digit1','Voice','kbVoicePrev'],['voiceNext','Digit2','Voice','kbVoiceNext'],['languagePrev','Digit3','Voice','kbLanguagePrev'],['languageNext','Digit4','Voice','kbLanguageNext'],
       ['theme','KeyD','View','kbTheme'],['focus','KeyF','View','kbFocus'],['follow','KeyW','View','kbFollow'],['clickSeek','KeyC','View','kbClickSeek'],
-      ['settings','KeyE','Dialogs','kbSettings'],['uiLanguage','KeyU','Dialogs','kbUiLanguage'],['export','KeyX','Dialogs','kbExport'],['openFile','KeyO','Dialogs','kbOpenFile','file'],['help','KeyH','Dialogs','kbHelp'],['close','KeyQ','Dialogs','kbClose']
+      ['settings','KeyE','Dialogs','kbSettings'],['uiLanguage','KeyU','Dialogs','kbUiLanguage'],['export','KeyX','Dialogs','kbExport'],['focusBar','KeyB','Dialogs','kbFocusBar'],['openFile','KeyO','Dialogs','kbOpenFile','file'],['help','KeyH','Dialogs','kbHelp'],['close','KeyQ','Dialogs','kbClose']
     ];
     const GROUPS=[['Playback','kbGroupPlayback'],['Navigation','kbGroupNavigation'],['Sound','kbGroupSound'],['Voice','kbGroupVoice'],['View','kbGroupView'],['Dialogs','kbGroupDialogs']];
     const REPEAT=new Set(['volumeUp','volumeDown','speedDown','speedUp','seekBack','seekForward','previousSection','nextSection']);
@@ -206,7 +206,9 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
   // paintBuffer sets the segments as one gradient, seekFill sets the played part. Both are plain CSS variables on the slider.
   const seekFill=fraction=>{const pct=(Math.max(0,Math.min(1,Number(fraction)||0))*100).toFixed(2)+'%';seek.style.setProperty('--seek-played','linear-gradient(to right,var(--reader-accent) 0 '+pct+',transparent '+pct+')');};
   const paintBuffer=ranges=>{const list=Array.isArray(ranges)?ranges.filter(r=>Array.isArray(r)&&r[1]>r[0]):[],signature=list.map(r=>r.join(':')).join(',');if(seek.dataset.bufferSignature===signature)return;seek.dataset.bufferSignature=signature;seek.dataset.buffered=String(list.length);if(!list.length){seek.style.removeProperty('--seek-buffered');return;}const c='color-mix(in srgb,var(--reader-accent) 42%,transparent)',pct=v=>(Math.max(0,Math.min(1,v))*100).toFixed(2)+'%';seek.style.setProperty('--seek-buffered','linear-gradient(to right,'+list.flatMap(([a,b])=>['transparent '+pct(a),c+' '+pct(a),c+' '+pct(b),'transparent '+pct(b)]).join(',')+')');};
-  const paintSeek=fraction=>{seek.value=String(fraction*1000);seekFill(fraction);seek.setAttribute('aria-valuetext',formats.number(fraction*100,formatPrefs,{maximumFractionDigits:2})+' %');if(Number.isFinite(latest.totalSeconds)){const elapsed=latest.totalSeconds*fraction;$('.elapsed').textContent=formats.duration(elapsed,formatPrefs);$('.remaining').textContent=formats.duration(Math.max(0,latest.totalSeconds-elapsed),formatPrefs);}};
+  /* the timeline's value for screen readers: "1:23 von 3:40" (the percentage only while the total is unknown) */
+  const seekText=fraction=>{const total=latest?.totalSeconds;return Number.isFinite(total)&&total>0?t('seekValue',{elapsed:formats.duration(total*fraction,formatPrefs),total:formats.duration(total,formatPrefs)}):formats.number(Math.round(fraction*100),formatPrefs)+' %';};
+  const paintSeek=fraction=>{seek.value=String(fraction*1000);seekFill(fraction);seek.setAttribute('aria-valuetext',seekText(fraction));if(Number.isFinite(latest.totalSeconds)){const elapsed=latest.totalSeconds*fraction;$('.elapsed').textContent=formats.duration(elapsed,formatPrefs);$('.remaining').textContent=formats.duration(Math.max(0,latest.totalSeconds-elapsed),formatPrefs);}};
   const commitSeek=()=>{if(seek.disabled||!seekDirty)return;seekDirty=false;seeking=false;const fraction=Math.max(0,Math.min(1,Number(seek.value)/1000));seekPending={fraction,expires:Date.now()+6000};clearTimeout(seekTimer);seekTimer=setTimeout(()=>{seekPending=null;update(latest);},6000);paintSeek(fraction);send('seekProgress',fraction);};
   listen(seek,'pointerdown',()=>{seeking=true;seekDirty=false;});
   listen(seek,'input',()=>{if(seek.disabled)return;seekDirty=true;paintSeek(Number(seek.value)/1000);});
@@ -278,8 +280,9 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
   const paintOffer=data=>{
     card.setAttribute('role','dialog');card.setAttribute('aria-labelledby','voice-card-title');
     card.removeAttribute('aria-label');
-    cardTitle.textContent=t(data.reason==='better'?'voice_card_better':'voice_card_none');
-    cardGet.textContent=t('voice_card_get',{name:data.primary.name,mb:data.primary.mb});
+    const slow=data.reason==='slow';      // this device computes the current voice slower than it speaks: the card offers a faster one and asks
+    cardTitle.textContent=t(slow?'voice_card_slow':data.reason==='better'?'voice_card_better':'voice_card_none');
+    cardGet.textContent=slow&&data.primary.installed?t('voice_card_use',{name:data.primary.name}):t('voice_card_get',{name:data.primary.name,mb:data.primary.mb});
     cardGet.dataset.id=data.primary.id;
     cardSmaller.hidden=!data.smaller;
     if(data.smaller){
@@ -287,9 +290,9 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
       cardSmaller.textContent=label;cardSmaller.dataset.id=data.smaller.id;
       cardSmaller.title=data.smaller.name+' · '+label;
     }
-    cardSample.hidden=!data.primary.sample;paintSample();cardKeep.hidden=data.reason!=='better';
+    cardSample.hidden=!data.primary.sample;paintSample();cardKeep.hidden=data.reason!=='better'&&!slow;
     cardKeep.textContent=t('voice_card_keep');
-    cardPart('note').textContent=t('voice_card_note');title(cardClose,'closeMessage');
+    cardPart('note').textContent=t(slow?'voice_card_slow_note':'voice_card_note');title(cardClose,'closeMessage');
   };
   /* The running voice download is ONE ring around the voice button, filled clockwise from twelve o'clock
      (owner request: no panel, no second bar). Percent and MB also stay in the bar's status line;
@@ -581,13 +584,15 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
      const fixed=chapterUi.button.querySelector('.reader-fixed-label'),fixedKey=chapters.length||!count?'chapters':'sections';if(fixed&&fixed.dataset.i18n!==fixedKey){fixed.dataset.i18n=fixedKey;fixed.textContent=t(fixedKey);}}
     chapterSelect.disabled=!count;chapterSelect.value=chapters.length?'c:'+message.chapterIndex:'s:'+index;if(!chapterSelect.value)chapterSelect.value='none';chapterUi.setLabel(chapters.length?'chooseChapter':'chooseSection');chapterUi.render();if(!chapters.length&&count)chapterUi.button.title=t('noChapters')+' · '+t('section',{current:index+1,count});sharedSettings.syncChapters?.();
   };
-  let loadingSince=0,loadingTick=0;
+  let loadingSince=0,loadingTick=0,loadSpoken=0;      // loadSpoken: the wait that was announced to screen readers (once per wait, from its 2nd second)
   const update=(message,optimistic=false)=>{
     latest=message;if(!optimistic)prepare(message);else prepareRegional(message,true);staticLabels();sharedSettings.update(message);if(modeChoice&&(message.overlayMode===modeChoice.value||Number(message.preferenceVersion)>modeChoice.version||message.statusKind==='error'&&message.statusKey==='save_failed'))modeChoice=null;paintMode(modeChoice?.value||message.overlayMode||'expert');
     title(play,message.paused?'resume':message.loading===true?'loadingPause':message.playing?'pause':'play');
+    /* screen readers: ONE stable name with the state as aria-pressed (WCAG 4.1.2; the tooltip keeps naming the next action: Pause / Weiter vorlesen) */
+    {const reading=message.paused!==true&&(message.playing===true||message.loading===true);play.setAttribute('aria-label',t('play'));if(play.getAttribute('aria-pressed')!==String(reading))play.setAttribute('aria-pressed',String(reading));}
     const count=Number.isInteger(message.sectionCount)&&message.sectionCount>0?message.sectionCount:0,index=Number.isInteger(message.sectionIndex)?message.sectionIndex:0;
     const can=message.controls||{};previous.disabled=!count||(typeof can.canPreviousSection==='boolean'?!can.canPreviousSection:index<=0);next.disabled=!count||(typeof can.canNextSection==='boolean'?!can.canNextSection:index>=count-1);updateChapters(message,index,count);section.title=count?t('section',{current:Math.min(count,index+1),count}):'';
-    const fraction=message.progressFraction;seek.disabled=!count||!Number.isFinite(fraction)||fraction<0||fraction>1;if(seek.disabled)seek.value='0';else if(!seeking&&!seekDirty){if(seekPending&&(Math.abs(fraction-seekPending.fraction)<.0001||Date.now()>=seekPending.expires)){seekPending=null;clearTimeout(seekTimer);}seek.value=String((seekPending?.fraction??fraction)*1000);}seek.setAttribute('aria-valuetext',!seek.disabled?formats.number(Math.round(fraction*100),formatPrefs)+' %':t('unknownDuration'));seekFill(seek.disabled?0:Number(seek.value)/1000);
+    const fraction=message.progressFraction;seek.disabled=!count||!Number.isFinite(fraction)||fraction<0||fraction>1;if(seek.disabled)seek.value='0';else if(!seeking&&!seekDirty){if(seekPending&&(Math.abs(fraction-seekPending.fraction)<.0001||Date.now()>=seekPending.expires)){seekPending=null;clearTimeout(seekTimer);}seek.value=String((seekPending?.fraction??fraction)*1000);}seek.setAttribute('aria-valuetext',!seek.disabled?seekText(fraction):t('unknownDuration'));seekFill(seek.disabled?0:Number(seek.value)/1000);
     $('.elapsed').textContent=duration(message.elapsedSeconds);$('.remaining').textContent=duration(message.remainingSeconds);timeline.title=message.remainingEstimated?t('estimated'):'';paintBuffer(seek.disabled?null:message.buffered);if(!seek.disabled&&(seeking||seekDirty||seekPending))paintSeek(seekPending&&!seeking&&!seekDirty?seekPending.fraction:Number(seek.value)/1000);
     const signature=[message.statusKey,message.playing===true,message.paused===true].join('|');if(restartPending&&signature!==restartPending.signature){clearTimeout(restartPending.timer);restartPending=null;}
     const key=message.statusKey,translated=typeof key==='string'&&dictionary[locale][key]?t(key,message.statusParams||{}):null;
@@ -602,7 +607,7 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
     const reason=loadingWord?(translated&&translated!==statusText?translated:t(message.playing===true||message.elapsedSeconds>0?'computing':'preparing')):'';
     /* The full error text stands once in the tree (details dialog) and is announced once; the trigger says it short. */
     status.textContent=hasError?'':statusText;status.title=hasError?'':reason||statusText;
-    if(loadingWord&&!downloading&&!hasError){const tick=()=>{if(!loadingSince||latest!==message)return;const s=Math.floor((Date.now()-loadingSince)/1000);if(s>=2)status.textContent=t('statusLoadsFor',{s});loadingTick=setTimeout(tick,1000-(Date.now()-loadingSince)%1000);};clearTimeout(loadingTick);tick();}
+    if(loadingWord&&!downloading&&!hasError){const tick=()=>{if(!loadingSince||latest!==message)return;const s=Math.floor((Date.now()-loadingSince)/1000);if(s>=2){status.textContent=t('statusLoadsFor',{s});if(loadSpoken!==loadingSince){loadSpoken=loadingSince;announce(t('statusLoads'));}}loadingTick=setTimeout(tick,1000-(Date.now()-loadingSince)%1000);};clearTimeout(loadingTick);tick();}
     if(!hasError){const focusInside=shadow.activeElement===errorTrigger||error.contains(shadow.activeElement);closeError(false);if(focusInside)play.focus({preventScroll:true});}
     statusSlot.toggleAttribute('data-error',hasError);errorTrigger.hidden=!hasError;
     errorButtonExpert.hidden=!hasError;errorButtonLight.hidden=!hasError;
@@ -664,6 +669,7 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
     .voice-menu,.vol-pop{position:fixed!important;right:auto!important;bottom:auto!important;margin:0!important;max-width:none!important;}
     @media(max-width:420px){.voice-menu{left:auto;right:auto;width:auto;}.reader-controls{display:grid;grid-template-columns:38px minmax(45px,1fr) 32px 74px;gap:7px;padding:4px 10px 10px;}.reader-controls .primary{grid-column:1;grid-row:1;}.voice{grid-column:2;grid-row:1;}.vol{grid-column:3;grid-row:1;}.speed{grid-column:4;grid-row:1;}.remaining{grid-column:1/4;grid-row:2;text-align:left;}.follow-label{grid-column:4;grid-row:2;}.vol-pop{width:auto;max-width:none;}.reader-title{font-size:10px;}.reader-top{gap:4px;}.voice{font-size:11px;}.voice small{font-size:9px;}.remaining{font-size:9px;}.follow-label{font-size:9px;}.speed{font-size:10px;min-width:62px;}.primary{margin-right:2px;}}
     .layer{position:fixed;inset:0;pointer-events:none;}.mark{position:absolute;background:rgba(255,215,35,.48);border:1px solid #c68b00;border-radius:3px;pointer-events:none}.hits{pointer-events:none}.hits[data-active] .hit{pointer-events:auto}.hit{position:absolute;background:transparent;cursor:pointer}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0s!important;animation-duration:0s!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
 </style><div class="bar" role="region" aria-label="Artikel vorlesen">
     <div class="reader-top"><span class="handle" role="button" tabindex="0" aria-label="${attr(uiText('moveBar'))}" title="${attr(uiText('moveHint'))}">${icon('grip')}</span><span class="reader-title">Vorlesen</span><span class="status" title="Bereit">Bereit</span><button class="settingsToggle" aria-expanded="false" aria-controls="reader-settings" aria-label="Einstellungen" title="Einstellungen">${icon('gear')}</button><button class="closeReader" title="${attr(uiText('closeReader'))}" aria-label="${attr(uiText('closeReader'))}">${icon('close')}</button></div>
     <div class="reader-controls"><button class="primary" data-command="toggle" title="Vorlesen / Pause" aria-label="Vorlesen">${icon('play')}</button><span class="voice"><button class="voice-btn" type="button" data-static aria-label="Stimme wählen" title="Stimme wählen" tabindex="-1"><span class="vn">Stimme</span><small></small>${icon('down')}</button><div class="voice-menu" role="menu" aria-label="Sprache und Stimme"></div></span><select class="speed" aria-label="Vorlesetempo" title="Vorlesetempo" disabled><option value="" selected disabled>Tempo</option>${Array.from({length:71},(_,i)=>{const n=(.5+i*.05).toFixed(2);return `<option value="${n}">${n.replace('.',',')}×</option>`}).join('')}</select><span class="vol"></span><span class="remaining" role="timer" aria-label="Restdauer unbekannt" title="Geschätzte Restdauer beim gewählten Tempo"></span><span class="follow-label"><button class="select-text" type="button" aria-pressed="true" title="Text auswählen" aria-label="Text auswählen">${icon('tap')}</button><button class="follow" type="button" aria-pressed="true" title="Text verfolgen" aria-label="Text verfolgen"></button></span></div>
@@ -746,6 +752,8 @@ function mountPlayerPolish({shadow,bar,send,icon,locales,onLocale,onFormats,rela
         settings:()=>{if(bar.hasAttribute('data-settings-inline')){focusIn(settingsPanel);return;}if(settingsPanel.hasAttribute('data-open')){closeSettings();const more=shadow.querySelector('.more-toggle');(more&&more.getClientRects().length?more:settingsToggle).focus({preventScroll:true});return;}openSettings();},   // the dialog's own focus step (after its lazily built voice / speed / volume rows) puts the focus on its first control
         uiLanguage:()=>{openSettings();const trigger=shadow.querySelector('.ui-language-trigger');if(trigger&&trigger.getClientRects().length)trigger.focus({preventScroll:true});else focusIn(settingsPanel);},
         export:()=>{const button=shadow.querySelector('.download-trigger');if(!button||button.disabled)return;polish?.openDownload();if(button.getAttribute('aria-expanded')==='true'){shadow.querySelector('.download-menu').tabIndex=-1;polish?.focusDownload();}},
+        /* keyboard and screen reader users reach the bar from anywhere in the page (it sits at the end of the page's tab order): focus lands on Play */
+        focusBar:()=>{const target=[toggle,shadow.querySelector('.handle')].find(node=>node&&!node.disabled&&node.getClientRects().length);target?.focus({preventScroll:true});},
         help:()=>kb.toggleHelp(),close:()=>click(shadow.querySelector('.closeReader'))}});
     }
     mountPolish();updateSelection();refreshLayout();

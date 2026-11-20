@@ -33,7 +33,10 @@ function playwright() {
   }
   throw new Error('playwright-core nicht gefunden (PLAYWRIGHT_ROOT setzen)');
 }
-const {chromium} = playwright();
+const {chromium, firefox} = playwright();
+/* --browser firefox: Playwright's Firefox (own temporary profile, launched here, headless); Firefox has no isMobile emulation: the mobile scenario there is a
+   390 px touch viewport with a Firefox-for-Android user agent */
+const FIREFOX = opt('--browser', 'chromium') === 'firefox';
 
 /* ---- fixtures ------------------------------------------------------------------------------------------------------------------------------------ */
 const DE = 'Dies ist ein kurzer Testtext. Er wird jetzt vorgelesen, damit wir sehen, ob alles funktioniert. Noch ein dritter Satz folgt hier.';
@@ -72,7 +75,7 @@ const bar = p => ({
       if (!host) return null; const r = host.shadowRoot, g = s => r.querySelector(s), hl = globalThis.CSS?.highlights?.get('notable-word');
       let word = ''; try { word = hl ? [...hl][0]?.toString() || '' : ''; } catch {}
       const rect = g('.primary')?.getBoundingClientRect();
-      return {label: g('.primary')?.getAttribute('aria-label') || '', status: g('.status')?.innerText || '', seek: Number(g('.seek-progress')?.value || 0), word, speed: g('.speed-trigger')?.getAttribute('aria-label') || '', voice: g('.voice-btn')?.innerText || '',
+      return {label: g('.primary')?.getAttribute('title') || '', pressed: g('.primary')?.getAttribute('aria-pressed') || '', status: g('.status')?.innerText || '', seek: Number(g('.seek-progress')?.value || 0), word, speed: g('.speed-trigger')?.getAttribute('aria-label') || '', voice: g('.voice-btn')?.innerText || '',
         playVisible: !!rect && rect.width > 0 && rect.bottom <= innerHeight + 1 && rect.right <= innerWidth + 1 && rect.left >= -1};
     });
   },
@@ -93,11 +96,11 @@ async function openText(p, text, mobile) {
 /* Play: the first click on a voice that is not on the device starts the download; "Ready" ends it, the next click reads. Returns {downloadMs, firstAudioMs}. */
 async function startReading(p, mobile, {downloadTimeout = 240000} = {}) {
   const b = bar(p), t0 = Date.now(); let downloadMs = 0, clickedAt = Date.now();
-  await tap(p, '.primary[aria-label^="Play"]', mobile);
+  await tap(p, '.primary[title^="Play"]', mobile);
   for (;;) {
     await p.waitForTimeout(120); const s = await b.state();
     if (/^Pause/.test(s.label) && s.status === 'Reading') return {downloadMs, firstAudioMs: Date.now() - clickedAt};
-    if (s.status === 'Ready' && /^Play/.test(s.label)) { downloadMs = Date.now() - t0; await p.waitForTimeout(400); clickedAt = Date.now(); await tap(p, '.primary[aria-label^="Play"]', mobile); }
+    if (s.status === 'Ready' && /^Play/.test(s.label)) { downloadMs = Date.now() - t0; await p.waitForTimeout(400); clickedAt = Date.now(); await tap(p, '.primary[title^="Play"]', mobile); }
     if (/failed/i.test(s.status)) throw new Error('Wiedergabe fehlgeschlagen: ' + s.status);
     if (Date.now() - t0 > downloadTimeout) throw new Error('keine Wiedergabe nach ' + downloadTimeout / 1000 + ' s: ' + JSON.stringify(s));
   }
@@ -107,7 +110,7 @@ async function watchWords(p, ms = 4000) {
   while (Date.now() - t0 < ms) { const s = await b.state(); if (s.word) words.add(s.word); if (seek0 === null) seek0 = s.seek; else if (s.seek > seek0) moved = true; await p.waitForTimeout(100); }
   return {words: [...words], timelineMoved: moved};
 }
-async function pauseIfPlaying(p, mobile) { const s = await bar(p).state(); if (/^Pause/.test(s.label)) { await tap(p, '.primary[aria-label^="Pause"]', mobile); await p.waitForFunction(() => { for (const e of document.querySelectorAll('*')) { const l = e.shadowRoot?.querySelector('.primary')?.getAttribute('aria-label'); if (l) return /^(Play|Resume)/.test(l); } }, null, {timeout: 10000}); } }
+async function pauseIfPlaying(p, mobile) { const s = await bar(p).state(); if (/^Pause/.test(s.label)) { await tap(p, '.primary[title^="Pause"]', mobile); await p.waitForFunction(() => { for (const e of document.querySelectorAll('*')) { const l = e.shadowRoot?.querySelector('.primary')?.getAttribute('title'); if (l) return /^(Play|Resume)/.test(l); } }, null, {timeout: 10000}); } }
 
 async function setSpeed(p, mobile) {
   await tap(p, '.speed-trigger', mobile); await p.waitForTimeout(300);
@@ -163,7 +166,7 @@ async function scenario(browser, def) {
   const served = await startServer(join(OUT, 'app'), {isolation: def.isolation, base: '/app/'});
   let ctx, p, cdp = null; touch = null;
   if (!DEFAULT_CTX) {
-    ctx = await browser.newContext({viewport: def.viewport, acceptDownloads: true, serviceWorkers: def.sw === false ? 'block' : 'allow', ...(def.mobile ? {hasTouch: true, isMobile: true, deviceScaleFactor: 1, userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0 Mobile Safari/537.36'} : {})});
+    ctx = await browser.newContext({viewport: def.viewport, acceptDownloads: true, serviceWorkers: def.sw === false ? 'block' : 'allow', ...(def.mobile && FIREFOX ? {hasTouch: true, userAgent: 'Mozilla/5.0 (Android 14; Mobile; rv:157.0) Gecko/157.0 Firefox/157.0'} : def.mobile ? {hasTouch: true, isMobile: true, deviceScaleFactor: 1, userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0 Mobile Safari/537.36'} : {})});
     p = await ctx.newPage();
   } else {
     ctx = browser.contexts()[0]; p = await ctx.newPage(); cdp = await ctx.newCDPSession(p);
@@ -200,7 +203,7 @@ async function scenario(browser, def) {
         const r = await setSpeed(p, mobile); must(r.max === '4' && /4×/.test(r.atMax) && /4×/.test(r.afterSix) && !/[5-9]×/.test(r.afterSix), JSON.stringify(r)); await shot(p, 'speed-4x');
         await p.keyboard.press('Escape'); await resetSpeed(p, mobile); return r;
       });
-      await step('Pause und Weiterlesen', async () => { await pauseIfPlaying(p, mobile); const s = await b.state(); must(/^(Play|Resume)/.test(s.label), s.label); await tap(p, '.primary[aria-label^="Resume"], .primary[aria-label^="Play"]', mobile); await p.waitForFunction(() => [...document.querySelectorAll('*')].some(e => /^Pause/.test(e.shadowRoot?.querySelector('.primary')?.getAttribute('aria-label') || '')), null, {timeout: 20000}); await pauseIfPlaying(p, mobile); });
+      await step('Pause und Weiterlesen', async () => { await pauseIfPlaying(p, mobile); const s = await b.state(); must(/^(Play|Resume)/.test(s.label), s.label); await tap(p, '.primary[title^="Resume"], .primary[title^="Play"]', mobile); await p.waitForFunction(() => [...document.querySelectorAll('*')].some(e => /^Pause/.test(e.shadowRoot?.querySelector('.primary')?.getAttribute('title') || '')), null, {timeout: 20000}); await pauseIfPlaying(p, mobile); });
       if (WITH_EN && !def.quick) {
         await step('EN Bella: Text oeffnen, Stimme nach Klick laden, vorlesen', async () => {
           await openText(p, EN, mobile); await p.waitForTimeout(800); const s0 = await b.state(); must(/Bella|Heart|English|Sky|Nicole/i.test(s0.voice + ' ' + await p.locator('.voice-btn').first().getAttribute('aria-label')), 'Stimme: ' + s0.voice);
@@ -262,7 +265,8 @@ const DEFS = {
   credentialless: {name: 'credentialless', viewport: {width: 1366, height: 900}, isolation: 'credentialless', isolated: true, quick: true, pdf},
   swisolate: {name: 'swisolate', viewport: {width: 1366, height: 900}, isolation: 'none', isolated: false, swIsolation: true, pdf},
 };
-const browser = await chromium.connectOverCDP(CDP);
+const browser = FIREFOX ? await firefox.launch({headless: true}) : await chromium.connectOverCDP(CDP);
+if (FIREFOX && DEFAULT_CTX) throw new Error('--default-context gilt nur für Chromium (CDP)');
 try { for (const n of WANT) { if (!DEFS[n]) throw new Error('unbekanntes Szenario ' + n); await scenario(browser, DEFS[n]); } } finally { await browser.close().catch(() => {}); }
 const fail = results.filter(r => !r.ok);
 log(`\n${results.length - fail.length}/${results.length} PASS` + (fail.length ? `, ${fail.length} FAIL:\n` + fail.map(r => `  [${r.scenario}] ${r.name} :: ${r.detail}`).join('\n') : ''));

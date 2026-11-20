@@ -12,7 +12,7 @@ import {parseCombo, reservedReason, detectPlatform, defaultCombo} from './platfo
 
 export const CONFIG_KEY = 'pageSettings', LEGACY_SHORTCUTS_KEY = 'notableShortcuts', CONFIG_VERSION = 2, EXPORT_VERSION = 1, EXPORT_SCHEMA = 'benotable-reader-settings', MAX_IMPORT_BYTES = 65536;
 /* The actions of the keyboard layer with their default physical key (Alt+Shift+<code>); must equal KEYMAP in player-surface.mjs (tests/config-central.test.mjs). */
-export const KEY_DEFAULTS = Object.freeze({playPause: 'KeyK', previousSection: 'ArrowLeft', nextSection: 'ArrowRight', previousBlock: 'PageUp', nextBlock: 'PageDown', previousChapter: 'Home', nextChapter: 'End', seekBack: 'KeyJ', seekForward: 'KeyL',
+export const KEY_DEFAULTS = Object.freeze({playPause: 'KeyK', focusBar: 'KeyB', previousSection: 'ArrowLeft', nextSection: 'ArrowRight', previousBlock: 'PageUp', nextBlock: 'PageDown', previousChapter: 'Home', nextChapter: 'End', seekBack: 'KeyJ', seekForward: 'KeyL',
   volumeUp: 'ArrowUp', volumeDown: 'ArrowDown', mute: 'KeyM', speedDown: 'Comma', speedUp: 'Period', voiceMenu: 'KeyN', voicePrev: 'Digit1', voiceNext: 'Digit2', languagePrev: 'Digit3', languageNext: 'Digit4',
   theme: 'KeyD', focus: 'KeyF', follow: 'KeyW', clickSeek: 'KeyC', settings: 'KeyE', uiLanguage: 'KeyU', export: 'KeyX', openFile: 'KeyO', help: 'KeyH', close: 'KeyQ'});
 /* Reading line (where the text being read stays on screen) 33 % from the top, scroll-free range 10 % of the reading area. Stored values are never touched, only the default changes. */

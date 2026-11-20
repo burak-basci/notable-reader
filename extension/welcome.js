@@ -62,7 +62,8 @@ const COMMANDS = [['_execute_action', 'extWelcomeKeyOpen'], ['toggle-play', 'kbP
 async function commandKeys() {
   let all = [];
   try { all = await api.commands?.getAll?.() || []; } catch {}
-  return COMMANDS.map(([name, label]) => ({label, shortcut: all.find(item => item.name === name)?.shortcut || ''}));
+  /* plus the in-page key that moves the focus into the bar (keyboard and screen reader users: the bar sits at the end of a page's tab order) */
+  return [...COMMANDS.map(([name, label]) => ({label, shortcut: all.find(item => item.name === name)?.shortcut || ''})), {label: 'kbFocusBar', shortcut: 'Alt+Shift+B'}];
 }
 
 async function render() {

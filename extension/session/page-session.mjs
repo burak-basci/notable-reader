@@ -50,6 +50,10 @@ const GPU_STATUS = Object.fromEntries(['webgpu-unavailable', 'jspi-unavailable',
 const ERROR_KEYS = new Set(ERROR_STATUS_KEYS);
 /* Cleared as soon as the listener picks another voice: they were about the old one. */
 const VOICE_ERRORS = new Set([...Object.values(ENGINE_ERROR_KEYS), 'voice_none_chosen']);
+/* A voice this device computes slower than it speaks (stops while reading that nobody asked for): the faster voices the bar OFFERS instead (it asks, nothing
+   switches by itself), best first per language. FASTER_VOICES_NOTE */
+const FASTER_VOICES = {en: [], de: []};
+const STALL_WINDOW_MS = 120000, STALLS_TO_OFFER = 3, STALL_MS_TO_OFFER = 6000;
 /* DOM left behind by the copy of an updated extension (another isolated world): bar, marks, quick actions, panels. */
 const ORPHAN_HOSTS = [
   '[data-notable-reader-surface="overlay"]', '[data-notable-reader-ui="highlight"]',
@@ -347,6 +351,31 @@ export class PageSession {
     void this.takeVoice(card.primary);
     return false;
   }
+  /* Stops while reading that nobody asked for (playing -> loading without a command): the device computes this voice slower than it speaks. After
+     STALLS_TO_OFFER stops or STALL_MS_TO_OFFER ms of such silence within STALL_WINDOW_MS the bar offers a faster voice, once per voice and page; "keep" is
+     remembered per voice. Reading goes on meanwhile. */
+  noteStall(next) {
+    const now = Date.now();
+    if (this.state === 'playing' && next === 'loading' && !this.starting && now - (this.userMoveAt || 0) > 1500) { this.stallFrom = now; return; }
+    if (!this.stallFrom || next === 'loading') return;
+    const ms = now - this.stallFrom; this.stallFrom = 0;
+    if (next !== 'playing') return;
+    this.stalls = [...(this.stalls || []).filter(stall => now - stall.at < STALL_WINDOW_MS), {at: now, ms}];
+    if (this.stalls.length >= STALLS_TO_OFFER || this.stalls.reduce((sum, stall) => sum + stall.ms, 0) >= STALL_MS_TO_OFFER) this.offerFasterVoice();
+  }
+  /* The first voice of FASTER_VOICES for this language that is not the current one and has not stopped on this page itself. */
+  fasterVoice() {
+    const seen = this.slowSeen || new Set();
+    return (FASTER_VOICES[this.lang] || []).map(id => MODELS[id]).find(model => model && !model.experimental && model.id !== this.voice?.id && !seen.has(model.id)) || null;
+  }
+  offerFasterVoice() {
+    const from = this.voice?.id; if (this.voice?.kind !== 'neural' || !from || this.voiceCard || this.tutor?.owns) return;
+    this.slowSeen ??= new Set(); if (this.slowSeen.has(from) || this.settings.slowDeclined?.[from]) return;
+    this.slowSeen.add(from); this.stalls = [];
+    const faster = this.fasterVoice(); if (!faster) return;
+    this.voiceCard = {reason: 'slow', primary: faster.id, smaller: null, from, at: {chunk: this.position.chunk, word: this.position.word}, downloading: ''};
+    this.changed();
+  }
   /* "Download" on the card: the card turns into the progress line, the voice is selected once it is on the device and
      reading starts where Play was pressed. */
   async takeVoice(id) {
@@ -354,6 +383,9 @@ export class PageSession {
     card.downloading = id; this.changed();
     await this.downloadVoice(id);
     if (this.voiceCard !== card) return;       // closed, stopped or replaced meanwhile: no surprise audio
+    const model = MODELS[id];
+    if (card.reason === 'slow' && model && this.installed.has(model.id) && this.voice?.id !== model.id) await this.applySettings({voice: {language: model.lang, id: model.voiceURI}});
+    if (this.voiceCard !== card) return;
     this.voiceCard = null;
     if (this.installed.has(id) && !this.destroyed) await this.play(card.at.chunk, card.at.word); else this.changed();
   }
@@ -363,6 +395,10 @@ export class PageSession {
     const card = this.voiceCard; if (!card) return;
     this.voiceCard = null;
     if (card.downloading) { this.changed(); return; }       // the download goes on, its progress line has a Cancel
+    if (card.reason === 'slow') {       // reading goes on with the current voice; "keep" means: do not ask again for this voice
+      if (keepReading) { this.settings.slowDeclined = {...(this.settings.slowDeclined || {}), [card.from]: true}; await this.save(); }
+      this.changed(); return;
+    }
     if (card.reason === 'better') {
       this.settings.offerDeclined = {...(this.settings.offerDeclined || {}), [this.lang]: true}; this.offer = null;
       await this.save(); this.buildCatalog();
@@ -476,6 +512,7 @@ export class PageSession {
       if (d.state === 'playing' && this.wantPause) { this.wantPause = false; this.pipeline?.pause(); return; }       // Pause pressed while the section was still loading: the audio never becomes audible
       if (d.state !== 'loading') this.wantPause = false;
       if (['playing', 'paused', 'ended', 'preempted'].includes(d.state) || d.state === 'error' && d.code !== 'model-missing') { this.starting = false; clearTimeout(this.startTimer); }
+      this.noteStall(d.state);
       this.state = d.state; if(d.state==='playing')void this.readingHistory?.heard(this.historyPosition()); this.lastError = d.state === 'error' ? (GPU_STATUS[d.code] || d.code === 'host-failed' && (this.failureKey(d.reason) || (this.offlineMissingModel() ? 'offline_download' : '')) || errorKey(d.code) || d.code || 'error') : '';
       if (d.state === 'error' && d.code === 'model-missing') this.lastError = '';
       if (d.state === 'error' && d.code === 'model-missing' && this.starting && !this.download && !this.dlRunning && !this.modelMissingRetry) {
@@ -911,6 +948,7 @@ export class PageSession {
     if (Number.isInteger(index)) return this.seekTo(index, 0, false);
   }
   async command(command, value) {
+    this.userMoveAt = Date.now();      // a stop right after a command (seek, jump, Play) is the command's own loading, never a sign of a slow device
     this.noteActivity?.();      // every control of the bar (a slider dragged in its menus included) is the user working: background look-ahead waits a moment
     /* a running guided explanation owns Play/Pause, Previous/Next and Stop of the bar (and their shortcuts) */
     if (this.tutor?.owns && TUTOR_COMMANDS[command]) return this.tutor[TUTOR_COMMANDS[command]]();
@@ -1106,7 +1144,7 @@ export class PageSession {
   voiceView(id) {
     const model = MODELS[id]; if (!model) return null;
     const name = voiceName(this.locales, base(this.settings.uiLanguage) || 'en', model.display || model.name);
-    return {id: model.id, name, mb: mbOf(model), sample: model.sample || ''};
+    return {id: model.id, name, mb: mbOf(model), sample: model.sample || '', installed: this.installed.has(model.id)};
   }
   cardView() {
     const card = this.voiceCard; if (!card) return null;

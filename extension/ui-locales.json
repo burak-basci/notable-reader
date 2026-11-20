@@ -1192,7 +1192,12 @@
       "popupStartReadingHint": "Die Leiste ist offen. Das Vorlesen beginnt an der markierten Stelle.",
       "sidebarOpenBar": "Leiste im Dokument öffnen",
       "export_no_voice": "Für eine Audiodatei fehlt eine geladene Stimme dieser Sprache. Lade sie in der Stimmenauswahl.",
-      "statusLoadsFor": "Lädt … {s} s"
+      "statusLoadsFor": "Lädt … {s} s",
+      "voice_card_slow": "Dein Rechner berechnet diese Stimme langsamer, als sie spricht. Deshalb entstehen Pausen.",
+      "voice_card_use": "{name} verwenden",
+      "voice_card_slow_note": "Die schnellere Stimme klingt etwas einfacher. Du kannst in der Stimmenliste jederzeit zurückwechseln.",
+      "seekValue": "{elapsed} von {total}",
+      "kbFocusBar": "Vorleseleiste fokussieren"
     },
     "en": {
       "reader": "Read aloud",
@@ -2359,7 +2364,12 @@
       "popupStartReadingHint": "The bar is open. Reading starts at the marked place.",
       "sidebarOpenBar": "Open the bar in the document",
       "export_no_voice": "An audio file needs a downloaded voice for this language. Get one in the voice picker.",
-      "statusLoadsFor": "Loading… {s} s"
+      "statusLoadsFor": "Loading… {s} s",
+      "voice_card_slow": "Your computer calculates this voice more slowly than it speaks, which causes pauses.",
+      "voice_card_use": "Use {name}",
+      "voice_card_slow_note": "The faster voice sounds a little plainer. You can switch back in the voice list at any time.",
+      "seekValue": "{elapsed} of {total}",
+      "kbFocusBar": "Move focus to the reading bar"
     },
     "fr": {
       "reader": "Lecture audio",
@@ -3526,7 +3536,12 @@
       "popupStartReadingHint": "La barre est ouverte. La lecture commence à l'endroit marqué.",
       "sidebarOpenBar": "Ouvrir la barre dans le document",
       "export_no_voice": "Un fichier audio nécessite une voix téléchargée pour cette langue. Obtenez-en une dans le choix des voix.",
-      "statusLoadsFor": "Chargement… {s} s"
+      "statusLoadsFor": "Chargement… {s} s",
+      "voice_card_slow": "Votre ordinateur calcule cette voix plus lentement qu’elle ne parle, d’où les pauses.",
+      "voice_card_use": "Utiliser {name}",
+      "voice_card_slow_note": "La voix plus rapide sonne un peu plus simple. Vous pouvez revenir en arrière à tout moment dans la liste des voix.",
+      "seekValue": "{elapsed} sur {total}",
+      "kbFocusBar": "Placer le focus sur la barre de lecture"
     },
     "es": {
       "reader": "Leer en voz alta",
@@ -4693,7 +4708,12 @@
       "popupStartReadingHint": "La barra está abierta. La lectura empieza en el punto marcado.",
       "sidebarOpenBar": "Abrir la barra en el documento",
       "export_no_voice": "Un archivo de audio necesita una voz descargada para este idioma. Consíguela en el selector de voces.",
-      "statusLoadsFor": "Cargando… {s} s"
+      "statusLoadsFor": "Cargando… {s} s",
+      "voice_card_slow": "Tu ordenador calcula esta voz más despacio de lo que habla; por eso hay pausas.",
+      "voice_card_use": "Usar {name}",
+      "voice_card_slow_note": "La voz más rápida suena algo más sencilla. Puedes volver a cambiar en la lista de voces cuando quieras.",
+      "seekValue": "{elapsed} de {total}",
+      "kbFocusBar": "Llevar el foco a la barra de lectura"
     },
     "it": {
       "reader": "Lettura ad alta voce",
@@ -5860,7 +5880,12 @@
       "popupStartReadingHint": "La barra è aperta. La lettura parte dal punto segnato.",
       "sidebarOpenBar": "Apri la barra nel documento",
       "export_no_voice": "Un file audio richiede una voce scaricata per questa lingua. Scaricala nella scelta delle voci.",
-      "statusLoadsFor": "Caricamento… {s} s"
+      "statusLoadsFor": "Caricamento… {s} s",
+      "voice_card_slow": "Il tuo computer calcola questa voce più lentamente di quanto parli: per questo ci sono pause.",
+      "voice_card_use": "Usa {name}",
+      "voice_card_slow_note": "La voce più veloce suona un po’ più semplice. Puoi tornare indietro in qualsiasi momento dall’elenco delle voci.",
+      "seekValue": "{elapsed} di {total}",
+      "kbFocusBar": "Porta il focus sulla barra di lettura"
     },
     "pt": {
       "reader": "Leitura em voz alta",
@@ -7027,7 +7052,12 @@
       "popupStartReadingHint": "A barra está aberta. A leitura começa no ponto marcado.",
       "sidebarOpenBar": "Abrir a barra no documento",
       "export_no_voice": "Um ficheiro de áudio precisa de uma voz transferida para este idioma. Obtém-na na escolha de vozes.",
-      "statusLoadsFor": "A carregar… {s} s"
+      "statusLoadsFor": "A carregar… {s} s",
+      "voice_card_slow": "O teu computador calcula esta voz mais devagar do que ela fala; por isso há pausas.",
+      "voice_card_use": "Usar {name}",
+      "voice_card_slow_note": "A voz mais rápida soa um pouco mais simples. Podes voltar a mudar na lista de vozes a qualquer momento.",
+      "seekValue": "{elapsed} de {total}",
+      "kbFocusBar": "Levar o foco para a barra de leitura"
     }
   },
   "formatLocales": [
