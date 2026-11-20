@@ -1159,6 +1159,7 @@
     "tests/neural-extension.cjs",
     "tests/neural-integration.cjs",
     "tests/neural-probe.cjs",
+    "tests/page-snapshot-safety.cjs",
     "tests/pdf-letterspacing.test.mjs",
     "tests/popup-design.cjs",
     "tests/reader-ui/acceptance.mjs",

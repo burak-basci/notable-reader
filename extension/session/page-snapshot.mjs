@@ -6,6 +6,19 @@
 const EXTENSION_UI = ['[data-notable-reader-surface]', '[data-notable-quick-actions]', '[data-notable-reader-ui]', '[data-reader-tutor-marks]', '[data-reader-explain-panel]',
   '[data-reader-explain-annotations]', '[data-reader-scrollbars-style]', '[data-notable-reader-spacing]', '[data-notable-reader-update]', '[data-notable-appearance]'].join(',');
 
+/* Cleaning of the saved file (code review 2.5.5, R5): no scripts, no handlers, no frames/plugins (iframe srcdoc, object, embed), no own base / refresh, and no
+   script address in ANY attribute. Browsers drop ASCII tab/newline anywhere in a URL and leading control characters/spaces, so "jav&#9;ascript:" and "java\nscript:"
+   are script links too: the scheme is checked on the value without them. Plus a Content-Security-Policy in the file that allows no script, plugin or frame. */
+const DROP = ',script,noscript,base,meta[http-equiv],link[rel~=preload],link[rel~=modulepreload],link[rel~=prefetch],link[rel~=import],iframe,frame,frameset,object,embed,applet,portal';
+export const SNAPSHOT_CSP = "script-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'";
+const SCRIPT_URL = /^(?:javascript|vbscript|livescript|data:text\/html|data:application\/(?:x-)?(?:java|ecma)script)/;
+export const scriptAddress = value => SCRIPT_URL.test(String(value).replace(/[\u0000-\u0020\u007f-\u009f]/g, '').toLowerCase());
+function scrub(root) {
+  for (const node of root.querySelectorAll(EXTENSION_UI + DROP)) node.remove();
+  const all = root.nodeType === 1 ? [root, ...root.querySelectorAll('*')] : [...root.querySelectorAll('*')];
+  for (const el of all) for (const attr of [...el.attributes]) if (/^on/i.test(attr.name) || attr.name.toLowerCase() === 'srcdoc' || scriptAddress(attr.value)) el.removeAttribute(attr.name);
+}
+
 /* path of child indices from the root element; the same path finds the twin in a deep clone */
 const pathOf = (node, root) => { const path = []; for (let n = node; n && n !== root; n = n.parentNode) { if (!n.parentNode) return null; path.unshift([...n.parentNode.childNodes].indexOf(n)); } return path; };
 const nodeAt = (root, path) => { let n = root; for (const i of path || []) { n = n?.childNodes[i]; if (!n) return null; } return n; };
@@ -28,13 +41,11 @@ export function pageSnapshot({document: doc = globalThis.document, range = 'all'
   const drop = range === 'here' ? beforeElements.map(el => nodeAt(clone, pathOf(el, root))).filter(Boolean) : [];
   for (const [from, to] of swaps) from.replaceWith(to);
   for (const node of drop) node.remove();
-  /* no extension UI, no scripts, no handlers, no own base / refresh */
-  for (const node of clone.querySelectorAll(EXTENSION_UI + ',script,base,meta[http-equiv],link[rel~=preload],link[rel~=modulepreload],link[rel~=prefetch]')) node.remove();
-  for (const el of [clone, ...clone.querySelectorAll('*')]) for (const attr of [...el.attributes]) if (/^on/i.test(attr.name) || /^\s*javascript:/i.test(attr.value)) el.removeAttribute(attr.name);
+  scrub(clone);
   /* the selection only: the page's head and body frame around the selected nodes */
   const body = clone.querySelector('body');
   if (range === 'selection' && selection && body) {
-    const part = selection.cloneContents(); for (const node of part.querySelectorAll(EXTENSION_UI + ',script')) node.remove();
+    const part = selection.cloneContents(); scrub(part);                       // the selection gets the same cleaning as the whole page (2.5.5 kept its handlers and links)
     body.replaceChildren(part);
   }
   /* the extension's constructed sheets (Night mode covers) and absolute addresses */
@@ -42,7 +53,8 @@ export function pageSnapshot({document: doc = globalThis.document, range = 'all'
   const adopted = (doc.adoptedStyleSheets || []).map(rulesOf).filter(Boolean).join('\n');
   if (adopted) { const style = doc.createElement('style'); style.dataset.notableSnapshot = 'appearance'; style.textContent = adopted; head.append(style); }
   const base = doc.createElement('base'); base.href = win?.location?.href || doc.baseURI; head.prepend(base);
-  if (!head.querySelector('meta[charset]')) { const meta = doc.createElement('meta'); meta.setAttribute('charset', 'utf-8'); head.prepend(meta); }
+  const csp = doc.createElement('meta'); csp.setAttribute('http-equiv', 'Content-Security-Policy'); csp.setAttribute('content', SNAPSHOT_CSP); head.prepend(csp);   // the saved file runs no script, whatever slipped through
+  head.querySelector('meta[charset]')?.remove(); { const meta = doc.createElement('meta'); meta.setAttribute('charset', 'utf-8'); head.prepend(meta); }
   const doctype = doc.doctype ? '<!doctype ' + doc.doctype.name + '>' : '<!doctype html>';
   return doctype + '\n' + clone.outerHTML;
 }
