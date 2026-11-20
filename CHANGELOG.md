@@ -5,7 +5,7 @@
 - Accessibility of the Reader's own surfaces (bar, voice list, settings, popup, welcome, help, side panel, file view, web
   app), checked with axe-core 4.10 (WCAG 2.2 A/AA rules) in light and dark mode, the Chromium accessibility tree, a
   scripted keyboard walk, 200 % zoom, 320 px width and increased text spacing: Play keeps one name and states
-  `aria-pressed`; the timeline says "1:23 of 3:40"; waits of 2 s or more are announced once; the voice panel that keeps
+  `aria-pressed`; the timeline carries "1:23 of 3:40" as `aria-valuetext`; waits of 2 s or more are announced once; the voice panel that keeps
   Tab inside is a modal dialog; reduced motion switches off the bar's transitions; Alt+Shift+B moves the focus from
   anywhere on the page into the bar (listed in help, settings and on the welcome page); the popup has a main landmark
   and a heading. Not yet tested with real screen readers.
