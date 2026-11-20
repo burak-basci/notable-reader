@@ -84,7 +84,7 @@ function buildSource(title,chapters){
 function onMark(sentence){const span=spans[displayChunkAt(session.charOfChunk(sentence))];if(!span)return;activeSpan&&activeSpan!==span&&activeSpan.removeAttribute('aria-current');activeSpan=span;span.setAttribute('aria-current','true');}
 /* Absolute character of the reading place (the page gets it back when the Focus Reader closes). */
 function placeChar(){return session.chunks.length?session.charOfPosition():null;}
-let statusKey='';function statusLine(){if(!currentText||exportBusy||importBusy)return;const s=session,key=[s.state,s.position.chunk,s.chunks.length,s.lastError].join('|');if(key===statusKey)return;statusKey=key;
+let statusKey='';function statusLine(){if(!currentText||exportBusy||importBusy||!$('#ocr-offer').hidden)return;   /* a scan opened after a good file: the text recognition offer (or its progress) owns the line, not the previous document's 'Bereit · Abschnitt 1 von 3' (2.5.5) */const s=session,key=[s.state,s.position.chunk,s.chunks.length,s.lastError].join('|');if(key===statusKey)return;statusKey=key;
  if(s.lastError)status(/^[a-z_]+$/.test(s.lastError)?mt(s.lastError.startsWith('offline_')?s.lastError:'reader_error'):s.lastError,true);
  else if(s.chunks.length)status(mt('fileStatusLine',{state:mt(s.state==='playing'?'fileStateReading':s.state==='paused'?'fileStatePaused':s.state==='ended'?'fileStateEnded':'fileStateReady'),current:s.position.chunk+1,count:s.chunks.length}));}
 
