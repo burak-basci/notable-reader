@@ -11,7 +11,7 @@ This document describes how to automate uploading the Notable Reader extension (
 - **Publisher ID**: `12058d5f-4f0c-4794-9f25-6401a962b0e1`
 - **Publisher Name**: `benotable – Burak Basci`
 - **Current Public Version**: 2.2.1 (under review: 2.3.3)
-- **Review Access**: Stored in Bitwarden under "Notable Reader · Chrome Web Store Review · 2.3.0"
+- **Review Access**: Kept in the maintainer's private password manager (not in this repository)
 
 ## Manual Process (Current)
 

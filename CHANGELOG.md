@@ -45,17 +45,25 @@
 - "Heard" / "Remaining" follow the spoken word instead of jumping once per section.
 - English Kokoro voice: two workers on 8+ cores while the engine has no WASM threads (fewer pauses at 1x).
 - File view: the status line shows the opened document instead of "PDF is opening ... page 15 of 15".
+- Removed the tracked backup copy `extension.backup.1794849236/` (old 2.4 files, not part of any release); it stays in
+  the Git history.
 
 ## 2.5.0 (2026-11-16)
 
-- **Full i18n support** (6 locales: de, en, es, fr, it, pt) with `default_locale: "en"` and `__MSG_*` placeholders in manifest
-- **Side Panel** integration (`side_panel.default_path: "sidebar.html"`) for persistent reader UI
-- **Commands API** with keyboard shortcuts: Alt+Shift+V (open), Alt+Shift+K (play/pause), Alt+Shift+Left/Right (prev/next section)
-- **Offscreen Documents** + **Unlimited Storage** permissions for background audio processing
-- **Cross-Origin Isolation** (COEP/COOP) for secure neural model execution
-- **File:// protocol support** for local PDF/HTML reading
-- **Compatible key architecture** (official + compatible ZIPs from single source)
-- Optional "Message to the developer" form in popup, settings and web app (six UI languages): mandatory public-issue confirmation, 2000 characters, at most 3 messages per rolling 10 minutes enforced by `server/feedback-service.mjs`, which creates the GitHub issue server-side. Only text and app version are sent.
+- Interface in six languages (de, en, es, fr, it, pt) through the browser's own locale system (`default_locale: en`,
+  `__MSG_*` placeholders in the manifest, localized store name and description).
+- Side panel (optional `sidePanel` permission), keyboard shortcuts (Alt+Shift+V open, Alt+Shift+K play/pause,
+  Alt+Shift+Left/Right previous/next section) and an offscreen document that runs the voices and audio
+  (`offscreen`, `unlimitedStorage`); local `file://` pages and PDFs can be read.
+- Two extension packages from one source (official ID and compatible ID); they differ only in `manifest.key`.
+- Voices: the Play button downloads the recommended voice for the page language once; a double click on a voice row
+  downloads and starts it; a running download shows as one slim strip above the bar and as a ring on the voice button;
+  prepared audio colours the timeline.
+- Optional local AI explanation ("Summarize" tour): English and, with the larger model, German; the model is
+  downloaded only after a click and checked by SHA-256 (Qwen3.5-0.8B q4, 668 MB, Apache-2.0, was added as a second
+  size on 17 November; the 2.4 model keeps working until a current one is installed).
+- COOP/COEP for all extension pages was tried and removed again during 2.5.0 (it stopped the offscreen engine host);
+  since 2.5.3 only the engine host is isolated.
 
 ## 2.4.0
 

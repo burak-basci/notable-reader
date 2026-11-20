@@ -1,225 +1,223 @@
-# Notable Reader (beNotable! Reader)
+# beNotable! Reader
 
-Webseiten, PDFs und eigene Dokumente vorlesen lassen, mit Stimmen, die auf dem
-eigenen Gerät laufen. Alle Funktionen und Downloads sind kostenlos: kein Konto,
-keine Werbung, kein Textkontingent. Eine Unterstützung ist freiwillig und
-schaltet nichts frei.
+Deutsch · [English](#english)
+
+Webseiten, PDFs, E-Books und eigene Texte vorlesen lassen, mit Stimmen, die im Browser auf dem eigenen Gerät
+rechnen. Das Wort, das gerade gesprochen wird, wird markiert.
 
 - **Web-App:** https://reader.benotable.de/app/
-- **Website und Downloads:** https://reader.benotable.de/
+- **Website:** https://reader.benotable.de/
+- **Chrome Web Store:** https://chromewebstore.google.com/detail/hgkfghgifkifgmklfgglilnmjglojonm
 - **Quellen:** https://github.com/burak-basci/notable-reader
-- **Unterstützen:** https://buy.stripe.com/cNi7sM72dbaU3w6eY7aVa00
 
-## Was Version 2.5 kann
+## Kostenlos, ohne Konto
 
-- Browser-Erweiterung (Chrome, Brave, Edge): Symbol anklicken, „Vorleseleiste
-  öffnen“, Play. Die Leiste am Text markiert das gesprochene Wort, scrollt mit,
-  springt per Klick auf ein Wort an diese Stelle und bietet Pause/Weiterlesen,
-  Abschnitte und Kapitel, Tempo von 0,5× bis 4×, Lautstärke bis 150 %, Klang
-  (Tonhöhe, Bass, Höhen), Sprechpausen, Lesezeichen und „Weiterlesen, wo du
-  aufgehört hast“.
-- Lokale KI-Stimmen: Der erste Play lädt die passende Stimme einmalig
-  (Deutsch Thorsten, Englisch Bella); danach liest der Reader offline. Weitere
-  Stimmen und Sprachen stehen in der Stimmenliste.
-- Dateiansicht: PDF mit Textebene und Originalseiten, PDFs aus dem Browser,
-  passwortgeschützte PDF nach Eingabe des Passworts, EPUB ohne DRM in
-  Buchreihenfolge, DOCX, TXT, Markdown, HTML sowie Bilder und Scans mit lokaler
-  Texterkennung.
-- Herunterladen: Seite, Auswahl oder ganzes Dokument als MP3, WAV, PDF oder
-  HTML.
-- Zusammenfassen: geführte Tour durch die Kernsätze einer Seite, optional mit
-  einem lokalen KI-Modell (einmaliger Download).
-- Oberfläche in sechs Sprachen (Deutsch, Englisch, Französisch, Spanisch,
-  Italienisch, Portugiesisch).
-- Verarbeitung auf dem Gerät: keine Dokumente an Notable Reader, kein
-  Analysetracking. Modelldownloads starten nur nach einem Klick.
-- Lokaler Hörbuch-Export: vollständige geöffnete Bücher und Texte als MP3 oder
-  WAV speichern. Die Audioerzeugung und Kodierung laufen auf dem eigenen Gerät.
+Alle Funktionen und alle Downloads sind kostenlos: kein Konto, keine Lizenzprüfung, keine Werbung, kein Textkontingent,
+keine Nutzungsstatistik. Die Erweiterung und die Web-App enthalten weder eine Gerätekennung noch einen Zahlungsaufruf.
+Eine freiwillige Unterstützung über einen Stripe-Link ist möglich; sie schaltet nichts frei (`extension/pricing.mjs`:
+„All Reader functions are free“, `extension/premium-browser.mjs`: Kompatibilitätsmodul ohne Konto oder Lizenz).
 
-## Bücher und Text als Hörbuch speichern
+## Was das Programm kann
 
-Die [Web-App](https://reader.benotable.de/app/?mode=audiobook) öffnen und eine
-EPUB-, PDF-, DOCX-, TXT-, Markdown- oder HTML-Datei auswählen oder Text einfügen.
-PDFs benötigen eine Textebene, EPUBs müssen DRM-frei sein. Unter **Hörbuch
-erstellen** eine lokale KI-Stimme und MP3 oder WAV wählen. Ein noch nicht
-installiertes Sprachmodell wird erst nach einem ausdrücklichen Klick geladen.
-System- und Online-Stimmen des Browsers stehen für diesen Dateiexport nicht
-zur Verfügung, weil die Browser-Sprachschnittstelle keine Audiodaten ausgibt.
+- Vorlesen von Webseiten (Erweiterung) und von Dateien: PDF, EPUB ohne DRM, DOCX, TXT, Markdown, HTML, eingefügter
+  Text sowie Bilder und Scans per lokaler Texterkennung (OCR).
+- Wortmarkierung, Tempo von 0,5× bis 4×, Abschnitte und Kapitel, Lesezeichen, Weiterlesen an der letzten Stelle.
+- Speichern als MP3 oder WAV (Hörbuch-Export) sowie Dokument als HTML oder PDF, jeweils auf dem eigenen Gerät erzeugt.
+- „Zusammenfassen“: geführte Tour durch die Kernsätze einer Seite, optional mit einem lokalen KI-Modell.
+- Oberfläche in sechs Sprachen: Deutsch, Englisch, Französisch, Spanisch, Italienisch, Portugiesisch.
+- Läuft in Chromium-Browsern ab Version 123 (Manifest V3). Eine Firefox-Version gibt es nicht; im Code ist dafür kein
+  Store-Eintrag hinterlegt (`extension/product-config.js`: `firefox: null`).
 
-Der Export verarbeitet den vollständigen geöffneten Text von Anfang bis Ende,
-unabhängig von der Lesestelle. Er läuft mit Standardtempo 1×; Tempo und
-Lautstärke des Vorleseplayers verändern die gespeicherte Datei nicht.
-MP3 verwendet 64 kbit/s mono, WAV unkomprimiertes 16-Bit-PCM mono. Für WAV gilt
-die technische 4-GiB-Dateigrenze; MP3 ist für lange Bücher platzsparender.
-Die Exporte sind in Web-App und Erweiterung kostenlos. Es gibt kein
-Wortkontingent. Die vorhandenen Sicherheitsgrenzen des Dateiimports gelten
-weiterhin.
+## Was lokal läuft
 
-Auf unterstützten Browsern lässt sich direkt in eine ausgewählte Datei
-schreiben. Sonst speichert der Browser Audio abschnittsweise im lokalen
-Dateisystem OPFS oder in IndexedDB und bietet anschließend den Download an.
-Nur wenn beide Verfahren fehlen, gilt eine 32-MiB-Grenze für den
-Arbeitsspeicher-Fallback. Die App meldet echte Speichergrenzen ausdrücklich.
-Eine vollständige PCM-Kopie des Buchs wird nicht im RAM gesammelt.
+- Die Stimmen-Engine (ONNX Runtime Web mit WebAssembly) rechnet im Browser. Der Text verlässt den Browser nicht;
+  an Hugging Face gehen nur Modelldateien-Anfragen (siehe unten), nie Dokumenttext.
+- Der lokale Verlauf speichert beim tatsächlichen Abspielen eine Textkopie, die Quelle, den Titel, die Zeit und die
+  Position lokal im Browser (private Fenster ausgenommen). Löschen geht in den Ansichten des Verlaufs und der
+  Bibliothek. Einzelheiten: [PRIVACY.md](PRIVACY.md).
 
-Den Tab während der Berechnung geöffnet lassen; Dauer und verfügbare
-Speichermenge hängen vom Gerät und vom Buch ab. Fortschritt und Abbruch sind
-sichtbar. Unterbrochene Berechnungen beginnen erneut. Nach normalem Ende oder
-Abbruch werden temporäre Audiodaten bereinigt; nach einem Browserabsturz können
-Reste mit **Temporäre Hörbuchdaten löschen** entfernt werden. Aktive Exporte
-anderer Tabs bleiben geschützt. Bewusst heruntergeladene Dateien verbleiben
-im gewählten Downloadordner.
+## Was beim ersten Start geladen wird
 
-Anleitungen: [Buch in Hörbuch umwandeln](https://reader.benotable.de/buch-in-hoerbuch/)
-und [Book to audiobook](https://reader.benotable.de/book-to-audiobook/).
+- **Die Installation lädt kein Sprachmodell.** Erst der erste Klick auf Play lädt eine Stimme von Hugging Face, mit fester
+  Revision und geprüft nach Größe und SHA-256:
+  - Deutsch: Thorsten medium, ca. 63 MB (`rhasspy/piper-voices`).
+  - Englisch: Bella (Kokoro FP32), ca. 326 MB (`onnx-community/Kokoro-82M-v1.0-ONNX`).
+  - Belege: `extension/voice-picker.mjs` (`FIRST_RUN_VOICES`), `extension/tools/reader/neural-models.js`,
+    `extension/tools/reader/neural-voices.js`, `extension/models/voice-catalog.mjs`. Weitere Stimmen und Sprachen
+    stehen in der Stimmenliste und werden erst nach einem Klick geladen.
+- Optional, nur nach Klick: OCR-Sprachdaten (`tessdata_fast`, je 1 bis 4 MB, aus einem festgelegten Hugging-Face-Spiegel).
+- Optional, nur nach Klick: ein lokales KI-Erklärmodell. IBM Granite 4.0 350M ca. 580 MB
+  (`extension/explain/model-manifest.json`) oder Qwen3.5-0.8B ca. 668 MB
+  (`extension/explain/model-manifest-better.json`, auch für Deutsch).
+- Erlaubte Download-Ziele laut Content-Security-Policy: `huggingface.co`, `*.huggingface.co`, `*.hf.co`,
+  `*.xethub.hf.co`.
 
-Stimmen, Sprachumfang, Aussprache und die tatsächlich erreichbare
-Wiedergabegeschwindigkeit hängen vom Betriebssystem und der gewählten Stimme ab.
-Eine als online gemeldete Systemstimme kann Text an ihren Anbieter übertragen. Auf
-Systemen ohne installierte Stimmen kann der bewusst gestartete lokale
-KI-Modelldownload genutzt, eine Systemstimme eingerichtet oder eine verfügbare
-Online-Stimme ausdrücklich eingeschaltet werden. Der Reader zeigt diesen
-Fall an, statt eine funktionierende Sprachausgabe vorzutäuschen.
+## Berechtigungen
 
-PDF-Scans brauchen eine vorgelagerte OCR. Alte binäre DOC-Dateien müssen zuerst
-als DOCX exportiert werden. Verschlüsselte EPUBs/Office-Archive, ZIP64-Archive,
-unsichere Pfade und Archive mit auffälligen Entpackgrößen werden abgewiesen.
-Für den Archivimport gelten technische Sicherheitsgrenzen: höchstens 128 MB
-Archiv-/Gesamtinhalt, 32 MB je Datei, 4.096 Einträge und bei großen Einträgen ein
-maximales Kompressionsverhältnis von 1.000:1. Diese Grenzen verhindern
-Speicherüberlastungen; sie sind kein kostenpflichtiges Textkontingent.
+Aus `extension/manifest.json`. `host_permissions` ist leer: Beim Installieren fragt die Erweiterung keinen Zugriff auf
+alle Websites an.
 
-## Erweiterung installieren
+| Berechtigung | Wozu |
+|---|---|
+| `activeTab`, `scripting` | die Seite lesen, die du vorlesen lassen willst |
+| `storage`, `unlimitedStorage` | Einstellungen, Verlauf, Bibliothek und heruntergeladene Modelle lokal speichern |
+| `offscreen` | verstecktes Erweiterungsdokument, in dem Stimmen und Audio laufen |
+| `downloads` (optional) | Einstellungen exportieren, gespeicherte Dateien im Ordner zeigen |
+| `sidePanel` (optional) | die Leiste im Seitenbereich des Browsers zeigen |
+| `webNavigation` (optional) | nur die Frames des aktuellen Tabs auflisten, wenn Text in einem eingebetteten Frame liegt |
+| `optional_host_permissions` (`http://*/*`, `https://*/*`) | wird erst bei Bedarf für genau eine Website angefragt (Frame dieser Website, automatisches Weiterlesen der Kapitel) |
 
-Aus dem [GitHub-Release](https://github.com/burak-basci/notable-reader/releases)
-das zur Installation passende Paket und SHA256SUMS herunterladen:
+Content-Security-Policy der Erweiterungsseiten: `connect-src 'self' https://huggingface.co https://*.huggingface.co
+https://*.hf.co https://*.xethub.hf.co`, dazu `script-src 'self' 'wasm-unsafe-eval'`; es wird kein Code nachgeladen.
 
-- `notable-reader-extension-2.4.0.zip`: offizielle Erweiterungs-ID
-  `hgkfghgifkifgmklfgglilnmjglojonm`.
-- `notable-reader-compatible-2.4.0.zip`: bestehende lokale Companion-ID
-  `bbobdmpbadoijfffgfeefcenegbbjddd` für ein kompatibles Upgrade.
+## Aus dem Quelltext bauen
 
-Beide Pakete haben dieselbe Version, Oberfläche und sämtliche Funktionen. Nur
-der öffentliche Identitätsschlüssel im Manifest unterscheidet sich. Die private
-1.6.4 und die bisherige öffentliche 2.3.3 waren verschiedene Quellen; 2.4.0 führt
-ihren aktuellen Quellstand zusammen. Eine bloße höhere Versionsaufschrift ist
-kein Upgrade. Der Store besitzt einen eigenen Freigabestand; ein GitHub-Release
-ändert weder einen laufenden Review noch die Storeinstallation automatisch.
-
-Hash prüfen, ZIP vollständig entpacken und auf `chrome://extensions` bzw.
-`edge://extensions` im Entwicklermodus **Entpackte Erweiterung laden** wählen.
-Der gewählte Ordner muss `manifest.json` enthalten. Bei bestehender Installation
-denselben ID-Typ und denselben Installationsordner verwenden; vorher aktuelle
-Einstellungen und Lesestellen sichern. Keine zweite Variante gleichzeitig als
-vermeintliches Upgrade installieren. Die echte geladene Version/ID und sämtliche
-Paketdateien nach dem Upgrade vergleichen. Details: [Installation](docs/install.md).
-
-Die Browserengine verarbeitet lokale Dokumente und Artikel ohne Python-Daemon.
-Lokale KI-Modelle werden nur nach einem ausdrücklichen Download angeboten.
-Der optionale Nativeadapter benutzt ausschließlich den lokalen Anschluss
-127.0.0.1; seine Berechtigung wird bei der bewussten Einrichtung angefragt.
-Er benötigt separat installierte Linux-Voraussetzungen, lokale Modelle und den
-lokalen Browseranschluss. Er startet keine automatische Wiedergabe. Native
-Installation, Grenzen und Lizenzen: [native/README.md](native/README.md).
-
-Die Web-App kann auf unterstützten Geräten als PWA installiert werden; sie
-bleibt vom optionalen Nativecompanion unabhängig.
-
-## Datenschutz
-
-Dateien und geladener Text bleiben im Speicher der geöffneten Seite. Der
-Hörbuchexport kann temporäres Audio lokal in OPFS oder IndexedDB speichern,
-wie oben beschrieben. Es gibt keinen Upload-Endpunkt. Beim Schließen wird die
-Textsitzung verworfen. Bis zu 100
-Lesestellen werden als Text-Fingerabdruck und Abschnittsnummer gespeichert,
-zusammen mit Stimme, Tempo, Lautstärke und Optionen. Es werden weder Dokumenttext
-noch Dateiname oder Quell-URL in diesen Einstellungen gespeichert.
-
-Die Dokument-App nutzt den Browserspeicher ihrer Website beziehungsweise ihrer
-Erweiterungsseite. Die Artikelleiste speichert Einstellungen in
-`chrome.storage.local`. **Einstellungen & Lesestellen löschen** entfernt diese
-Daten im jeweiligen Reader. Die Web-App speichert öffentlich ausgelieferte
-Programmdateien im Offline-Cache; Dokumentdateien gehören nicht zu diesem Cache.
-Freiwillig heruntergeladene KI-Modelle liegen getrennt im CacheStorage
-`notable-reader-neural-models-v1` und werden mit **Lokale KI-Modelle löschen**
-entfernt. Beim Modelldownload erhält Hugging Face technische Verbindungsdaten;
-Dateien und Text werden nicht übertragen. Modellgröße und SHA-256 müssen vor
-der Speicherung mit dem gepinnten Katalog übereinstimmen. Die Inferenz arbeitet
-im eigenen Worker mit ONNX Runtime WebAssembly und gibt lokal erzeugtes Audio
-über einen Audiopuffer aus. Ein Abschnitt wird vorausberechnet; tatsächliche
-Synthesegeschwindigkeit und Geräteleistung können das gewünschte Tempo begrenzen.
-Websitebesuch und freiwillige Zahlung unterliegen den Hinweisen auf
-https://reader.benotable.de/privacy und den Bedingungen des Zahlungsanbieters.
-
-## Entwicklung und Prüfung
-
-Die Erweiterung ist buildless HTML, CSS und JavaScript. Produktcode liegt unter
-`extension/`. Kein CDN und kein nachgeladener ausführbarer Fremdcode.
+Voraussetzungen: Python 3 (nur Standardbibliothek) und Git für `tools/release.py`; Node.js für die Web-App und die Tests.
 
 ```sh
-npm install
-npm run test:core
-npm run test:browser
-python3 tools/release.py --freeze-inventory
-python3 tools/release.py --output-dir /path/to/new-release-directory
+# Pakete (offizielle ID, kompatible ID, Quellpaket, Web-App); der Zielordner darf noch nicht existieren
+python3 tools/release.py --output-dir /pfad/zu/neuem-ordner
+# weitere Optionen: --freeze-inventory (Dateiinventar neu festschreiben), --source-commit <hash>,
+# --allow-unbound (nur lokal, ohne Herkunftsnachweis)
+
+# Nur die Web-App
+node tools/build-webapp.mjs --out /pfad/zu/ordner     # optional --version X.Y.Z --rev rN
 ```
 
-Die Browserprüfung benötigt eine von Playwright unterstützte Chromium-Installation;
-`npx playwright-core install chromium` lädt sie bei Bedarf. Tests starten ausschließlich
-einen eigenen stummen Headless-Browser und benutzen öffentliche synthetische
-Dokumente unter `tests/fixtures/`. Die Stimmen-Zustandsprüfung benutzt kontrollierte
-Teststimmen; der tatsächliche Stimmenbestand wird separat erfasst. Ein bestandener
-Stummschalttest ist kein subjektives Klangurteil.
+Entpackt laden: `chrome://extensions` öffnen, Entwicklermodus einschalten, „Entpackte Erweiterung laden“ und den Ordner
+`extension/` wählen.
 
-Der vollständige Hörbuchexport hat eine gesonderte reproduzierbare Abnahme:
-[tests/audiobook-export/README.md](tests/audiobook-export/README.md). Sie trennt
-echte vollständige ONNX-Buchsynthese und vollständige Dateidekodierung von
-deterministischen Tests für 100.000 Wörter, Speichergrenzen und Abbruch.
-`node tests/audiobook-ui.mjs` prüft nach dem Releasebau zusätzlich den tatsächlichen
-UI-Weg mit lokal vorhandenen, hashgeprüften Piper-Modellen, Offline-Reload,
-MP3/WAV-Download und Abbruch. Dafür gelten die Modellpfade und Voraussetzungen
-der gesonderten Abnahme.
+Hinweis: `extension/vendor/explain/transformers.min.js` (Transformers.js 4.2.0, Runtime des Erklärmodells) steht in
+`.gitignore` und fehlt im Git-Repository. Der Erklär-Worker (`extension/explain/worker.mjs`) lädt sie, und das Release-Inventar nennt sie; ein Build
+braucht sie also. Sie ist die Datei `dist/transformers.min.js` aus dem npm-Paket `@huggingface/transformers` 4.2.0 mit zwei
+dokumentierten Änderungen; Herkunft, Prüfsummen und die Änderungen stehen in `extension/vendor/explain/provenance.json`.
+Ein Skript, das die Datei erzeugt, gibt es im Repository nicht.
 
-Die PDF-Testdateien lassen sich mit dem optionalen Entwicklungswerkzeug
-PyMuPDF neu erzeugen: `python3 tools/fixtures.py tests/fixtures`.
-PyMuPDF gehört nicht zur Browserlaufzeit. Der optionale Nativecompanion verwendet es als separat installierte AGPL- bzw. kommerziell lizenzierte Abhängigkeit.
+Tests: `npm install`, `npm run test:core`, `npm run test:browser` (benötigt ein Chromium, das Playwright unterstützt).
+Beschreibung des Release-Ablaufs: [docs/releases.md](docs/releases.md) (Teile davon beschreiben noch den Stand 2.4).
 
 ## Lizenzen
 
-Die Browserdistribution einschließlich eSpeak NG wird unter
-GPL-3.0-or-later ausgeliefert (LICENSE/COPYING). Der selbst geschriebene
-Browserreadercode ist zusätzlich unter MIT verfügbar (LICENSE-MIT, Dateiheader).
-Mozilla PDF.js und Readability: Apache-2.0. fflate und ONNX Runtime: MIT.
-Piper-Phonemizer-Wrapper: MIT, eingebettetes eSpeak NG: GPL-3.0-or-later.
-Kokoro-Modell: Apache-2.0. Piper-Modellverzeichnis: MIT, Thorsten-Sprachdatensatz:
-CC0. Stimmengewichte kommen erst nach dem ausdrücklichen Download.
-Der lokal gebündelte MP3-Encoder @breezystack/lamejs 1.2.7 steht unter
-LGPL-3.0; seine vollständigen korrespondierenden Quellen und Hinweise liegen
-unter `extension/vendor/export/` und sind Bestandteil der Distribution.
+- Distribution des Browserteils: **GPL-3.0-or-later** (`LICENSE`, `COPYING`), weil sie eSpeak NG enthält (Phonemisierung
+  der Piper-Stimmen).
+- Eigener Browsercode von Burak Basci: zusätzlich **MIT** (`LICENSE-MIT`, Dateiköpfe).
+- Der MP3-Encoder `@breezystack/lamejs` 1.2.7 (LGPL-3.0) liegt unverändert unter
+  `extension/tools/reader/vendor/export/`, mit seinen Quellen.
+- Nativer Linux-Begleiter unter `native/`: **AGPL-3.0-or-later** (`native/LICENSE`); er ist nicht Teil der Browserpakete.
+- Alle Fremdkomponenten, Modelle und deren Lizenzen: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Die Quellen von
+  eSpeak NG und des Phonemizers: [third_party_sources/README.md](third_party_sources/README.md).
 
-Vollständige Phonemizer-/eSpeak-Quellen, Sprachdatenquellen, Originalhinweise,
-Buildanleitung und Hashinventar sind im Quellpaket enthalten, siehe
-[third_party_sources/README.md](third_party_sources/README.md) und
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Datenschutz: [PRIVACY.md](PRIVACY.md). Sicherheitsmeldungen: [SECURITY.md](SECURITY.md). Änderungen:
+[CHANGELOG.md](CHANGELOG.md).
 
-Die Erweiterungs-ZIPs enthalten keine Modellgewichte, Pythonumgebung oder CUDA-Bibliotheken. Das kanonische Sourcepaket enthält zusätzlich die streng allowlisteten optionalen Nativequellen samt Linux-Bootstrap unter AGPL-3.0-or-later, vollständigem Lizenztext und [eigenen Drittanbieterhinweisen](native/THIRD_PARTY_NOTICES.md). Die Browserlizenzen und unveränderten Vendorquellen bleiben erhalten. Kein MIT-/GPL-only-Versprechen für die Nativeausführung.
+---
 
-Der reproduzierbare unveränderliche Releasebau, Source-/Commitbindung, beide ID-Pakete und die daemonfreie Web-Ausgabe sind in [docs/releases.md](docs/releases.md) beschrieben.
+<a id="english"></a>
 
-## Korrektur in 2.3.2
+# English
 
-Abgebrochene oder überholte PDF-Abbildungsberechnungen erzeugen keine bleibenden Fehlerhinweise. Ein erfolgreicher neuer Bildaufbau stellt die ursprüngliche Beschriftung wieder her; echte aktuelle Fehler bleiben sichtbar. Die getrennten Prüfungen `test:figure-paint` und `test:figure-paint-browser` decken Abbruch, Wiederholung und rasche Darstellungswechsel ab.
+Read web pages, PDFs, e-books and your own text aloud with voices that run on your own device in the browser. The word
+being spoken is highlighted.
 
-## Ruhige Darstellung und Dokumentdownloads
+- **Web app:** https://reader.benotable.de/app/
+- **Website:** https://reader.benotable.de/
+- **Chrome Web Store:** https://chromewebstore.google.com/detail/hgkfghgifkifgmklfgglilnmjglojonm
+- **Source:** https://github.com/burak-basci/notable-reader
 
-Die gemeinsame Papier-/Grün-Steuerung bleibt in Artikel, Datei-App, Fokusansicht und Erweiterungsmenü an denselben Stellen. Die Dokumentpalette ist von der Playerfarbe getrennt; Sprache, Region,12-/24-Stundenformat, Kapitel, Restdauer und die Prognose nach dem Fortsetzen sind einstellbar.
+## Free, no account
 
-HTML- und EPUB-Dateien übernehmen lokal enthaltene PNG-/JPEG-/WebP-Abbildungen in die bereinigte Textfassung. Externe Bildadressen werden nicht nachgeladen. Bei Artikeln können nur bereits geladene Bilder übernommen werden, deren Pixel der Browser freigibt; ausgelassene Bilder werden deutlich gemeldet. PDFs behalten eine gesonderte Originalvorschau und liefern verfügbare Rasterabbildungen für die Lesefassung. Komplexe, nicht trennbare Grafik kann als ausdrücklich beschriftete Seitenabbildung erscheinen. Wiederkehrende Randzeilen werden konservativ bereinigt; echte Kapitel und vorhandene Lesestellen werden zugeordnet.
+Every function and every download is free: no account, no licence check, no ads, no text quota, no usage analytics.
+The extension and the web app contain no device identifier and no payment call. A voluntary payment link (Stripe)
+exists; it unlocks nothing (`extension/pricing.mjs`, `extension/premium-browser.mjs`).
 
-Der gleiche Downloadknopf bietet HTML und eine gerasterte PDF-Fassung mit gewählter Darstellung. Diese bereinigte PDF ist keine originalgetreue Ausgabe mit durchsuchbarer Textebene. Ein Abbruch oder Fehler stellt kein unvollständiges Ergebnis bereit. Browser-Dateiwerkzeuge zeigen18 tatsächlich unterstützte Darstellungsfelder; die zusätzliche native Originalseitensteuerung unterstützt20. Nicht unterstützte Optionen werden nicht als wirkungslose Checkboxen angeboten.
+## What it does
 
-## Unterstützen
+- Reads web pages (extension) and files: PDF, EPUB without DRM, DOCX, TXT, Markdown, HTML, pasted text, and images or
+  scans through local text recognition (OCR).
+- Word highlighting, speed from 0.5x to 4x, sections and chapters, bookmarks, resume where you stopped.
+- Saves audio as MP3 or WAV (audiobook export) and documents as HTML or PDF, all produced on your device.
+- "Summarize": a guided tour through the key sentences of a page, optionally with a local AI model.
+- Interface in six languages: German, English, French, Spanish, Italian, Portuguese.
+- Runs in Chromium-based browsers, version 123 or newer (Manifest V3). There is no Firefox version; the code has no
+  Firefox store entry (`extension/product-config.js`: `firefox: null`).
 
-Homepage, Web-App, Erweiterungs-Popup und Einstellungen bieten einen direkten
-Stripe-Link für eine freiwillige Unterstützung mit frei wählbarem Betrag. Eine
-Zahlung schaltet keine Funktionen frei; alle Funktionen bleiben kostenlos.
+## What runs locally
+
+- The voice engine (ONNX Runtime Web with WebAssembly) computes in the browser. Text does not leave the browser;
+  Hugging Face only receives requests for model files (below), never document text.
+- The local reading history keeps, during actual playback, a text copy, the source, the title, the time and the position
+  in your browser (private windows are left out). It can be deleted in the history and library views. Details:
+  [PRIVACY.md](PRIVACY.md).
+
+## What is downloaded on first use
+
+- **Installing downloads no voice model.** The first click on Play downloads one voice from Hugging Face at a fixed
+  revision, checked by size and SHA-256:
+  - German: Thorsten medium, about 63 MB (`rhasspy/piper-voices`).
+  - English: Bella (Kokoro FP32), about 326 MB (`onnx-community/Kokoro-82M-v1.0-ONNX`).
+  - Evidence: `extension/voice-picker.mjs` (`FIRST_RUN_VOICES`), `extension/tools/reader/neural-models.js`,
+    `extension/tools/reader/neural-voices.js`, `extension/models/voice-catalog.mjs`. More voices and languages are in the
+    voice list and are downloaded only after a click.
+- Optional, only after a click: OCR language data (`tessdata_fast`, 1 to 4 MB each, from a pinned Hugging Face mirror).
+- Optional, only after a click: a local AI explanation model. IBM Granite 4.0 350M, about 580 MB
+  (`extension/explain/model-manifest.json`), or Qwen3.5-0.8B, about 668 MB (`extension/explain/model-manifest-better.json`,
+  also for German).
+- Download hosts allowed by the content security policy: `huggingface.co`, `*.huggingface.co`, `*.hf.co`,
+  `*.xethub.hf.co`.
+
+## Permissions
+
+From `extension/manifest.json`. `host_permissions` is empty: installing asks for no access to all websites.
+
+| Permission | Purpose |
+|---|---|
+| `activeTab`, `scripting` | read the page you ask the Reader to read |
+| `storage`, `unlimitedStorage` | keep settings, history, library and downloaded models locally |
+| `offscreen` | hidden extension document in which voices and audio run |
+| `downloads` (optional) | export settings, show saved files in their folder |
+| `sidePanel` (optional) | show the reader bar in the browser's side panel |
+| `webNavigation` (optional) | only list the frames of the current tab when the text sits in an embedded frame |
+| `optional_host_permissions` (`http://*/*`, `https://*/*`) | requested only when needed, for exactly one website (a frame of that site, automatic chapter continuation) |
+
+Content security policy of the extension pages: `connect-src 'self' https://huggingface.co https://*.huggingface.co
+https://*.hf.co https://*.xethub.hf.co`, plus `script-src 'self' 'wasm-unsafe-eval'`; no code is loaded from outside.
+
+## Build from source
+
+Requirements: Python 3 (standard library only) and Git for `tools/release.py`; Node.js for the web app and the tests.
+
+```sh
+# packages (official ID, compatible ID, source package, web app); the output directory must not exist yet
+python3 tools/release.py --output-dir /path/to/new-directory
+# more options: --freeze-inventory (rewrite the file inventory), --source-commit <hash>,
+# --allow-unbound (local staging only, no provenance claim)
+
+# web app only
+node tools/build-webapp.mjs --out /path/to/directory   # optional --version X.Y.Z --rev rN
+```
+
+Load unpacked: open `chrome://extensions`, switch on Developer mode, choose "Load unpacked" and select the `extension/`
+folder.
+
+Note: `extension/vendor/explain/transformers.min.js` (Transformers.js 4.2.0, the runtime of the explanation model) is
+listed in `.gitignore` and is not in the Git repository. The explanation worker (`extension/explain/worker.mjs`) loads it and the release inventory names it, so a build needs it. It is `dist/transformers.min.js` from the npm package `@huggingface/transformers` 4.2.0 with
+two documented edits; origin, checksums and the edits are in `extension/vendor/explain/provenance.json`. The repository
+has no script that produces the file.
+
+Tests: `npm install`, `npm run test:core`, `npm run test:browser` (needs a Chromium that Playwright supports). The release
+procedure is in [docs/releases.md](docs/releases.md) (parts of it still describe the 2.4 state).
+
+## Licences
+
+- The browser distribution as a whole is **GPL-3.0-or-later** (`LICENSE`, `COPYING`) because it contains eSpeak NG
+  (phonemizer of the Piper voices).
+- The Reader's own browser code by Burak Basci is additionally available under the **MIT** licence (`LICENSE-MIT`, file
+  headers).
+- The MP3 encoder `@breezystack/lamejs` 1.2.7 (LGPL-3.0) is shipped unmodified under
+  `extension/tools/reader/vendor/export/`, with its sources.
+- The optional native Linux companion in `native/` is **AGPL-3.0-or-later** (`native/LICENSE`); it is not part of the
+  browser packages.
+- All third-party components, models and their licences: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Sources of eSpeak
+  NG and the phonemizer: [third_party_sources/README.md](third_party_sources/README.md).
+
+Privacy: [PRIVACY.md](PRIVACY.md). Security reports: [SECURITY.md](SECURITY.md). Changes: [CHANGELOG.md](CHANGELOG.md).

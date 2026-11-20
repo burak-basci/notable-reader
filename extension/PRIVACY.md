@@ -40,7 +40,7 @@ between browsers.
   without network. The browser itself, its extension manager and the website you visit can make their own
   network connections independently of this.
 - Downloads are sent without cookies and without a referrer. Every file is pinned to a fixed revision and checked
-  by size and SHA-256. The download hosts are `huggingface.co`, `*.huggingface.co` and `*.hf.co`.
+  by size and SHA-256. The download hosts are `huggingface.co`, `*.huggingface.co`, `*.hf.co` and `*.xethub.hf.co`.
 - The language data for text recognition (OCR) is a language pack of about 1 to 4 MB per language, fetched from a
   pinned Hugging Face mirror of `tessdata_fast`.
 
