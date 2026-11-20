@@ -17,7 +17,7 @@ function notASentenceEnd(text, endOfMark, end) {
   if (/^[(\["„“»'‘]*\p{L}\.$/u.test(tok) && /^(?:\p{L}|Chr)\.[,;:)]*$/u.test(next)) return true;                  // "z. B." "J. K." "u. a." (first letter of a chain)
   const prev = /(\S+)\s+\S+$/u.exec(before)?.[1] || '';
   if (/^[(\["„“»'‘]*\p{L}\.$/u.test(prev) && /^\p{L}\.$/u.test(tok) && /^\p{Lu}/u.test(next)) return /^\p{Lu}\.$/u.test(tok) || /^\p{L}\.$/u.test(prev) && /^\p{Ll}\.$/u.test(tok);   // second initial: "J. K. Rowling", "z. B. Terraform"
-  if (/^\d{1,2}\.$/u.test(tok) && MONTH.test(next)) return true;                                       // "am 3. Oktober"
+  if (/^[(\["„“»'‘]*\d{1,2}\.$/u.test(tok) && MONTH.test(next)) return true;                          // "am 3. Oktober", "(31. Dezember 2023)" (Wikipedia, R2-06)
   return false;
 }
 export function sentenceSpans(text) {
