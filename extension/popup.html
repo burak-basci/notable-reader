@@ -56,7 +56,7 @@
   <button type="button" class="read-action" id="entry-download"><span class="read-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 10l5 5 5-5M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg></span><span class="read-action-copy"><strong data-i18n="extDownload">Herunterladen</strong><small data-i18n="popupDownloadHint">MP3, WAV, PDF oder HTML</small></span></button>
  </div>
  <section class="read-resume" aria-labelledby="read-recent-label">
-  <div class="read-section-head"><h3 id="read-recent-label" data-i18n="popupResumeHeading">Weiterlesen, wo du aufgehört hast</h3><button type="button" class="read-text-link" id="entry-library" data-i18n="popupOpenHistory">Ganzer Verlauf</button></div>
+  <div class="read-section-head"><h3 aria-level="2" id="read-recent-label" data-i18n="popupResumeHeading">Weiterlesen, wo du aufgehört hast</h3><button type="button" class="read-text-link" id="entry-library" data-i18n="popupOpenHistory">Ganzer Verlauf</button></div>
   <div class="read-recent" id="read-recent" hidden>
    <button type="button" id="read-resume"><span class="read-recent-copy"><strong id="read-recent-title"></strong><small id="read-recent-detail"></small><q id="read-recent-quote" hidden></q></span><span class="read-recent-go"><span>Weiterhören</span><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#chevron"></use></svg></span></button>
    <progress id="read-recent-progress" max="1" value="0"></progress>
@@ -66,15 +66,15 @@
 </section>
 
 <section id="panel-extras" role="tabpanel" aria-labelledby="tab-extras" hidden>
- <section class="extras-group" aria-labelledby="extras-long-title"><h3 id="extras-long-title" data-i18n="popupExtrasLong">Hörbuch und lange Texte</h3><div class="extras-grid">
+ <section class="extras-group" aria-labelledby="extras-long-title"><h3 aria-level="2" id="extras-long-title" data-i18n="popupExtrasLong">Hörbuch und lange Texte</h3><div class="extras-grid">
   <button type="button" class="extra" id="open-reader-audiobook" data-reader-tool="audiobook"><span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="extra-copy"><strong data-i18n="popupAudiobook">Hörbuch erstellen</strong><small data-i18n="popupAudiobookHint">Speichert ganze Texte als MP3 oder WAV auf deinem Gerät.</small></span></button>
   <button type="button" class="extra" data-entry="pickNextChapter"><span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 5v14M6 5l10 7-10 7z"/></svg></span><span class="extra-copy"><strong data-i18n="popupNextChapter">Kapitel automatisch weiter</strong><small data-i18n="popupNextChapterHint">Zeig auf den Link zum nächsten Kapitel, dann liest der Reader dort weiter.</small></span></button>
  </div></section>
- <section class="extras-group" aria-labelledby="extras-part-title"><h3 id="extras-part-title" data-i18n="popupExtrasPart">Nur einen Teil hören</h3><div class="extras-grid">
+ <section class="extras-group" aria-labelledby="extras-part-title"><h3 aria-level="2" id="extras-part-title" data-i18n="popupExtrasPart">Nur einen Teil hören</h3><div class="extras-grid">
   <button type="button" class="extra" data-entry="selectArea"><span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></span><span class="extra-copy"><strong data-i18n="popupSelectArea">Bereich auswählen</strong><small data-i18n="popupSelectAreaHint">Zieh einen Rahmen um den Teil der Seite, den du hören willst.</small></span></button>
   <button type="button" class="extra" data-entry="captureArea"><span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m4 16 5-5 4 4 3-3 5 5M8 8h.01"/></svg></span><span class="extra-copy"><strong data-i18n="popupCaptureArea">Text aus Bild oder Scan</strong><small data-i18n="popupCaptureAreaHint">Erkennt Text in einem Bildausschnitt auf deinem Gerät und liest ihn vor.</small></span></button>
  </div></section>
- <section class="extras-group" aria-labelledby="extras-place-title"><h3 id="extras-place-title" data-i18n="popupExtrasPlace">Wo der Reader erscheint</h3><div class="extras-grid">
+ <section class="extras-group" aria-labelledby="extras-place-title"><h3 aria-level="2" id="extras-place-title" data-i18n="popupExtrasPlace">Wo der Reader erscheint</h3><div class="extras-grid">
   <button type="button" class="extra" id="entry-sidebar"><span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg></span><span class="extra-copy"><strong data-i18n="popupSidebar">Seitenleiste öffnen</strong><small data-i18n="popupSidebarHint">Gemerktes und Steuerung bleiben neben der Seite offen.</small></span></button>
   <button type="button" class="extra" data-control="resetBar"><span class="extra-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#reset"></use></svg></span><span class="extra-copy"><strong data-i18n="popupResetBar">Vorleseleiste zurücksetzen</strong><small data-i18n="popupResetBarHint">Holt die Leiste zurück an ihren Platz unten in der Mitte.</small></span></button>
  </div></section>
@@ -85,7 +85,7 @@
 
 <section id="panel-support" role="tabpanel" aria-labelledby="tab-support" hidden>
  <section class="supportbox" aria-labelledby="support-heading">
-  <h3 id="support-heading" data-i18n="popupSupportHeading">beNotable! Reader ist und bleibt für alle kostenlos.</h3>
+  <h3 aria-level="2" id="support-heading" data-i18n="popupSupportHeading">beNotable! Reader ist und bleibt für alle kostenlos.</h3>
   <p class="copy" data-i18n="popupSupportIntro">Wenn er dir etwas wert ist, kannst du die Arbeit daran unterstützen.</p>
   <div class="offer-card" id="support-tiers"></div>
   <div id="support-custom-host"></div>
