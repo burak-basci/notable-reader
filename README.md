@@ -7,7 +7,8 @@ rechnen. Das Wort, das gerade gesprochen wird, wird markiert.
 
 - **Web-App:** https://reader.benotable.de/app/
 - **Website:** https://reader.benotable.de/
-- **Chrome Web Store:** https://chromewebstore.google.com/detail/hgkfghgifkifgmklfgglilnmjglojonm
+- **Chrome Web Store:** https://chromewebstore.google.com/detail/hgkfghgifkifgmklfgglilnmjglojonm (der Store zeigt bis
+  zur Freigabe von 2.5 noch eine ältere Fassung)
 - **Quellen:** https://github.com/burak-basci/notable-reader
 
 ## Kostenlos, ohne Konto
@@ -91,9 +92,11 @@ Hinweis: `extension/vendor/explain/transformers.min.js` (Transformers.js 4.2.0, 
 `.gitignore` und fehlt im Git-Repository. Der Erklär-Worker (`extension/explain/worker.mjs`) lädt sie, und das Release-Inventar nennt sie; ein Build
 braucht sie also. Sie ist die Datei `dist/transformers.min.js` aus dem npm-Paket `@huggingface/transformers` 4.2.0 mit zwei
 dokumentierten Änderungen; Herkunft, Prüfsummen und die Änderungen stehen in `extension/vendor/explain/provenance.json`.
-Ein Skript, das die Datei erzeugt, gibt es im Repository nicht.
+Vor dem ersten Bauen aus einem frischen Checkout: `node tools/fetch-transformers.mjs` lädt das npm-Paket, prüft dessen
+Integrität, wendet die zwei Änderungen an und prüft das Ergebnis gegen die SHA-256 aus `provenance.json`.
 
-Tests: `npm install`, `npm run test:core`, `npm run test:browser` (benötigt ein Chromium, das Playwright unterstützt).
+Tests: `npm test` (Unit-Tests ohne Browser); Browsertests wie `node tests/webapp-browser.mjs` brauchen `npm install`
+und ein Chromium, das Playwright unterstützt.
 Beschreibung des Release-Ablaufs: [docs/releases.md](docs/releases.md) (Teile davon beschreiben noch den Stand 2.4).
 
 ## Lizenzen
@@ -121,7 +124,8 @@ being spoken is highlighted.
 
 - **Web app:** https://reader.benotable.de/app/
 - **Website:** https://reader.benotable.de/
-- **Chrome Web Store:** https://chromewebstore.google.com/detail/hgkfghgifkifgmklfgglilnmjglojonm
+- **Chrome Web Store:** https://chromewebstore.google.com/detail/hgkfghgifkifgmklfgglilnmjglojonm (until 2.5 is approved
+  the store still shows an older version)
 - **Source:** https://github.com/burak-basci/notable-reader
 
 ## Free, no account
@@ -201,10 +205,12 @@ folder.
 
 Note: `extension/vendor/explain/transformers.min.js` (Transformers.js 4.2.0, the runtime of the explanation model) is
 listed in `.gitignore` and is not in the Git repository. The explanation worker (`extension/explain/worker.mjs`) loads it and the release inventory names it, so a build needs it. It is `dist/transformers.min.js` from the npm package `@huggingface/transformers` 4.2.0 with
-two documented edits; origin, checksums and the edits are in `extension/vendor/explain/provenance.json`. The repository
-has no script that produces the file.
+two documented edits; origin, checksums and the edits are in `extension/vendor/explain/provenance.json`. Before the first build from a fresh
+checkout run `node tools/fetch-transformers.mjs`: it downloads the npm package, checks its integrity, applies the two edits
+and checks the result against the SHA-256 in `provenance.json`.
 
-Tests: `npm install`, `npm run test:core`, `npm run test:browser` (needs a Chromium that Playwright supports). The release
+Tests: `npm test` (unit tests, no browser); browser tests such as `node tests/webapp-browser.mjs` need `npm install` and a
+Chromium that Playwright supports. The release
 procedure is in [docs/releases.md](docs/releases.md) (parts of it still describe the 2.4 state).
 
 ## Licences
