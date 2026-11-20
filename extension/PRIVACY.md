@@ -1,6 +1,6 @@
 # Privacy and local data
 
-beNotable! Reader – last updated: 13 November 2026
+beNotable! Reader – last updated: 20 November 2026
 
 All Reader features and downloads are free. The extension needs no Reader account, creates no device identifier
 and contacts no license service. It contains no usage analytics, rating counters or ad trackers. Old local license
@@ -27,7 +27,7 @@ between browsers.
 - Document text, images, text recognition (OCR) results, explanation requests and generated audio are processed
   locally by the Reader features. The extension bundles no credentials for external AI providers and does not
   send document content to such services.
-- "Summarize" shows the key passages of a page without any download. For AI explanations (currently in English) it uses a local language model (IBM Granite 4.0 350M, about 580 MB, Apache-2.0; a copy of the model of earlier versions keeps working until it is replaced). It is downloaded once
+- "Summarize" shows the key passages of a page without any download. For AI explanations (English and German) it uses a local language model (Qwen3.5-0.8B, about 668 MB, or the smaller IBM Granite 4.0 350M, about 580 MB, both Apache-2.0; a copy of the model of earlier versions keeps working until it is replaced). It is downloaded once
   from Hugging Face only after you explicitly click, and then runs in the browser on your device without
   network. The page text stays local.
 - System voices are limited to local voices. Whether your operating system's components use additional services
