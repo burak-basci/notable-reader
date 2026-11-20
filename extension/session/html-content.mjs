@@ -117,7 +117,10 @@ export function collectHtmlBlocks({metadataOnly=false,cites=false,reading={}}={}
     const NL='\uE000',NP='\uE001';      // NP: a blank line inside one text node of code (kept as a paragraph break so the chunker can cut at a new function/block)
     const visit=(node,code)=>{
       if(node.nodeType===Node.TEXT_NODE){if(visible(parent(node)))parts.push(code?node.data.replace(/(?:\r\n?|\n)(?:[ \t]*(?:\r\n?|\n))+/gu,NP).replace(/\r\n?|\n/gu,NL):node.data);return;}
-      if(node.nodeType!==Node.ELEMENT_NODE||!visible(node))return;
+      if(node.nodeType!==Node.ELEMENT_NODE)return;
+      /* a left-out pronunciation, date or promo between two text nodes is a word boundary ("Bochum [ˈboːxʊm]": "[" and "]" stay two tokens, each maps to its own
+         text node); whitespace only, no non-space character moves */
+      if(!visible(node)){if(!code&&node.matches?.('.IPA,[lang="zxx"],time,a[href*="google.com/preferences/source"]'))parts.push(' ');return;}
       const inCode=code||node.tagName==='PRE';
       const gaps=inCode?null:gapsOf(node),boundary=node.tagName==='BR'||blockTags.has(node.tagName),mark=inCode&&node.tagName!=='PRE'?NL:' ';
       if(gaps?.before)parts.push(' ');

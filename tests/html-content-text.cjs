@@ -87,7 +87,7 @@ const server = http.createServer((q, r) => {
     ok(!/Stand: 20\.11|12:40 Uhr/.test(all), 'tagesschau date line (metatextline) not read');
     ok(!/Just now/.test(all), 'relative time in the byline not read');
     ok(!/Reuters/.test(all), 'picture credit label not read');
-    ok(!/ˈboːxʊm/.test(all) && /Bochum \[\] is a city/.test(all), 'IPA pronunciation not read: ' + all.match(/Bochum.{0,40}/)?.[0]);
+    ok(!/ˈboːxʊm/.test(all) && /Bochum \[ \] is a city/.test(all), 'IPA pronunciation not read, the brackets stay two tokens: ' + all.match(/Bochum.{0,40}/)?.[0]);
     ok(/meeting is on Monday 23 hours from now/.test(all), 'a <time> inside a sentence stays');
     ok(!/bei Google bevorzugen/.test(all), 'Google "preferred sources" button not read (SPIEGEL, R2-05)');
     ok(/A quoted sentence inside a figure stays/.test(all) && /Caption under the picture/.test(all), 'quote in a figure and the caption stay');
