@@ -18,24 +18,38 @@ export function phaseSummary(stats) {
     decoderSharePercent: stats.totalMs ? Math.round(100 * stats.decodeMs / stats.totalMs) : null, predictorSharePercent: stats.totalMs ? Math.round(100 * stats.predictorMs / stats.totalMs) : null, prefillMs: Math.round(stats.prefillMs), frameBudgetMs: 80};
 }
 
-/* The plain text block for the diagnosis. `report` = answer of the host ({loaded, caps, recent, bench?}); `label` = localized heading. */
-export function engineLines(report, label = 'Voice engine') {
+/* Words of the diagnosis per interface language (kept here: the lines are built from numbers, not from the UI catalog). English is the fallback.
+   Technical names (GPU, CPU, WebGPU, JSPI, RTF, WASM) stay as they are in every language. */
+const L = {
+  en: {none: 'no voice loaded', worker: n => `${n} worker${n === 1 ? '' : 's'}`, load: 'load', yes: 'yes', no: 'no', cores: 'cores', last: (n, id) => `Last ${n} sections (${id})`, audio: (a, t) => `${a} s audio in ${t} s`, phases: 'Phases per section', frame: 'ms/frame', step: 'ms/step', budget: 'budget', speed: 'Speed test', one: '1 section', par: n => `${n} sections in parallel`, forAudio: (t, a) => `${t} s for ${a} s audio`, failed: 'failed'},
+  de: {none: 'keine Stimme geladen', worker: n => `${n} Worker`, load: 'Laden', yes: 'ja', no: 'nein', cores: 'Kerne', last: (n, id) => `Letzte ${n} Abschnitte (${id})`, audio: (a, t) => `${a} s Audio in ${t} s`, phases: 'Phasen je Abschnitt', frame: 'ms/Frame', step: 'ms/Schritt', budget: 'Budget', speed: 'Geschwindigkeitstest', one: '1 Abschnitt', par: n => `${n} Abschnitte parallel`, forAudio: (t, a) => `${t} s für ${a} s Audio`, failed: 'fehlgeschlagen'},
+  es: {none: 'ninguna voz cargada', worker: n => `${n} worker${n === 1 ? '' : 's'}`, load: 'carga', yes: 'sí', no: 'no', cores: 'núcleos', last: (n, id) => `Últimas ${n} secciones (${id})`, audio: (a, t) => `${a} s de audio en ${t} s`, phases: 'Fases por sección', frame: 'ms/fotograma', step: 'ms/paso', budget: 'presupuesto', speed: 'Prueba de velocidad', one: '1 sección', par: n => `${n} secciones en paralelo`, forAudio: (t, a) => `${t} s para ${a} s de audio`, failed: 'fallida'},
+  fr: {none: 'aucune voix chargée', worker: n => `${n} worker${n === 1 ? '' : 's'}`, load: 'chargement', yes: 'oui', no: 'non', cores: 'cœurs', last: (n, id) => `Dernières ${n} sections (${id})`, audio: (a, t) => `${a} s d’audio en ${t} s`, phases: 'Phases par section', frame: 'ms/trame', step: 'ms/étape', budget: 'budget', speed: 'Test de vitesse', one: '1 section', par: n => `${n} sections en parallèle`, forAudio: (t, a) => `${t} s pour ${a} s d’audio`, failed: 'échec'},
+  it: {none: 'nessuna voce caricata', worker: n => `${n} worker`, load: 'caricamento', yes: 'sì', no: 'no', cores: 'core', last: (n, id) => `Ultime ${n} sezioni (${id})`, audio: (a, t) => `${a} s di audio in ${t} s`, phases: 'Fasi per sezione', frame: 'ms/frame', step: 'ms/passo', budget: 'budget', speed: 'Test di velocità', one: '1 sezione', par: n => `${n} sezioni in parallelo`, forAudio: (t, a) => `${t} s per ${a} s di audio`, failed: 'non riuscito'},
+  pt: {none: 'nenhuma voz carregada', worker: n => `${n} worker${n === 1 ? '' : 's'}`, load: 'carregamento', yes: 'sim', no: 'não', cores: 'núcleos', last: (n, id) => `Últimas ${n} seções (${id})`, audio: (a, t) => `${a} s de áudio em ${t} s`, phases: 'Fases por seção', frame: 'ms/quadro', step: 'ms/passo', budget: 'orçamento', speed: 'Teste de velocidade', one: '1 seção', par: n => `${n} seções em paralelo`, forAudio: (t, a) => `${t} s para ${a} s de áudio`, failed: 'falhou'},
+};
+/* The popup sets <html lang> to the interface language (i18n.translateDOM); a caller may pass the code explicitly. */
+const uiLanguage = () => { const code = String(globalThis.document?.documentElement?.lang || '').slice(0, 2).toLowerCase(); return code; };
+export const diagnosisWords = language => L[language] || L[uiLanguage()] || L.en;
+
+/* The plain text block for the diagnosis. `report` = answer of the host ({loaded, caps, recent, bench?}); `label` = localized heading; `language` = interface language (default: the page's). */
+export function engineLines(report, label = 'Voice engine', language) {
   if (!report) return [`${label}: -`];
-  const lines = [], loaded = report.loaded, caps = report.caps;
-  lines.push(`${label}: ${loaded ? [backendText(loaded), `${loaded.workers} worker${loaded.workers === 1 ? '' : 's'}`, `load ${round(loaded.initMs / 1000, 1)} s`].join(' · ') : 'no voice loaded'}`);
-  if (caps) lines.push(`WebGPU ${caps.webgpu ? 'yes' : 'no'} · JSPI ${caps.jspi ? 'yes' : 'no'} · ${caps.cores ?? '?'} cores · ${caps.memoryGB ?? '?'} GB`);
+  const w = diagnosisWords(language), lines = [], loaded = report.loaded, caps = report.caps;
+  lines.push(`${label}: ${loaded ? [backendText(loaded), w.worker(loaded.workers), `${w.load} ${round(loaded.initMs / 1000, 1)} s`].join(' · ') : w.none}`);
+  if (caps) lines.push(`WebGPU ${caps.webgpu ? w.yes : w.no} · JSPI ${caps.jspi ? w.yes : w.no} · ${caps.cores ?? '?'} ${w.cores} · ${caps.memoryGB ?? '?'} GB`);
   const recent = report.recent;
-  if (recent?.sections) lines.push(`Last ${recent.sections} sections (${recent.modelId}): RTF ${recent.rtf} (${recent.audioSec} s audio in ${round(recent.ms / 1000, 1)} s)`);
+  if (recent?.sections) lines.push(`${w.last(recent.sections, recent.modelId)}: RTF ${recent.rtf} (${w.audio(recent.audioSec, round(recent.ms / 1000, 1))})`);
   const phases = phaseSummary(report.lastPhases);
-  if (phases) lines.push(`Phases per section: talker ${phases.talkerMsPerFrame} ms/frame · predictor ${phases.predictorMsPerFrame} ms/frame (${phases.predictorMsPerStep} ms/step, ${phases.predictorSharePercent} %) · decoder ${phases.decoderSharePercent} % · budget ${phases.frameBudgetMs} ms/frame`);
+  if (phases) lines.push(`${w.phases}: talker ${phases.talkerMsPerFrame} ${w.frame} · predictor ${phases.predictorMsPerFrame} ${w.frame} (${phases.predictorMsPerStep} ${w.step}, ${phases.predictorSharePercent} %) · decoder ${phases.decoderSharePercent} % · ${w.budget} ${phases.frameBudgetMs} ${w.frame}`);
   const bench = report.bench;
   if (bench?.ok) {
-    lines.push(`Speed test (${bench.modelId}): load ${round(bench.loadMs / 1000, 1)} s`);
-    lines.push(`  1 section: ${round(bench.single.ms / 1000, 1)} s for ${round(bench.single.audioSec, 1)} s audio, RTF ${rtf(bench.single.ms, bench.single.audioSec)}`);
-    if (bench.parallel) lines.push(`  ${bench.parallel.sections} sections in parallel: ${round(bench.parallel.ms / 1000, 1)} s for ${round(bench.parallel.audioSec, 1)} s audio, RTF ${rtf(bench.parallel.ms, bench.parallel.audioSec)}`);
+    lines.push(`${w.speed} (${bench.modelId}): ${w.load} ${round(bench.loadMs / 1000, 1)} s`);
+    lines.push(`  ${w.one}: ${w.forAudio(round(bench.single.ms / 1000, 1), round(bench.single.audioSec, 1))}, RTF ${rtf(bench.single.ms, bench.single.audioSec)}`);
+    if (bench.parallel) lines.push(`  ${w.par(bench.parallel.sections)}: ${w.forAudio(round(bench.parallel.ms / 1000, 1), round(bench.parallel.audioSec, 1))}, RTF ${rtf(bench.parallel.ms, bench.parallel.audioSec)}`);
     const measured = phaseSummary(bench.single.stats);
-    if (measured) lines.push(`  talker ${measured.talkerMsPerFrame} ms/frame · predictor ${measured.predictorMsPerFrame} ms/frame · decoder ${measured.decoderSharePercent} %`);
-  } else if (bench) lines.push(`Speed test: ${bench.code || 'failed'}`);
+    if (measured) lines.push(`  talker ${measured.talkerMsPerFrame} ${w.frame} · predictor ${measured.predictorMsPerFrame} ${w.frame} · decoder ${measured.decoderSharePercent} %`);
+  } else if (bench) lines.push(`${w.speed}: ${bench.code || w.failed}`);
   return lines;
 }
 
