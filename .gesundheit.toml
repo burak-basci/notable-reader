@@ -1,0 +1,14 @@
+# Gebäudezustand (tools/gesundheit.py)
+#
+# Diese Datei vorhanden = die Prüfung vor dem Push ist eingeschaltet.
+# Inhalt ist noch nicht ausgewertet; die Schwellen stehen oben im Skript
+# (CC_BLOCK_NEU, CC_BLOCK_WACHSTUM, DUP_BLOCK_ZEILEN).
+#
+# Eingerichtet wird der Hook je Arbeitskopie:
+#     python3 tools/gesundheit.py hook install
+# Entfernen:
+#     python3 tools/gesundheit.py hook uninstall
+#
+# Die Pipeline prüft unabhängig davon bei jedem Push (Job "gesundheit" in
+# .forgejo/workflows/ci.yml). Der Hook ist nur die schnelle Runde davor.
+basis = "origin/main"
