@@ -52,6 +52,7 @@ KLEIN = 3              # kürzere Zeilen zählen nicht als Duplikat
 # beides sind die Treiber, die die SlopCodeBench als Erosion misst. Ehrlich
 # benannt: das ist Länge und Tiefe, nicht zyklomatische Komplexität.
 TS_ENDUNGEN = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
+DART_ENDUNGEN = (".dart",)
 OXLINT_VERSION = "1.23.0"
 TS_MAX_ZEILEN = 80       # .ts/.js: Logik
 TS_MAX_ZEILEN_JSX = 120  # .tsx/.jsx: JSX blaeht Zeilen auf, ohne Komplexitaet
@@ -324,6 +325,67 @@ def _funktionen_bewerten(pfad: str, alt_fn: dict, neu_fn: dict,
     return zuwachs_summe
 
 
+def _dart_bin() -> str | None:
+    for kandidat in ("dart", os.path.expanduser("~/development/flutter/bin/dart")):
+        pfad = shutil.which(kandidat) or (kandidat if os.path.isfile(kandidat) else None)
+        if pfad:
+            return pfad
+    return None
+
+
+def _dart_analyzer(pfade: list[str], bereiche: dict[str, set[int]],
+                   cwd: str) -> tuple[list[str], str | None]:
+    """Der echte Analyzer, keine eigene Messung: Fehler und Warnungen auf
+    geänderten Zeilen. Komplexität kann Dart nicht — bewusst nicht erfunden."""
+    if not pfade:
+        return [], None
+    binaer = _dart_bin()
+    if binaer is None:
+        return [], "kein dart im PATH — Dart nicht geprüft"
+    lauf = subprocess.run(
+        [binaer, "analyze", "--format", "machine", *pfade],
+        cwd=cwd, capture_output=True, text=True, check=False,
+    )
+    befunde = []
+    for zeile in lauf.stdout.splitlines():
+        teile = zeile.split("|")
+        if len(teile) < 8:
+            continue
+        schwere, _, code, datei, nummer, _, _, meldung = teile[:8]
+        try:
+            nr = int(nummer)
+        except ValueError:
+            continue
+        if os.path.isabs(datei):
+            datei = os.path.relpath(datei, cwd)
+        # Import-Fehler sind Umgebungsrauschen (kein pub get), nicht Schuld des Commits.
+        if code == "URI_DOES_NOT_EXIST" or schwere == "INFO":
+            continue
+        if nr not in bereiche.get(datei, set()):
+            continue
+        befunde.append(f"{datei}:{nr}: Analyzer {schwere.lower()}: {meldung} ({code}) — beheben oder begründen")
+    return befunde, None
+
+
+def _dart_bewerten(basis: str, kopf: str, pfade: list[str], cwd: str,
+                   befunde: list, warnungen: list) -> dict:
+    zahlen = {"dateien": 0, "dup_plus": 0}
+    bereiche = {}
+    for pfad in pfade:
+        neu = datei_inhalt(kopf, pfad, cwd)
+        if neu is None:
+            continue
+        alt = datei_inhalt(basis, pfad, cwd) or ""
+        zahlen["dateien"] += 1
+        zahlen["dup_plus"] += _duplikat_bewerten(pfad, alt, neu, befunde)
+        bereiche[pfad] = diff_zeilen(basis, kopf, pfad, cwd)
+    treffer, fehler = _dart_analyzer(pfade, bereiche, cwd)
+    befunde.extend(treffer)
+    if fehler:
+        warnungen.append(fehler)
+    return zahlen
+
+
 def _python_bewerten(basis: str, kopf: str, pfade: list[str], cwd: str,
                      befunde: list, warnungen: list) -> dict:
     zahlen = {"dateien": 0, "cc_plus": 0, "dup_plus": 0}
@@ -383,11 +445,13 @@ def auswerten(basis: str, kopf: str, cwd: str) -> dict:
     ohne_tests = [p for p in geaendert if _pruefenswert(p)]
     python_pfade = [p for p in ohne_tests if p.endswith(".py")]
     ts_pfade = [p for p in ohne_tests if p.endswith(TS_ENDUNGEN)]
+    dart_pfade = [p for p in ohne_tests if p.endswith(DART_ENDUNGEN)]
     befunde, warnungen = [], []
     zahlen = {"dateien": 0, "cc_plus": 0, "dup_plus": 0}
     for teil in (
         _python_bewerten(basis, kopf, python_pfade, cwd, befunde, warnungen),
         _ts_bewerten(basis, kopf, ts_pfade, cwd, befunde, warnungen),
+        _dart_bewerten(basis, kopf, dart_pfade, cwd, befunde, warnungen),
     ):
         zahlen["dateien"] += teil["dateien"]
         zahlen["dup_plus"] += teil["dup_plus"]
@@ -505,6 +569,32 @@ def _selbsttest_ts() -> list[tuple[str, bool]]:
     ]
 
 
+def _selbsttest_dart() -> list[tuple[str, bool]]:
+    """Analyzer-Befund auf geänderter Zeile blockiert; unveränderte nicht."""
+    if shutil.which("dart") is None and not os.path.isfile(
+        os.path.expanduser("~/development/flutter/bin/dart")
+    ):
+        return [("Dart übersprungen (kein dart)", True)]
+    with tempfile.TemporaryDirectory() as tmp:
+        git("init", "-q", cwd=tmp)
+        git("config", "user.email", "t@t", cwd=tmp)
+        git("config", "user.name", "t", cwd=tmp)
+        os.makedirs(os.path.join(tmp, "lib"))
+        probe = os.path.join(tmp, "lib", "probe.dart")
+        with open(probe, "w") as fh:
+            fh.write("int laenge(int a) {\n  return a;\n}\n")
+        git("add", "-A", cwd=tmp)
+        git("commit", "-qm", "gut", cwd=tmp)
+        basis = git("rev-parse", "HEAD", cwd=tmp).strip()
+        with open(probe, "w") as fh:
+            fh.write("int laenge(int? a) {\n  return a.abs();\n}\n")
+        git("add", "-A", cwd=tmp)
+        git("commit", "-qm", "kaputt", cwd=tmp)
+        ergebnis = auswerten(basis, git("rev-parse", "HEAD", cwd=tmp).strip(), tmp)
+    return [("Dart-Analyzer-Fehler auf geänderter Zeile blockiert",
+             any("Analyzer" in b for b in ergebnis["block"]))]
+
+
 def selbsttest() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         git("init", "-q", cwd=tmp)
@@ -533,6 +623,7 @@ def selbsttest() -> int:
         ("# gesundheit-ok hebt auf", not begruendet["block"] and bool(begruendet["begruendet"])),
     ]
     faelle += _selbsttest_ts()
+    faelle += _selbsttest_dart()
     for name, ok in faelle:
         print(f"  {'✓' if ok else '✗'} {name}")
     return 0 if all(ok for _, ok in faelle) else 1
